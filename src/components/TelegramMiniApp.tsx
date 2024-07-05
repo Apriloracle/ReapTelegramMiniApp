@@ -2,59 +2,26 @@ import React, { useEffect, useState } from 'react'
 import { useWeb3 } from '@/utils/web3'
 import { useConnect } from 'wagmi'
 
-interface TelegramWebApp {
-  ready: () => void;
-  MainButton: {
-    setText: (text: string) => void;
-    show: () => void;
-    onClick: (callback: () => void) => void;
-  };
-  showAlert: (message: string) => void;
-}
-
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: TelegramWebApp;
-    };
-  }
-}
-
 const TelegramMiniApp: React.FC = () => {
-  const [tg, setTg] = useState<TelegramWebApp | null>(null);
+  const [tg, setTg] = useState<any>(null)
   const { account, isConnected, balance, chainId } = useWeb3()
   const { connect, connectors } = useConnect()
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      setTg(window.Telegram.WebApp);
-      window.Telegram.WebApp.ready();
+      const tgApp = window.Telegram.WebApp
+      setTg(tgApp)
+      tgApp.ready()
     }
-  }, []);
-
-  useEffect(() => {
-    if (tg) {
-      tg.MainButton.setText('Connect Wallet');
-      tg.MainButton.show();
-      tg.MainButton.onClick(() => {
-        if (!isConnected && connectors.length > 0) {
-          connect({ connector: connectors[0] });
-        } else {
-          tg.showAlert(isConnected ? 'Already connected!' : 'No connectors available');
-        }
-      });
-    }
-  }, [tg, isConnected, connect, connectors]);
+  }, [])
 
   return (
-    <div className="bg-gray-100 p-4 max-w-md mx-auto font-sans pb-16">
-      {/* Header */}
+    <div className="bg-gray-100 p-4 max-w-md mx-auto font-sans">
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Home</h1>
-        <button className="text-gray-600">⋮</button>
+        <h1 className="text-2xl font-bold text-gray-800">Home</h1>
+        <button className="text-gray-600 text-2xl">⋮</button>
       </header>
 
-      {/* Balance Card */}
       <div className="bg-orange-500 rounded-3xl p-4 mb-6 text-white">
         <div className="flex justify-between items-center mb-4">
           <div>
@@ -83,31 +50,28 @@ const TelegramMiniApp: React.FC = () => {
         </div>
       </div>
 
-      {/* Web3 Connection Status */}
-      {isConnected ? (
-        <div className="bg-white rounded-xl p-4 mb-6">
-          <p className="font-bold mb-2">Connected to Web3</p>
-          <p className="text-sm">Account: {account?.slice(0, 6)}...{account?.slice(-4)}</p>
-          <p className="text-sm">Chain ID: {chainId}</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl p-4 mb-6">
-          <p className="font-bold mb-2">Not connected to Web3</p>
-          <p className="text-sm">Connect using the button at the bottom of the screen</p>
-        </div>
-      )}
+      <div className="bg-white rounded-xl p-4 mb-6">
+        {isConnected ? (
+          <div>
+            <p className="font-bold mb-2">Connected to Web3</p>
+            <p className="text-sm">Account: {account?.slice(0, 6)}...{account?.slice(-4)}</p>
+            <p className="text-sm">Chain ID: {chainId}</p>
+          </div>
+        ) : (
+          <div>
+            <p className="font-bold mb-2">Not connected to Web3</p>
+            <p className="text-sm">Connect using the button at the bottom of the screen</p>
+          </div>
+        )}
+      </div>
 
-      {/* Referral Banner */}
       <div className="bg-white rounded-xl p-4 mb-6 flex items-center justify-between">
-        <div>
-          <p className="font-bold">Earn <span className="text-orange-500">80 APRIL</span> per friend invited</p>
-        </div>
+        <p className="font-bold">Earn <span className="text-orange-500">80 APRIL</span> per friend invited</p>
         <img src="/api/placeholder/80/80" alt="Referral" className="rounded-xl" />
       </div>
 
-      {/* Recommended Section */}
       <section className="mb-6">
-        <h3 className="text-xl font-bold mb-4">Recommended</h3>
+        <h3 className="text-xl font-bold mb-4 text-gray-800">Recommended</h3>
         <div className="grid grid-cols-3 gap-4">
           {[
             { icon: "⚽", label: "Sports" },
@@ -119,28 +83,13 @@ const TelegramMiniApp: React.FC = () => {
           ].map((item, index) => (
             <div key={index} className="bg-white rounded-xl p-4 flex flex-col items-center justify-center">
               <span className="text-2xl mb-2">{item.icon}</span>
-              <p className="text-sm">{item.label}</p>
+              <p className="text-sm text-gray-600">{item.label}</p>
             </div>
           ))}
         </div>
       </section>
-
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2">
-        {[
-          { icon: "🏠", label: "Home", active: true },
-          { icon: "💰", label: "Earn" },
-          { icon: "🎮", label: "Games" },
-          { icon: "🏅", label: "Sports" },
-        ].map((item, index) => (
-          <button key={index} className={`flex flex-col items-center ${item.active ? 'text-orange-500' : 'text-gray-400'}`}>
-            <span className="text-2xl">{item.icon}</span>
-            <span className="text-xs mt-1">{item.label}</span>
-          </button>
-        ))}
-      </nav>
     </div>
-  );
-};
+  )
+}
 
-export default TelegramMiniApp;
+export default TelegramMiniApp
