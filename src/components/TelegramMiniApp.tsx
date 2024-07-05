@@ -1,11 +1,24 @@
 import React, { useEffect, useState } from 'react'
-import { useWeb3 } from '@/utils/web3'
-import { useConnect } from 'wagmi'
+
+// Declare the global Telegram object
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        ready: () => void;
+        MainButton: {
+          setText: (text: string) => void;
+          show: () => void;
+          onClick: (callback: () => void) => void;
+        };
+        showAlert: (message: string) => void;
+      };
+    };
+  }
+}
 
 const TelegramMiniApp: React.FC = () => {
-  const [tg, setTg] = useState<any>(null)
-  const { account, isConnected, balance, chainId } = useWeb3()
-  const { connect, connectors } = useConnect()
+  const [tg, setTg] = useState<Window['Telegram']['WebApp'] | null>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
@@ -15,29 +28,21 @@ const TelegramMiniApp: React.FC = () => {
     }
   }, [])
 
+  useEffect(() => {
+    if (tg) {
+      tg.MainButton.setText('Click me!')
+      tg.MainButton.show()
+      tg.MainButton.onClick(() => {
+        tg.showAlert('You clicked the main button!')
+      })
+    }
+  }, [tg])
+
   return (
     <div className="bg-gray-100 p-4 max-w-md mx-auto font-sans">
       <h1 className="text-2xl font-bold mb-4">Celo Telegram Mini App</h1>
-      {isConnected ? (
-        <div>
-          <p>Connected Account: {account}</p>
-          <p>Balance: {balance} ETH</p>
-          <p>Chain ID: {chainId}</p>
-        </div>
-      ) : (
-        <div>
-          <p>Not connected to Web3</p>
-          {connectors.map((connector) => (
-            <button
-              key={connector.id}
-              onClick={() => connect({ connector })}
-              className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
-            >
-              Connect with {connector.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <p className="mb-4">Welcome to our Telegram Mini App!</p>
+      <p>Try clicking the main button at the bottom of your screen.</p>
     </div>
   )
 }
