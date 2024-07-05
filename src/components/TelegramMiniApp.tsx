@@ -2,24 +2,16 @@ import React, { useEffect, useState } from 'react'
 import { useWeb3 } from '@/utils/web3'
 import { useConnect } from 'wagmi'
 
-declare global {
-  interface Window {
-    Telegram: any;
-  }
-}
-
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<any>(null)
   const { account, isConnected, balance, chainId } = useWeb3()
   const { connect, connectors } = useConnect()
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const tgApp = window.Telegram?.WebApp
-      if (tgApp) {
-        setTg(tgApp)
-        tgApp.ready()
-      }
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      const tgApp = window.Telegram.WebApp
+      setTg(tgApp)
+      tgApp.ready()
     }
   }, [])
 
@@ -46,7 +38,6 @@ const TelegramMiniApp: React.FC = () => {
           ))}
         </div>
       )}
-      {/* Add more UI components here */}
     </div>
   )
 }
