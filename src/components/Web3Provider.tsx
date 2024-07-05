@@ -1,18 +1,12 @@
 import React from 'react'
-import { Web3ReactProvider } from '@web3-react/core'
-import { Web3Provider } from '@ethersproject/providers'
-
-function getLibrary(provider: any): Web3Provider {
-  const library = new Web3Provider(provider)
-  library.pollingInterval = 12000
-  return library
-}
+import { WagmiConfig } from 'wagmi'
+import { config } from '@/utils/config'
 
 const Web3ProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <Web3ReactProvider getLibrary={getLibrary}>
+    <WagmiConfig config={config}>
       {children}
-    </Web3ReactProvider>
+    </WagmiConfig>
   )
 }
 
