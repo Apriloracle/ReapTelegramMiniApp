@@ -1,14 +1,18 @@
-import { useAccount, useBalance, useNetwork } from 'wagmi'
+import '@/styles/globals.css'
+import type { AppProps } from 'next/app'
+import { WagmiProvider } from 'wagmi'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { config } from '@/utils/config'
 
-export const useWeb3 = () => {
-  const { address, isConnected } = useAccount()
-  const { chain } = useNetwork()
-  const { data: balance } = useBalance({
-    address: address,
-  })
+// Create a client
+const queryClient = new QueryClient()
 
-  return {
-    account: address,
-    isConnected,
-    balance: balance?.formatted,
-    chainId: ch
+export default function App({ Component, pageProps }: AppProps) {
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <Component {...pageProps} />
+      </QueryClientProvider>
+    </WagmiProvider>
+  )
+}
