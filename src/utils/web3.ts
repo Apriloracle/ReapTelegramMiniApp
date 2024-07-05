@@ -13,4 +13,4 @@ export const useWeb3 = () => {
     balance: balance?.formatted,
     chainId,
   }
-}
+}}
