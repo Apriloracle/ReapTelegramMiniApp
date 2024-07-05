@@ -4,10 +4,6 @@ import { coinbaseWallet, injected, metaMask, walletConnect } from 'wagmi/connect
 
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID
 
-if (!walletConnectProjectId) {
-  throw new Error('You need to provide NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID env variable')
-}
-
 export const config = createConfig({
   chains: [celoAlfajores, celo, mainnet],
   transports: {
@@ -18,7 +14,9 @@ export const config = createConfig({
   connectors: [
     metaMask(),
     coinbaseWallet({ appName: 'Celo Telegram App' }),
-    walletConnect({ projectId: walletConnectProjectId }),
+    ...(walletConnectProjectId
+      ? [walletConnect({ projectId: walletConnectProjectId })]
+      : []),
     injected(),
   ],
 })
