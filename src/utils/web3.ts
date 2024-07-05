@@ -1,8 +1,8 @@
-import { useAccount, useBalance, useChainId } from 'wagmi'
+import { useAccount, useBalance, useNetwork } from 'wagmi'
 
 export const useWeb3 = () => {
   const { address, isConnected } = useAccount()
-  const chainId = useChainId()
+  const { chain } = useNetwork()
   const { data: balance } = useBalance({
     address: address,
   })
@@ -11,6 +11,6 @@ export const useWeb3 = () => {
     account: address,
     isConnected,
     balance: balance?.formatted,
-    chainId,
+    chainId: chain?.id,
   }
 }
