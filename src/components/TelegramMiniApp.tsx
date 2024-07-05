@@ -1,30 +1,32 @@
 import React, { useEffect, useState } from 'react'
 
+// Define the structure of the Telegram WebApp object
+interface TelegramWebApp {
+  ready: () => void;
+  MainButton: {
+    setText: (text: string) => void;
+    show: () => void;
+    onClick: (callback: () => void) => void;
+  };
+  showAlert: (message: string) => void;
+}
+
 // Declare the global Telegram object
 declare global {
   interface Window {
     Telegram?: {
-      WebApp?: {
-        ready: () => void;
-        MainButton: {
-          setText: (text: string) => void;
-          show: () => void;
-          onClick: (callback: () => void) => void;
-        };
-        showAlert: (message: string) => void;
-      };
+      WebApp?: TelegramWebApp;
     };
   }
 }
 
 const TelegramMiniApp: React.FC = () => {
-  const [tg, setTg] = useState<Window['Telegram']['WebApp'] | null>(null)
+  const [tg, setTg] = useState<TelegramWebApp | null>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tgApp = window.Telegram.WebApp
-      setTg(tgApp)
-      tgApp.ready()
+      setTg(window.Telegram.WebApp)
+      window.Telegram.WebApp.ready()
     }
   }, [])
 
