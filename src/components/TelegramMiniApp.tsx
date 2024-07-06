@@ -48,70 +48,65 @@ const TelegramMiniApp: React.FC = () => {
   }, [tg, isConnected, connect, connectors])
 
   return (
-    <div className="bg-gray-100 p-4 max-w-md mx-auto font-sans pb-16">
-      {/* Header */}
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Home</h1>
-        <button className="text-gray-600 text-2xl">⋮</button>
+    <div style={{ backgroundColor: '#f3f4f6', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Home</h1>
+        <button style={{ fontSize: '1.5rem', background: 'none', border: 'none' }}>⋮</button>
       </header>
 
-      {/* Balance Card */}
-      <div className="bg-orange-500 rounded-3xl p-4 mb-6 text-white">
-        <div className="flex justify-between items-center mb-4">
+      <div style={{ backgroundColor: '#f97316', borderRadius: '1.5rem', padding: '1rem', marginBottom: '1.5rem', color: 'white' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <div>
-            <p className="text-sm opacity-80">Total Balance</p>
-            <h2 className="text-4xl font-bold">${isConnected ? balance : '0.00'}</h2>
+            <p style={{ fontSize: '0.875rem', opacity: 0.8 }}>Total Balance</p>
+            <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', margin: '0' }}>${isConnected ? balance : '0.00'}</h2>
           </div>
-          <button className="bg-white text-orange-500 px-4 py-2 rounded-full flex items-center">
+          <button style={{ backgroundColor: 'white', color: '#f97316', padding: '0.5rem 1rem', borderRadius: '9999px', display: 'flex', alignItems: 'center', border: 'none', cursor: 'pointer' }}>
             Cashout 💼
           </button>
         </div>
-        <div className="flex justify-between">
-          <div className="bg-orange-400 rounded-xl p-2 flex items-center">
-            <span className="mr-2">💼</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ backgroundColor: '#fb923c', borderRadius: '0.75rem', padding: '0.5rem', display: 'flex', alignItems: 'center', flex: '1', marginRight: '0.5rem' }}>
+            <span style={{ marginRight: '0.5rem' }}>💼</span>
             <div>
-              <p className="text-xs opacity-80">Available APRIL</p>
-              <p className="font-bold">4000</p>
+              <p style={{ fontSize: '0.75rem', opacity: 0.8, margin: '0' }}>Available APRIL</p>
+              <p style={{ fontWeight: 'bold', margin: '0' }}>4000</p>
             </div>
           </div>
-          <div className="bg-orange-400 rounded-xl p-2 flex items-center">
-            <span className="mr-2">💳</span>
+          <div style={{ backgroundColor: '#fb923c', borderRadius: '0.75rem', padding: '0.5rem', display: 'flex', alignItems: 'center', flex: '1', marginLeft: '0.5rem' }}>
+            <span style={{ marginRight: '0.5rem' }}>💳</span>
             <div>
-              <p className="text-xs opacity-80">Pending APRIL</p>
-              <p className="font-bold">15.0</p>
+              <p style={{ fontSize: '0.75rem', opacity: 0.8, margin: '0' }}>Pending APRIL</p>
+              <p style={{ fontWeight: 'bold', margin: '0' }}>15.0</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Web3 Connection Status */}
-      <div className="bg-white rounded-xl p-4 mb-6">
+      <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem' }}>
         {isConnected ? (
           <div>
-            <p className="font-bold mb-2">Connected to Web3</p>
-            <p className="text-sm">Account: {account?.slice(0, 6)}...{account?.slice(-4)}</p>
-            <p className="text-sm">Chain ID: {chainId}</p>
+            <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Connected to Web3</p>
+            <p style={{ fontSize: '0.875rem' }}>Account: {account?.slice(0, 6)}...{account?.slice(-4)}</p>
+            <p style={{ fontSize: '0.875rem' }}>Chain ID: {chainId}</p>
           </div>
         ) : (
           <div>
-            <p className="font-bold mb-2">Not connected to Web3</p>
-            <p className="text-sm">Connect using the button at the bottom of the screen</p>
+            <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Not connected to Web3</p>
+            <p style={{ fontSize: '0.875rem' }}>Connect using the button at the bottom of the screen</p>
           </div>
         )}
       </div>
 
-      {/* Referral Banner */}
-      <div className="bg-white rounded-xl p-4 mb-6 flex items-center justify-between">
+      <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <p className="font-bold">Earn <span className="text-orange-500">80 APRIL</span> per friend invited</p>
+          <p style={{ fontWeight: 'bold' }}>Earn <span style={{ color: '#f97316' }}>80 APRIL</span> per friend invited</p>
         </div>
-        <img src="/api/placeholder/80/80" alt="Referral" className="rounded-xl" />
+        <img src="/api/placeholder/80/80" alt="Referral" style={{ borderRadius: '0.75rem', width: '80px', height: '80px' }} />
       </div>
 
-      {/* Recommended Section */}
-      <section className="mb-6">
-        <h3 className="text-xl font-bold mb-4 text-gray-800">Recommended</h3>
-        <div className="grid grid-cols-3 gap-4">
+      <section style={{ marginBottom: '1.5rem' }}>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Recommended</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
           {[
             { icon: "⚽", label: "Sports" },
             { icon: "🛒", label: "Shopping" },
@@ -120,15 +115,13 @@ const TelegramMiniApp: React.FC = () => {
             { icon: "🎟️", label: "Vouchers" },
             { icon: "📡", label: "Airtime/data" },
           ].map((item, index) => (
-            <div key={index} className="bg-white rounded-xl p-4 flex flex-col items-center justify-center">
-              <span className="text-2xl mb-2">{item.icon}</span>
-              <p className="text-sm text-gray-600">{item.label}</p>
+            <div key={index} style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{item.icon}</span>
+              <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: '0', textAlign: 'center' }}>{item.label}</p>
             </div>
           ))}
         </div>
       </section>
-
-      {/* Bottom Navigation is handled by Telegram's native UI */}
     </div>
   )
 }
