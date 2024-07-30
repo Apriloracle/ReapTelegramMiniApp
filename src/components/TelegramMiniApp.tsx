@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { ConnectButton } from "thirdweb/react"
-import { useAddress, useBalance, useChain } from "thirdweb/react"
+import { ConnectWallet, useConnect, useAddress, useChain, useBalance } from "@thirdweb-dev/react";
 import { client } from "./client" // Make sure to create this client file
 
 interface TelegramWebApp {
@@ -23,9 +22,9 @@ declare global {
 
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
-  const address = useAddress()
-  const { data: balance } = useBalance()
-  const { chain } = useChain()
+  const address = useAddress();
+  const { data: balance } = useBalance();
+  const chain = useChain();
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
@@ -87,13 +86,7 @@ const TelegramMiniApp: React.FC = () => {
 
       {/* Thirdweb Connect Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-        <ConnectButton
-          client={client}
-          appMetadata={{
-            name: "Telegram Mini App",
-            url: "https://example.com",
-          }}
-        />
+        <ConnectWallet />
       </div>
 
       <div style={{ backgroundColor: '#374151', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
