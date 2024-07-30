@@ -3,7 +3,7 @@ import { Celo } from "@thirdweb-dev/chains";
 import React from "react";
 
 export const ThirdwebProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const providerConfig: ThirdwebProviderProps = {
+  const providerConfig: ThirdwebProviderProps<typeof Celo[]> = {
     clientId: "YOUR_CLIENT_ID_HERE", // Replace with your actual client ID
     activeChain: Celo,
     supportedChains: [Celo],
