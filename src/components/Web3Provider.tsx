@@ -28,18 +28,10 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
         <ConnectKitProvider
           options={{
             initialChainId: 0,
-            // Disable unsupported wallets
-            walletConnectName: 'WalletConnect',
-            hideNoWalletCTA: true,
-            hideMainnetWarning: true,
-            hideRecentBadge: true,
-            embedGoogleFonts: true,
-            // Customizing the modal for Telegram
             customAvatar: () => null,
-            disclaimer: null,
+            embedGoogleFonts: true,
             walletConnectCTA: 'modal',
             language: 'en-US',
-            // You can add more customizations here
           }}
         >
           {children}
