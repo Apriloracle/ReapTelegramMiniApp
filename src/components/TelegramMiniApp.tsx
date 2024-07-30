@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { ConnectWallet, useConnect, useAddress, useChain, useBalance } from "@thirdweb-dev/react";
-import { client } from "./client" // Make sure to create this client file
+import { ConnectWallet, useAddress, useBalance, useChain } from "@thirdweb-dev/react";
 
 interface TelegramWebApp {
   ready: () => void;
@@ -35,7 +34,7 @@ const TelegramMiniApp: React.FC = () => {
   }, [])
 
   return (
-    <div style={{ backgroundColor: '#1F2937', color: '#E5E7EB', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
+   <div style={{ backgroundColor: '#1F2937', color: '#E5E7EB', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#F9FAFB' }}>Home</h1>
         <button style={{ fontSize: '1.5rem', background: 'none', border: 'none', color: '#E5E7EB' }}>⋮</button>
@@ -69,7 +68,7 @@ const TelegramMiniApp: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#374151', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem' }}>
+ <div style={{ backgroundColor: '#374151', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem' }}>
         {address ? (
           <div>
             <p style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#F9FAFB' }}>Connected to Web3</p>
@@ -84,8 +83,9 @@ const TelegramMiniApp: React.FC = () => {
         )}
       </div>
 
+
       {/* Thirdweb Connect Button */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
         <ConnectWallet />
       </div>
 
