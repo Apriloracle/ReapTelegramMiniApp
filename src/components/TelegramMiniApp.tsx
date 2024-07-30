@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { ConnectKitButton } from 'connectkit';
-import { useAccount, useBalance, useNetwork } from 'wagmi'
+import { useAccount, useBalance, useChainId } from 'wagmi'
 import { formatEther } from 'viem'
 
 interface TelegramWebApp {
@@ -23,9 +23,9 @@ declare global {
 
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
-  const { address, isConnected } = useAccount();
-  const { data: balance } = useBalance({ address });
-  const { chain } = useNetwork();
+  const { address, isConnected } = useAccount()
+  const { data: balance } = useBalance({ address })
+  const chainId = useChainId()
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
@@ -34,6 +34,17 @@ const TelegramMiniApp: React.FC = () => {
       tgApp.ready()
     }
   }, [])
+
+  const getChainName = (id: number) => {
+    switch (id) {
+      case 42220:
+        return 'Celo'
+      case 44787:
+        return 'Celo Alfajores Testnet'
+      default:
+        return 'Unknown'
+    }
+  }
 
   return (
     <div style={{ backgroundColor: '#1F2937', color: '#E5E7EB', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
@@ -79,7 +90,7 @@ const TelegramMiniApp: React.FC = () => {
           <div>
             <p style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#F9FAFB' }}>Connected to Web3</p>
             <p style={{ fontSize: '0.875rem' }}>Account: {address?.slice(0, 6)}...{address?.slice(-4)}</p>
-            <p style={{ fontSize: '0.875rem' }}>Chain: {chain?.name || 'Unknown'}</p>
+            <p style={{ fontSize: '0.875rem' }}>Chain: {getChainName(chainId)}</p>
           </div>
         ) : (
           <div>
