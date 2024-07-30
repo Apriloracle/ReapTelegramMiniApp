@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useWeb3 } from '@/utils/web3'
 import { useConnect } from 'wagmi'
+import { ConnectButton } from "thirdweb/react"
+import { client } from "./client" // Make sure to create this client file
 
 interface TelegramWebApp {
   ready: () => void;
@@ -92,9 +94,20 @@ const TelegramMiniApp: React.FC = () => {
         ) : (
           <div>
             <p style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#F9FAFB' }}>Not connected to Web3</p>
-            <p style={{ fontSize: '0.875rem' }}>Connect using the button at the bottom of the screen</p>
+            <p style={{ fontSize: '0.875rem' }}>Connect using the button below</p>
           </div>
         )}
+      </div>
+
+      {/* Thirdweb Connect Button */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+        <ConnectButton
+          client={client}
+          appMetadata={{
+            name: "Telegram Mini App",
+            url: "https://example.com",
+          }}
+        />
       </div>
 
       <div style={{ backgroundColor: '#374151', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
