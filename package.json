@@ -14,9 +14,9 @@
     "react-dom": "^18",
     "wagmi": "^2.0.0",
     "thirdweb": "^5",
-    "thirdweb-dev/react": "^4.9.4",
-    "thirdweb-dev/sdk": "^4.0.99",
-    "thirdweb-dev/chains": "^0.1.120",
+    "@thirdweb-dev/react": "^4.9.4",
+    "@thirdweb-dev/sdk": "^4.0.99",
+    "@thirdweb-dev/chains": "^0.1.120",
     "viem": "^2.0.0",
     "@tanstack/react-query": "^5.0.0"
   },
