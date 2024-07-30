@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { useWeb3 } from '@/utils/web3'
-import { useConnect } from 'wagmi'
 import { ConnectButton } from "thirdweb/react"
+import { useAddress, useBalance, useChain } from "thirdweb/react"
 import { client } from "./client" // Make sure to create this client file
 
 interface TelegramWebApp {
@@ -24,8 +23,9 @@ declare global {
 
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
-  const { account, isConnected, balance, chainId } = useWeb3()
-  const { connect, connectors } = useConnect()
+  const address = useAddress()
+  const { data: balance } = useBalance()
+  const { chain } = useChain()
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
@@ -34,20 +34,6 @@ const TelegramMiniApp: React.FC = () => {
       tgApp.ready()
     }
   }, [])
-
-  useEffect(() => {
-    if (tg) {
-      tg.MainButton.setText('Connect Wallet')
-      tg.MainButton.show()
-      tg.MainButton.onClick(() => {
-        if (!isConnected && connectors.length > 0) {
-          connect({ connector: connectors[0] })
-        } else {
-          tg.showAlert(isConnected ? 'Already connected!' : 'No connectors available')
-        }
-      })
-    }
-  }, [tg, isConnected, connect, connectors])
 
   return (
     <div style={{ backgroundColor: '#1F2937', color: '#E5E7EB', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
@@ -60,7 +46,7 @@ const TelegramMiniApp: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <div>
             <p style={{ fontSize: '0.875rem', opacity: 0.8 }}>Total Balance</p>
-            <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', margin: '0' }}>${isConnected ? balance : '0.00'}</h2>
+            <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', margin: '0' }}>${balance ? balance.displayValue : '0.00'}</h2>
           </div>
           <button style={{ backgroundColor: '#F9FAFB', color: '#4B5563', padding: '0.5rem 1rem', borderRadius: '9999px', display: 'flex', alignItems: 'center', border: 'none', cursor: 'pointer' }}>
             Cashout 💼
@@ -85,11 +71,11 @@ const TelegramMiniApp: React.FC = () => {
       </div>
 
       <div style={{ backgroundColor: '#374151', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem' }}>
-        {isConnected ? (
+        {address ? (
           <div>
             <p style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#F9FAFB' }}>Connected to Web3</p>
-            <p style={{ fontSize: '0.875rem' }}>Account: {account?.slice(0, 6)}...{account?.slice(-4)}</p>
-            <p style={{ fontSize: '0.875rem' }}>Chain ID: {chainId}</p>
+            <p style={{ fontSize: '0.875rem' }}>Account: {address.slice(0, 6)}...{address.slice(-4)}</p>
+            <p style={{ fontSize: '0.875rem' }}>Chain: {chain?.name || 'Unknown'}</p>
           </div>
         ) : (
           <div>
