@@ -1,4 +1,4 @@
-import { ThirdwebProvider, type ThirdwebProviderProps } from "@thirdweb-dev/react";
+import { ThirdwebProvider, type ThirdwebProviderProps, metamaskWallet, coinbaseWallet, walletConnect } from "@thirdweb-dev/react";
 import { Celo } from "@thirdweb-dev/chains";
 import React from "react";
 
@@ -8,9 +8,9 @@ export const ThirdwebProviderWrapper: React.FC<{ children: React.ReactNode }> = 
     activeChain: Celo,
     supportedChains: [Celo],
     supportedWallets: [
-      "metamask",
-      "coinbase",
-      "walletConnect",
+      metamaskWallet(),
+      coinbaseWallet(),
+      walletConnect(),
       // Add more wallet options as needed
     ],
     dAppMeta: {
