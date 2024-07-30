@@ -23,7 +23,6 @@ declare global {
 
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
-  const [isInTelegram, setIsInTelegram] = useState(false)
   const { address, isConnected } = useAccount()
   const { data: balance } = useBalance({ address })
   const chainId = useChainId()
@@ -32,7 +31,6 @@ const TelegramMiniApp: React.FC = () => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       const tgApp = window.Telegram.WebApp
       setTg(tgApp)
-      setIsInTelegram(true)
       tgApp.ready()
     }
   }, [])
@@ -45,13 +43,6 @@ const TelegramMiniApp: React.FC = () => {
         return 'Celo Alfajores Testnet'
       default:
         return 'Unknown'
-    }
-  }
-
-  const handleConnect = () => {
-    if (isInTelegram) {
-      // Open WalletConnect QR in a new tab or Telegram's in-app browser
-      window.open('https://walletconnect.com/scanner', '_blank')
     }
   }
 
@@ -109,15 +100,9 @@ const TelegramMiniApp: React.FC = () => {
         )}
       </div>
 
-      {/* Conditional rendering for connect button */}
+      {/* ConnectKit Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-        {isInTelegram ? (
-          <button onClick={handleConnect} style={{ backgroundColor: '#3B82F6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
-            Connect Wallet
-          </button>
-        ) : (
-          <ConnectKitButton />
-        )}
+        <ConnectKitButton />
       </div>
 
       <div style={{ backgroundColor: '#374151', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
