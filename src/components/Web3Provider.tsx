@@ -33,14 +33,11 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
             hideNoWalletCTA: true,
             hideMainnetWarning: true,
             hideRecentBadge: true,
-            hideTooltips: true,
-            hideQuestionMarkCTA: true,
-            hideDefaultWalletWhenDelegateWalletIsConnected: true,
             embedGoogleFonts: true,
-            walletConnectCTA: 'scan',
             // Customizing the modal for Telegram
             customAvatar: () => null,
             disclaimer: null,
+            walletConnectCTA: 'modal',
             language: 'en-US',
             // You can add more customizations here
           }}
