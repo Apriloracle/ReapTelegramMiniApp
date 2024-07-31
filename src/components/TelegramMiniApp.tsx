@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { ConnectKitButton } from 'connectkit';
-import { useAccount, useBalance, useChainId } from 'wagmi'
-import { formatEther } from 'viem'
+import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 
@@ -28,9 +27,7 @@ const RESET_MINUTES = 60;
 
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
-  const { address, isConnected } = useAccount()
-  const { data: balance } = useBalance({ address })
-  const chainId = useChainId()
+  const { address } = useAccount()
 
   const [score, setScore] = useState<number>(0);
   const [dailyTaps, setDailyTaps] = useState<number>(0);
@@ -138,85 +135,57 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
-const handleTransfer = async () => {
-  if (isDailyLimitReached) {
-    setError("Tap limit reached. Please try again in a few minutes.");
-    return;
-  }
-
-  try {
-    if (!address) {
-      throw new Error("Celo address not found");
+  const handleTransfer = async () => {
+    if (isDailyLimitReached) {
+      setError("Tap limit reached. Please try again in a few minutes.");
+      return;
     }
 
-    // Call the cloud function for ERC20 transfer
-    const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleTap', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ address }),
-    });
+    try {
+      if (!address) {
+        throw new Error("Celo address not found");
+      }
 
-    if (!response.ok) {
-      throw new Error('Failed to process the tap');
+      // Call the cloud function for ERC20 transfer
+      const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleTaps', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ address }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to process the tap');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update the score in Tinybase
+        const currentScore = store.getCell('stats', 'clicks', 'count') as number;
+        const newScore = currentScore + 1;
+        store.setCell('stats', 'clicks', 'count', newScore);
+        
+        // Update daily taps
+        const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
+        const newDailyTaps = currentDailyTaps + 1;
+        dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
+
+        setError(null);
+        console.log('Tap processed successfully');
+      } else {
+        throw new Error(result.message || 'Unknown error occurred');
+      }
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      console.error('Error processing tap:', err);
     }
-
-    const result = await response.json();
-
-    if (result.success) {
-      // Update the score in Tinybase
-      const currentScore = store.getCell('stats', 'clicks', 'count') as number;
-      const newScore = currentScore + 1;
-      store.setCell('stats', 'clicks', 'count', newScore);
-      
-      // Update daily taps
-      const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
-      const newDailyTaps = currentDailyTaps + 1;
-      dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
-
-      setError(null);
-      
-      // You might want to add a success message or update the UI here
-      console.log('Tap processed successfully');
-    } else {
-      throw new Error(result.message || 'Unknown error occurred');
-    }
-
-  } catch (err) {
-    setError(err instanceof Error ? err.message : String(err));
-    console.error('Error processing tap:', err);
-  }
-};
-
-  const getChainName = (id: number) => {
-    switch (id) {
-      case 42220:
-        return 'Celo'
-      case 44787:
-        return 'Celo Alfajores Testnet'
-      default:
-        return 'Unknown'
-    }
-  }
+  };
 
   return (
-
-      <div style={{ backgroundColor: '#374151', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem' }}>
-        {isConnected ? (
-          <div>
-            <p style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#F9FAFB' }}>Connected to Web3</p>
-            <p style={{ fontSize: '0.875rem' }}>Account: {address?.slice(0, 6)}...{address?.slice(-4)}</p>
-            <p style={{ fontSize: '0.875rem' }}>Chain: {getChainName(chainId)}</p>
-          </div>
-        ) : (
-          <div>
-            <p style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#F9FAFB' }}>Not connected to Web3</p>
-            <p style={{ fontSize: '0.875rem' }}>Connect using the button below</p>
-          </div>
-        )}
-      </div>
-
+    <div style={{ backgroundColor: '#1F2937', color: '#E5E7EB', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
       {/* ConnectKit Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
         <ConnectKitButton />
@@ -232,8 +201,6 @@ const handleTransfer = async () => {
         </div>
         <p style={{ fontSize: '0.875rem', color: '#D1D5DB' }}>Current Score</p>
       </div>
-
-     // ... (previous code remains the same)
 
       {/* Tap Button */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -305,13 +272,6 @@ const handleTransfer = async () => {
         {error && (
           <p style={{ marginTop: '0.5rem', color: '#EF4444', fontSize: '0.875rem' }}>{error}</p>
         )}
-      </div>
-
-      <div style={{ backgroundColor: '#374151', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <p style={{ fontWeight: 'bold', color: '#F9FAFB' }}>Earn <span style={{ color: '#FCD34D' }}>80 CELO</span> per friend invited</p>
-        </div>
-        <img src="/api/placeholder/80/80" alt="Referral" style={{ borderRadius: '0.75rem', width: '80px', height: '80px' }} />
       </div>
     </div>
   )
