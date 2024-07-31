@@ -147,7 +147,7 @@ const TelegramMiniApp: React.FC = () => {
       }
 
       // Call the cloud function for ERC20 transfer
-      const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleTaps', {
+      const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleTap', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
