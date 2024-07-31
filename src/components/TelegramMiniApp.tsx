@@ -138,52 +138,56 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
-  const handleTransfer = async () => {
-    if (isDailyLimitReached) {
-      setError("Tap limit reached. Please try again in a few minutes.");
-      return;
+const handleTransfer = async () => {
+  if (isDailyLimitReached) {
+    setError("Tap limit reached. Please try again in a few minutes.");
+    return;
+  }
+
+  try {
+    if (!address) {
+      throw new Error("Celo address not found");
     }
 
-    try {
-      if (!address) {
-        throw new Error("Celo address not found");
-      }
+    // Call the cloud function for ERC20 transfer
+    const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleTaps', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ address }),
+    });
 
-      // Call the cloud function instead of direct ERC20 transfer
-      const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleTaps', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ address }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to process the tap');
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Update the score in Tinybase
-        const currentScore = store.getCell('stats', 'clicks', 'count') as number;
-        const newScore = currentScore + 1;
-        store.setCell('stats', 'clicks', 'count', newScore);
-        
-        // Update daily taps
-        const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
-        const newDailyTaps = currentDailyTaps + 1;
-        dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
-
-        setError(null);
-      } else {
-        throw new Error(result.message || 'Unknown error occurred');
-      }
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    if (!response.ok) {
+      throw new Error('Failed to process the tap');
     }
-  };
+
+    const result = await response.json();
+
+    if (result.success) {
+      // Update the score in Tinybase
+      const currentScore = store.getCell('stats', 'clicks', 'count') as number;
+      const newScore = currentScore + 1;
+      store.setCell('stats', 'clicks', 'count', newScore);
+      
+      // Update daily taps
+      const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
+      const newDailyTaps = currentDailyTaps + 1;
+      dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
+
+      setError(null);
+      
+      // You might want to add a success message or update the UI here
+      console.log('Tap processed successfully');
+    } else {
+      throw new Error(result.message || 'Unknown error occurred');
+    }
+
+  } catch (err) {
+    setError(err instanceof Error ? err.message : String(err));
+    console.error('Error processing tap:', err);
+  }
+};
 
   const getChainName = (id: number) => {
     switch (id) {
