@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
@@ -24,6 +24,7 @@ declare global {
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
+const BATCH_SIZE = 100;
 
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
@@ -38,6 +39,60 @@ const TelegramMiniApp: React.FC = () => {
   const dailyStore = React.useMemo(() => createStore(), []);
   const persister = React.useMemo(() => createLocalPersister(store, 'celon-stats'), [store]);
   const dailyPersister = React.useMemo(() => createLocalPersister(dailyStore, 'celon-daily-stats'), [dailyStore]);
+
+  const batchStore = React.useMemo(() => {
+    const newStore = createStore();
+    newStore.setSchema({
+      taps: {
+        id: { type: 'number' },
+        timestamp: { type: 'string' },
+        celoAddress: { type: 'string' },
+      },
+    });
+    return newStore;
+  }, []);
+
+  const [tapCount, setTapCount] = useState<number>(0);
+
+  const sendBatchToCloudFunction = useCallback(async (batch: any[]) => {
+    try {
+      const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleBatchTaps', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(batch),
+      });
+      return response.json();
+    } catch (error) {
+      console.error('Error sending batch:', error);
+    }
+  }, []);
+
+  const addTap = useCallback(() => {
+    if (!address) {
+      console.error('Celo address not found');
+      return;
+    }
+
+    const tap = {
+      id: tapCount + 1,
+      timestamp: new Date().toISOString(),
+      celoAddress: address,
+    };
+
+    batchStore.setRow('taps', tapCount, tap);
+    setTapCount(prevCount => prevCount + 1);
+
+    if (tapCount + 1 >= BATCH_SIZE) {
+      const taps = batchStore.getTable('taps');
+      const batch = Object.values(taps);
+      sendBatchToCloudFunction(batch).then(() => {
+        batchStore.delTable('taps');
+        setTapCount(0);
+      });
+    }
+  }, [address, batchStore, sendBatchToCloudFunction, tapCount]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
@@ -146,37 +201,21 @@ const TelegramMiniApp: React.FC = () => {
         throw new Error("Celo address not found");
       }
 
-      // Call the cloud function for ERC20 transfer
-      const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleTaps', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ address }),
-      });
+      // Add tap to batch
+      addTap();
 
-      if (!response.ok) {
-        throw new Error('Failed to process the tap');
-      }
+      // Update the score in Tinybase
+      const currentScore = store.getCell('stats', 'clicks', 'count') as number;
+      const newScore = currentScore + 1;
+      store.setCell('stats', 'clicks', 'count', newScore);
+      
+      // Update daily taps
+      const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
+      const newDailyTaps = currentDailyTaps + 1;
+      dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
 
-      const result = await response.json();
-
-      if (result.success) {
-        // Update the score in Tinybase
-        const currentScore = store.getCell('stats', 'clicks', 'count') as number;
-        const newScore = currentScore + 1;
-        store.setCell('stats', 'clicks', 'count', newScore);
-        
-        // Update daily taps
-        const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
-        const newDailyTaps = currentDailyTaps + 1;
-        dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
-
-        setError(null);
-        console.log('Tap processed successfully');
-      } else {
-        throw new Error(result.message || 'Unknown error occurred');
-      }
+      setError(null);
+      console.log('Tap processed successfully');
 
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
