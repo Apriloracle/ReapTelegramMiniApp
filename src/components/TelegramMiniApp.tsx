@@ -14,7 +14,6 @@ interface TelegramWebApp {
   showAlert: (message: string) => void;
 }
 
-
 declare global {
   interface Window {
     Telegram?: {
@@ -82,7 +81,7 @@ const TelegramMiniApp: React.FC = () => {
       celoAddress: address,
     };
 
-    batchStore.setRow('taps', tapCount, tap);
+    batchStore.setRow('taps', String(tapCount), tap);  // Convert tapCount to string
     setTapCount(prevCount => prevCount + 1);
 
     if (tapCount + 1 >= BATCH_SIZE) {
@@ -224,7 +223,7 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
-return (
+  return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh' }}>
       {/* ConnectKit Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
