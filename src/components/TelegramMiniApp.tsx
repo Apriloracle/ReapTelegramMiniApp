@@ -14,6 +14,7 @@ interface TelegramWebApp {
   showAlert: (message: string) => void;
 }
 
+
 declare global {
   interface Window {
     Telegram?: {
