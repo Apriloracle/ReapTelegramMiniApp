@@ -4,7 +4,6 @@ import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import { LocalWallet } from "@thirdweb-dev/wallets";
-import { CHAIN_ID_TO_NAME } from "@thirdweb-dev/chains";
 
 interface TelegramWebApp {
   ready: () => void;
