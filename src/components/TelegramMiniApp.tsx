@@ -3,7 +3,7 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import { LocalWallet } from "@thirdweb-dev/wallets";
+import { LocalWallet, LocalWalletLoadOptions } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
 
 interface TelegramWebApp {
@@ -143,27 +143,26 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
-import { LocalWallet, LocalWalletLoadOptions } from "@thirdweb-dev/wallets";
 
-const loadOrCreateLocalWallet = async () => {
-  const storedWallet = localStorage.getItem('localWallet');
-  if (storedWallet) {
-    try {
-      const wallet = new LocalWallet();
-      const loadOptions: LocalWalletLoadOptions = JSON.parse(storedWallet);
-      await wallet.load(loadOptions);
-      setLocalWallet(wallet);
-      const address = await wallet.getAddress();
-      setLocalWalletAddress(address);
-      console.log('Loaded existing local wallet');
-    } catch (error) {
-      console.error('Error loading stored wallet:', error);
+ const loadOrCreateLocalWallet = async () => {
+    const storedWallet = localStorage.getItem('localWallet');
+    if (storedWallet) {
+      try {
+        const wallet = new LocalWallet();
+        const loadOptions: LocalWalletLoadOptions = JSON.parse(storedWallet);
+        await wallet.load(loadOptions);
+        setLocalWallet(wallet);
+        const address = await wallet.getAddress();
+        setLocalWalletAddress(address);
+        console.log('Loaded existing local wallet');
+      } catch (error) {
+        console.error('Error loading stored wallet:', error);
+        await createNewLocalWallet();
+      }
+    } else {
       await createNewLocalWallet();
     }
-  } else {
-    await createNewLocalWallet();
-  }
-};
+  };
 
 const createNewLocalWallet = async () => {
   try {
