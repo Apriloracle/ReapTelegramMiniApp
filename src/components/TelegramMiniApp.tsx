@@ -145,12 +145,11 @@ const TelegramMiniApp: React.FC = () => {
 
 
  const loadOrCreateLocalWallet = async () => {
-    const storedWallet = localStorage.getItem('localWallet');
-    if (storedWallet) {
+    const storedWalletConfig = localStorage.getItem('localWalletConfig');
+    if (storedWalletConfig) {
       try {
         const wallet = new LocalWallet();
-        const loadOptions: LocalWalletLoadOptions = JSON.parse(storedWallet);
-        await wallet.load(loadOptions);
+        await wallet.load(JSON.parse(storedWalletConfig));
         setLocalWallet(wallet);
         const address = await wallet.getAddress();
         setLocalWalletAddress(address);
@@ -165,20 +164,20 @@ const TelegramMiniApp: React.FC = () => {
   };
 
 const createNewLocalWallet = async () => {
-  try {
-    const wallet = new LocalWallet();
-    await wallet.generate();
-    const exportedWallet = await wallet.save();
-    localStorage.setItem('localWallet', JSON.stringify(exportedWallet));
-    setLocalWallet(wallet);
-    const address = await wallet.getAddress();
-    setLocalWalletAddress(address);
-    console.log('Created and stored new local wallet');
-  } catch (error) {
-    console.error('Error creating new wallet:', error);
-    setError("Failed to create local wallet. Please try again.");
-  }
-};
+    try {
+      const wallet = new LocalWallet();
+      await wallet.generate();
+      const config = await wallet.save();
+      localStorage.setItem('localWalletConfig', JSON.stringify(config));
+      setLocalWallet(wallet);
+      const address = await wallet.getAddress();
+      setLocalWalletAddress(address);
+      console.log('Created and stored new local wallet');
+    } catch (error) {
+      console.error('Error creating new wallet:', error);
+      setError("Failed to create local wallet. Please try again.");
+    }
+  };
 
   const handleLogin = async () => {
     setLoading(true);
