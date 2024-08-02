@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit';
 import { celo } from 'wagmi/chains';
 import { walletConnect } from 'wagmi/connectors';
+import { ThirdwebProvider } from "@thirdweb-dev/react";
 
 const config = createConfig(
   getDefaultConfig({
@@ -23,20 +24,22 @@ const queryClient = new QueryClient();
 
 export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <ConnectKitProvider
-          options={{
-            initialChainId: 0,
-            customAvatar: () => null,
-            embedGoogleFonts: true,
-            walletConnectCTA: 'modal',
-            language: 'en-US',
-          }}
-        >
-          {children}
-        </ConnectKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <ThirdwebProvider activeChain={celo}>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <ConnectKitProvider
+            options={{
+              initialChainId: 0,
+              customAvatar: () => null,
+              embedGoogleFonts: true,
+              walletConnectCTA: 'modal',
+              language: 'en-US',
+            }}
+          >
+            {children}
+          </ConnectKitProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </ThirdwebProvider>
   );
 };
