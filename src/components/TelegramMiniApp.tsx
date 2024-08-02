@@ -148,7 +148,9 @@ const loadOrCreateLocalWallet = async () => {
   if (storedWallet) {
     try {
       const wallet = new LocalWallet();
-      await wallet.load(storedWallet);
+      await wallet.load({
+        encryptedJson: storedWallet
+      });
       setLocalWallet(wallet);
       const address = await wallet.getAddress();
       setLocalWalletAddress(address);
