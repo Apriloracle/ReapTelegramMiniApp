@@ -3,7 +3,8 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import { useCreateWallet, LocalWallet } from "@thirdweb-dev/react";
+import { LocalWallet } from "@thirdweb-dev/wallets";
+import { CHAIN_ID_TO_NAME } from "@thirdweb-dev/chains";
 
 interface TelegramWebApp {
   ready: () => void;
@@ -29,8 +30,8 @@ const RESET_MINUTES = 60;
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
   const { address } = useAccount()
-  const { createWallet } = useCreateWallet();
   const [localWallet, setLocalWallet] = useState<LocalWallet | null>(null);
+  const [localWalletAddress, setLocalWalletAddress] = useState<string | null>(null);
 
   const [score, setScore] = useState<number>(0);
   const [dailyTaps, setDailyTaps] = useState<number>(0);
@@ -138,6 +139,21 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
+  const handleLogin = async () => {
+    try {
+      const wallet = new LocalWallet();
+      await wallet.generate();
+      await wallet.connect();
+      setLocalWallet(wallet);
+      const walletAddress = await wallet.getAddress();
+      setLocalWalletAddress(walletAddress);
+      console.log("Created local wallet:", walletAddress);
+    } catch (error) {
+      console.error("Error creating local wallet:", error);
+      setError("Failed to create local wallet. Please try again.");
+    }
+  };
+
   const handleTransfer = async () => {
     if (isDailyLimitReached) {
       setError("Tap limit reached. Please try again in a few minutes.");
@@ -145,11 +161,10 @@ const TelegramMiniApp: React.FC = () => {
     }
 
     try {
-      if (!address && !localWallet) {
+      const walletAddress = address || localWalletAddress;
+      if (!walletAddress) {
         throw new Error("No wallet connected");
       }
-
-      const walletAddress = address || await localWallet?.getAddress();
 
       // Call the cloud function for ERC20 transfer
       const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleTaps', {
@@ -189,18 +204,6 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
-  const handleLogin = async () => {
-    try {
-      const wallet = await createWallet();
-      setLocalWallet(wallet);
-      console.log("Created local wallet:", wallet);
-      // You might want to store the wallet address or other relevant information
-    } catch (error) {
-      console.error("Error creating local wallet:", error);
-      setError("Failed to create local wallet. Please try again.");
-    }
-  };
-
   return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh' }}>
       {/* Login Button */}
@@ -218,9 +221,16 @@ const TelegramMiniApp: React.FC = () => {
             fontWeight: 'bold',
           }}
         >
-          {localWallet ? 'Logged In' : 'Login'}
+          {localWalletAddress ? 'Logged In' : 'Login'}
         </button>
       </div>
+
+      {/* Display Local Wallet Address */}
+      {localWalletAddress && (
+        <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0' }}>
+          Local Wallet: {localWalletAddress.slice(0, 6)}...{localWalletAddress.slice(-4)}
+        </div>
+      )}
 
       {/* ConnectKit Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
