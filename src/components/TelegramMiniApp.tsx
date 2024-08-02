@@ -3,8 +3,6 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import { LocalWallet } from "@thirdweb-dev/wallets";
-import { ThirdwebSDK } from "@thirdweb-dev/sdk";
 
 interface TelegramWebApp {
   ready: () => void;
@@ -30,9 +28,6 @@ const RESET_MINUTES = 60;
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
   const { address } = useAccount()
-  const [localWallet, setLocalWallet] = useState<LocalWallet | null>(null);
-  const [localWalletAddress, setLocalWalletAddress] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   const [score, setScore] = useState<number>(0);
   const [dailyTaps, setDailyTaps] = useState<number>(0);
@@ -61,9 +56,6 @@ const TelegramMiniApp: React.FC = () => {
 
     // Load persisted data
     loadPersistedData();
-
-    // Load or create local wallet
-    loadLocalWallet();
 
     // Add listeners for score changes
     const scoreListenerId = store.addCellListener(
@@ -143,72 +135,6 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
-  const initializeLocalWallet = async () => {
-    try {
-      const wallet = new LocalWallet();
-      
-      // generate a random wallet
-      await wallet.generate();
-      
-      // connect the wallet to the application
-      await wallet.connect();
-      
-      // save the wallet to persistent storage
-      const savedWallet = await wallet.save();
-      localStorage.setItem('localWallet', JSON.stringify(savedWallet));
-
-      const address = await wallet.getAddress();
-      setLocalWallet(wallet);
-      setLocalWalletAddress(address);
-      console.log('Local wallet initialized and saved');
-    } catch (error) {
-      console.error('Error initializing local wallet:', error);
-      setError("Failed to initialize local wallet. Please try again.");
-    }
-  };
-
-  const loadLocalWallet = async () => {
-    try {
-      const wallet = new LocalWallet();
-      const savedWallet = localStorage.getItem('localWallet');
-      
-      if (savedWallet) {
-        // load the wallet from persistent storage
-        await wallet.load(JSON.parse(savedWallet));
-        
-        // connect the wallet to the application
-        await wallet.connect();
-
-        const address = await wallet.getAddress();
-        setLocalWallet(wallet);
-        setLocalWalletAddress(address);
-        console.log('Local wallet loaded and connected');
-      } else {
-        await initializeLocalWallet();
-      }
-    } catch (error) {
-      console.error('Error loading local wallet:', error);
-      setError("Failed to load local wallet. Initializing new wallet.");
-      await initializeLocalWallet();
-    }
-  };
-
-  const handleLogin = async () => {
-    setLoading(true);
-    try {
-      if (!localWallet) {
-        await loadLocalWallet();
-      }
-      await localWallet?.connect();
-      setError(null);
-    } catch (error) {
-      console.error("Error connecting to local wallet:", error);
-      setError("Failed to connect to local wallet. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleTransfer = async () => {
     if (isDailyLimitReached) {
       setError("Tap limit reached. Please try again in a few minutes.");
@@ -216,9 +142,8 @@ const TelegramMiniApp: React.FC = () => {
     }
 
     try {
-      const walletAddress = localWalletAddress || address;
-      if (!walletAddress) {
-        throw new Error("No wallet connected");
+      if (!address) {
+        throw new Error("Celo address not found");
       }
 
       // Call the cloud function for ERC20 transfer
@@ -227,7 +152,7 @@ const TelegramMiniApp: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ address: walletAddress }),
+        body: JSON.stringify({ address }),
       });
 
       if (!response.ok) {
@@ -259,36 +184,8 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
-  return (
+return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh' }}>
-      {/* Login Button */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-        <button 
-          onClick={handleLogin}
-          disabled={loading}
-          style={{
-            backgroundColor: '#4A5568',
-            color: 'white',
-            padding: '0.5rem 1rem',
-            borderRadius: '0.375rem',
-            border: 'none',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            opacity: loading ? 0.5 : 1,
-          }}
-        >
-          {loading ? 'Connecting...' : (localWalletAddress ? 'Connected' : 'Connect Local Wallet')}
-        </button>
-      </div>
-
-      {/* Display Local Wallet Address */}
-      {localWalletAddress && (
-        <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
-          Local Wallet: {localWalletAddress}
-        </div>
-      )}
-
       {/* ConnectKit Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
         <ConnectKitButton />
@@ -327,7 +224,7 @@ const TelegramMiniApp: React.FC = () => {
           }}></div>
           <button
             onClick={handleTransfer}
-            disabled={isDailyLimitReached || (!address && !localWalletAddress)}
+            disabled={isDailyLimitReached}
             style={{
               position: 'relative',
               width: '100%',
@@ -341,19 +238,19 @@ const TelegramMiniApp: React.FC = () => {
               fontSize: '1.25rem',
               fontWeight: 'bold',
               border: 'none',
-              cursor: isDailyLimitReached || (!address && !localWalletAddress) ? 'not-allowed' : 'pointer',
+              cursor: isDailyLimitReached ? 'not-allowed' : 'pointer',
               transition: 'all 300ms ease-in-out',
               boxShadow: '0 10px 20px rgba(240,94,35,0.3), inset 0 -5px 10px rgba(0,0,0,0.2), 0 0 0 6px rgba(240,94,35,0.2), 0 0 0 12px rgba(240,94,35,0.1)',
               textShadow: '0 2px 4px rgba(0,0,0,0.3)',
               transform: 'translateY(0)',
-              opacity: isDailyLimitReached || (!address && !localWalletAddress) ? 0.5 : 1,
+              opacity: isDailyLimitReached ? 0.5 : 1,
             }}
           >
             <span style={{
               position: 'relative',
               zIndex: 2,
             }}>
-              {isDailyLimitReached ? 'Limit Reached' : (!address && !localWalletAddress ? 'Connect Wallet' : 'Tap to earn')}
+              {isDailyLimitReached ? 'Limit Reached' : 'Tap to earn'}
             </span>
             <div style={{
               content: '""',
