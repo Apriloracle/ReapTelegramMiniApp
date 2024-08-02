@@ -3,7 +3,8 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import { localWallet, useConnect } from '@thirdweb-dev/react';
+import { LocalWallet } from "@thirdweb-dev/wallets";
+import { ThirdwebSDK } from "@thirdweb-dev/sdk";
 
 interface TelegramWebApp {
   ready: () => void;
@@ -29,7 +30,7 @@ const RESET_MINUTES = 60;
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
   const { address } = useAccount()
-  const connect = useConnect();
+  const [localWallet, setLocalWallet] = useState<LocalWallet | null>(null);
   const [localWalletAddress, setLocalWalletAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -139,22 +140,22 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
- const handleLogin = async () => {
-  setLoading(true);
-  try {
-    const localWalletConfig = localWallet();
-    const wallet = await connect(localWalletConfig);
-    if (wallet && wallet.wallet) {
-      const address = await wallet.wallet.getAddress();
-      setLocalWalletAddress(address);
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const wallet = new LocalWallet();
+      await wallet.generate();
+      await wallet.connect();
+      setLocalWallet(wallet);
+      const walletAddress = await wallet.getAddress();
+      setLocalWalletAddress(walletAddress);
+    } catch (error) {
+      console.error("Error creating local wallet:", error);
+      setError("Failed to create local wallet. Please try again.");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error creating local wallet:", error);
-    setError("Failed to create local wallet. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleTransfer = async () => {
     if (isDailyLimitReached) {
@@ -327,4 +328,4 @@ const TelegramMiniApp: React.FC = () => {
   )
 }
 
-export default TelegramMiniApp
+export default TelegramMini
