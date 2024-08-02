@@ -148,10 +148,7 @@ const loadOrCreateLocalWallet = async () => {
   if (storedWallet) {
     try {
       const wallet = new LocalWallet();
-      await wallet.import({
-        strategy: 'encryptedJson',
-        encryptedJson: storedWallet
-      });
+      await wallet.load(storedWallet);
       setLocalWallet(wallet);
       const address = await wallet.getAddress();
       setLocalWalletAddress(address);
@@ -164,14 +161,12 @@ const loadOrCreateLocalWallet = async () => {
     await createNewLocalWallet();
   }
 };
-
-  const createNewLocalWallet = async () => {
+  
+const createNewLocalWallet = async () => {
   try {
     const wallet = new LocalWallet();
     await wallet.generate();
-    const exportedWallet = await wallet.export({
-      strategy: 'encryptedJson'
-    });
+    const exportedWallet = await wallet.save();
     localStorage.setItem('localWallet', exportedWallet);
     setLocalWallet(wallet);
     const address = await wallet.getAddress();
