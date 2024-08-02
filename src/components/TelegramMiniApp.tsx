@@ -164,7 +164,7 @@ const TelegramMiniApp: React.FC = () => {
     }
 
     try {
-      const walletAddress = address || localWalletAddress;
+      const walletAddress = localWalletAddress || address;
       if (!walletAddress) {
         throw new Error("No wallet connected");
       }
@@ -232,8 +232,8 @@ const TelegramMiniApp: React.FC = () => {
 
       {/* Display Local Wallet Address */}
       {localWalletAddress && (
-        <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0' }}>
-          Local Wallet: {localWalletAddress.slice(0, 6)}...{localWalletAddress.slice(-4)}
+        <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
+          Local Wallet: {localWalletAddress}
         </div>
       )}
 
