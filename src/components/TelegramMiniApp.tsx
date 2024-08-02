@@ -161,7 +161,7 @@ const loadOrCreateLocalWallet = async () => {
     await createNewLocalWallet();
   }
 };
-  
+
 const createNewLocalWallet = async () => {
   try {
     const wallet = new LocalWallet();
