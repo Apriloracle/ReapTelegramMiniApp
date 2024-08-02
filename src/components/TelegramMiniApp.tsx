@@ -3,6 +3,7 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
+import { useCreateWallet, LocalWallet } from "@thirdweb-dev/react";
 
 interface TelegramWebApp {
   ready: () => void;
@@ -28,6 +29,8 @@ const RESET_MINUTES = 60;
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
   const { address } = useAccount()
+  const { createWallet } = useCreateWallet();
+  const [localWallet, setLocalWallet] = useState<LocalWallet | null>(null);
 
   const [score, setScore] = useState<number>(0);
   const [dailyTaps, setDailyTaps] = useState<number>(0);
@@ -142,9 +145,11 @@ const TelegramMiniApp: React.FC = () => {
     }
 
     try {
-      if (!address) {
-        throw new Error("Celo address not found");
+      if (!address && !localWallet) {
+        throw new Error("No wallet connected");
       }
+
+      const walletAddress = address || await localWallet?.getAddress();
 
       // Call the cloud function for ERC20 transfer
       const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleTaps', {
@@ -152,7 +157,7 @@ const TelegramMiniApp: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ address }),
+        body: JSON.stringify({ address: walletAddress }),
       });
 
       if (!response.ok) {
@@ -184,8 +189,39 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
-return (
+  const handleLogin = async () => {
+    try {
+      const wallet = await createWallet();
+      setLocalWallet(wallet);
+      console.log("Created local wallet:", wallet);
+      // You might want to store the wallet address or other relevant information
+    } catch (error) {
+      console.error("Error creating local wallet:", error);
+      setError("Failed to create local wallet. Please try again.");
+    }
+  };
+
+  return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh' }}>
+      {/* Login Button */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+        <button 
+          onClick={handleLogin}
+          style={{
+            backgroundColor: '#4A5568',
+            color: 'white',
+            padding: '0.5rem 1rem',
+            borderRadius: '0.375rem',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+          }}
+        >
+          {localWallet ? 'Logged In' : 'Login'}
+        </button>
+      </div>
+
       {/* ConnectKit Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
         <ConnectKitButton />
