@@ -328,4 +328,4 @@ const TelegramMiniApp: React.FC = () => {
   )
 }
 
-export default TelegramMini
+export default TelegramMiniApp
