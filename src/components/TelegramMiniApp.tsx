@@ -3,7 +3,7 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import { LocalWallet, LocalWalletLoadOptions } from "@thirdweb-dev/wallets";
+import { LocalWallet } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
 
 interface TelegramWebApp {
@@ -63,7 +63,7 @@ const TelegramMiniApp: React.FC = () => {
     loadPersistedData();
 
     // Load or create local wallet
-    loadOrCreateLocalWallet();
+    loadLocalWallet();
 
     // Add listeners for score changes
     const scoreListenerId = store.addCellListener(
@@ -143,39 +143,53 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
+  const initializeLocalWallet = async () => {
+    try {
+      const wallet = new LocalWallet();
+      
+      // generate a random wallet
+      await wallet.generate();
+      
+      // connect the wallet to the application
+      await wallet.connect();
+      
+      // save the wallet to persistent storage
+      const savedWallet = await wallet.save();
+      localStorage.setItem('localWallet', JSON.stringify(savedWallet));
 
- const loadOrCreateLocalWallet = async () => {
-    const storedWalletConfig = localStorage.getItem('localWalletConfig');
-    if (storedWalletConfig) {
-      try {
-        const wallet = new LocalWallet();
-        await wallet.load(JSON.parse(storedWalletConfig));
-        setLocalWallet(wallet);
-        const address = await wallet.getAddress();
-        setLocalWalletAddress(address);
-        console.log('Loaded existing local wallet');
-      } catch (error) {
-        console.error('Error loading stored wallet:', error);
-        await createNewLocalWallet();
-      }
-    } else {
-      await createNewLocalWallet();
+      const address = await wallet.getAddress();
+      setLocalWallet(wallet);
+      setLocalWalletAddress(address);
+      console.log('Local wallet initialized and saved');
+    } catch (error) {
+      console.error('Error initializing local wallet:', error);
+      setError("Failed to initialize local wallet. Please try again.");
     }
   };
 
-const createNewLocalWallet = async () => {
+  const loadLocalWallet = async () => {
     try {
       const wallet = new LocalWallet();
-      await wallet.generate();
-      const config = await wallet.save();
-      localStorage.setItem('localWalletConfig', JSON.stringify(config));
-      setLocalWallet(wallet);
-      const address = await wallet.getAddress();
-      setLocalWalletAddress(address);
-      console.log('Created and stored new local wallet');
+      const savedWallet = localStorage.getItem('localWallet');
+      
+      if (savedWallet) {
+        // load the wallet from persistent storage
+        await wallet.load(JSON.parse(savedWallet));
+        
+        // connect the wallet to the application
+        await wallet.connect();
+
+        const address = await wallet.getAddress();
+        setLocalWallet(wallet);
+        setLocalWalletAddress(address);
+        console.log('Local wallet loaded and connected');
+      } else {
+        await initializeLocalWallet();
+      }
     } catch (error) {
-      console.error('Error creating new wallet:', error);
-      setError("Failed to create local wallet. Please try again.");
+      console.error('Error loading local wallet:', error);
+      setError("Failed to load local wallet. Initializing new wallet.");
+      await initializeLocalWallet();
     }
   };
 
@@ -183,7 +197,7 @@ const createNewLocalWallet = async () => {
     setLoading(true);
     try {
       if (!localWallet) {
-        await loadOrCreateLocalWallet();
+        await loadLocalWallet();
       }
       await localWallet?.connect();
       setError(null);
