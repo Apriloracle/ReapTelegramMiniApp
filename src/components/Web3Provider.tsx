@@ -1,5 +1,6 @@
 import React from 'react';
-import { WagmiProvider, createConfig, http, Chain } from 'wagmi';
+import { WagmiProvider, createConfig, http } from 'wagmi';
+import { Chain } from '@wagmi/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit';
 import { walletConnect } from 'wagmi/connectors';
