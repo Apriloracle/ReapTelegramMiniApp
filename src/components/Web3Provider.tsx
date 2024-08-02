@@ -1,10 +1,29 @@
 import React from 'react';
 import { WagmiProvider, createConfig, http } from 'wagmi';
-import { Chain } from '@wagmi/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit';
 import { walletConnect } from 'wagmi/connectors';
 import { ThirdwebProvider } from "@thirdweb-dev/react";
+
+// Define a custom Chain type
+type Chain = {
+  id: number;
+  name: string;
+  network: string;
+  nativeCurrency: {
+    decimals: number;
+    name: string;
+    symbol: string;
+  };
+  rpcUrls: {
+    default: { http: string[] };
+    public: { http: string[] };
+  };
+  blockExplorers: {
+    default: { name: string; url: string };
+  };
+  testnet: boolean;
+};
 
 const customCelo: Chain = {
   id: 42220,
