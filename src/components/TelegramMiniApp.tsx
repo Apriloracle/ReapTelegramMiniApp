@@ -139,21 +139,22 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
-  const handleLogin = async () => {
-    setLoading(true);
-    try {
-      const localWalletConfig = localWallet();
-      const wallet = await connect(localWalletConfig);
-      if (wallet && wallet.data) {
-        setLocalWalletAddress(wallet.data.account);
-      }
-    } catch (error) {
-      console.error("Error creating local wallet:", error);
-      setError("Failed to create local wallet. Please try again.");
-    } finally {
-      setLoading(false);
+ const handleLogin = async () => {
+  setLoading(true);
+  try {
+    const localWalletConfig = localWallet();
+    const wallet = await connect(localWalletConfig);
+    if (wallet && wallet.wallet) {
+      const address = await wallet.wallet.getAddress();
+      setLocalWalletAddress(address);
     }
-  };
+  } catch (error) {
+    console.error("Error creating local wallet:", error);
+    setError("Failed to create local wallet. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleTransfer = async () => {
     if (isDailyLimitReached) {
