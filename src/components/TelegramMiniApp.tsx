@@ -3,7 +3,7 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import { LocalWallet } from "@thirdweb-dev/wallets";
+import { localWallet, useConnect } from '@thirdweb-dev/react';
 
 interface TelegramWebApp {
   ready: () => void;
@@ -29,8 +29,9 @@ const RESET_MINUTES = 60;
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
   const { address } = useAccount()
-  const [localWallet, setLocalWallet] = useState<LocalWallet | null>(null);
+  const connect = useConnect();
   const [localWalletAddress, setLocalWalletAddress] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const [score, setScore] = useState<number>(0);
   const [dailyTaps, setDailyTaps] = useState<number>(0);
@@ -139,17 +140,18 @@ const TelegramMiniApp: React.FC = () => {
   };
 
   const handleLogin = async () => {
+    setLoading(true);
     try {
-      const wallet = new LocalWallet();
-      await wallet.generate();
-      await wallet.connect();
-      setLocalWallet(wallet);
-      const walletAddress = await wallet.getAddress();
-      setLocalWalletAddress(walletAddress);
-      console.log("Created local wallet:", walletAddress);
+      const localWalletConfig = localWallet();
+      const wallet = await connect(localWalletConfig);
+      if (wallet && wallet.data) {
+        setLocalWalletAddress(wallet.data.account);
+      }
     } catch (error) {
       console.error("Error creating local wallet:", error);
       setError("Failed to create local wallet. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -209,18 +211,20 @@ const TelegramMiniApp: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
         <button 
           onClick={handleLogin}
+          disabled={loading}
           style={{
             backgroundColor: '#4A5568',
             color: 'white',
             padding: '0.5rem 1rem',
             borderRadius: '0.375rem',
             border: 'none',
-            cursor: 'pointer',
+            cursor: loading ? 'not-allowed' : 'pointer',
             fontSize: '1rem',
             fontWeight: 'bold',
+            opacity: loading ? 0.5 : 1,
           }}
         >
-          {localWalletAddress ? 'Logged In' : 'Login'}
+          {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
         </button>
       </div>
 
@@ -269,7 +273,7 @@ const TelegramMiniApp: React.FC = () => {
           }}></div>
           <button
             onClick={handleTransfer}
-            disabled={isDailyLimitReached}
+            disabled={isDailyLimitReached || (!address && !localWalletAddress)}
             style={{
               position: 'relative',
               width: '100%',
@@ -283,19 +287,19 @@ const TelegramMiniApp: React.FC = () => {
               fontSize: '1.25rem',
               fontWeight: 'bold',
               border: 'none',
-              cursor: isDailyLimitReached ? 'not-allowed' : 'pointer',
+              cursor: isDailyLimitReached || (!address && !localWalletAddress) ? 'not-allowed' : 'pointer',
               transition: 'all 300ms ease-in-out',
               boxShadow: '0 10px 20px rgba(240,94,35,0.3), inset 0 -5px 10px rgba(0,0,0,0.2), 0 0 0 6px rgba(240,94,35,0.2), 0 0 0 12px rgba(240,94,35,0.1)',
               textShadow: '0 2px 4px rgba(0,0,0,0.3)',
               transform: 'translateY(0)',
-              opacity: isDailyLimitReached ? 0.5 : 1,
+              opacity: isDailyLimitReached || (!address && !localWalletAddress) ? 0.5 : 1,
             }}
           >
             <span style={{
               position: 'relative',
               zIndex: 2,
             }}>
-              {isDailyLimitReached ? 'Limit Reached' : 'Tap to earn'}
+              {isDailyLimitReached ? 'Limit Reached' : (!address && !localWalletAddress ? 'Connect Wallet' : 'Tap to earn')}
             </span>
             <div style={{
               content: '""',
