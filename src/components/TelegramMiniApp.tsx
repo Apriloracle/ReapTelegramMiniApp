@@ -143,12 +143,15 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
+import { LocalWallet, LocalWalletLoadOptions } from "@thirdweb-dev/wallets";
+
 const loadOrCreateLocalWallet = async () => {
   const storedWallet = localStorage.getItem('localWallet');
   if (storedWallet) {
     try {
       const wallet = new LocalWallet();
-      await wallet.load(storedWallet);
+      const loadOptions: LocalWalletLoadOptions = JSON.parse(storedWallet);
+      await wallet.load(loadOptions);
       setLocalWallet(wallet);
       const address = await wallet.getAddress();
       setLocalWalletAddress(address);
@@ -167,7 +170,7 @@ const createNewLocalWallet = async () => {
     const wallet = new LocalWallet();
     await wallet.generate();
     const exportedWallet = await wallet.save();
-    localStorage.setItem('localWallet', exportedWallet);
+    localStorage.setItem('localWallet', JSON.stringify(exportedWallet));
     setLocalWallet(wallet);
     const address = await wallet.getAddress();
     setLocalWalletAddress(address);
