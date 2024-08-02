@@ -62,6 +62,9 @@ const TelegramMiniApp: React.FC = () => {
     // Load persisted data
     loadPersistedData();
 
+    // Load or create local wallet
+    loadOrCreateLocalWallet();
+
     // Add listeners for score changes
     const scoreListenerId = store.addCellListener(
       'stats',
@@ -140,18 +143,52 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
-  const handleLogin = async () => {
-    setLoading(true);
+  const loadOrCreateLocalWallet = async () => {
+    const storedWalletJSON = localStorage.getItem('localWallet');
+    if (storedWalletJSON) {
+      try {
+        const wallet = new LocalWallet();
+        await wallet.import(JSON.parse(storedWalletJSON));
+        setLocalWallet(wallet);
+        const address = await wallet.getAddress();
+        setLocalWalletAddress(address);
+        console.log('Loaded existing local wallet');
+      } catch (error) {
+        console.error('Error loading stored wallet:', error);
+        await createNewLocalWallet();
+      }
+    } else {
+      await createNewLocalWallet();
+    }
+  };
+
+  const createNewLocalWallet = async () => {
     try {
       const wallet = new LocalWallet();
       await wallet.generate();
-      await wallet.connect();
+      const exportedWallet = await wallet.export();
+      localStorage.setItem('localWallet', JSON.stringify(exportedWallet));
       setLocalWallet(wallet);
-      const walletAddress = await wallet.getAddress();
-      setLocalWalletAddress(walletAddress);
+      const address = await wallet.getAddress();
+      setLocalWalletAddress(address);
+      console.log('Created and stored new local wallet');
     } catch (error) {
-      console.error("Error creating local wallet:", error);
+      console.error('Error creating new wallet:', error);
       setError("Failed to create local wallet. Please try again.");
+    }
+  };
+
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      if (!localWallet) {
+        await loadOrCreateLocalWallet();
+      }
+      await localWallet?.connect();
+      setError(null);
+    } catch (error) {
+      console.error("Error connecting to local wallet:", error);
+      setError("Failed to connect to local wallet. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -226,7 +263,7 @@ const TelegramMiniApp: React.FC = () => {
             opacity: loading ? 0.5 : 1,
           }}
         >
-          {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
+          {loading ? 'Connecting...' : (localWalletAddress ? 'Connected' : 'Connect Local Wallet')}
         </button>
       </div>
 
