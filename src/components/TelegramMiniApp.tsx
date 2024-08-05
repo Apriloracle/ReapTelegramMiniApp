@@ -20,9 +20,11 @@ const TelegramMiniApp: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [shares, setShares] = useState<number>(0);
 
-  const store = React.useMemo(() => createStore(), []);
+  const clickStore = React.useMemo(() => createStore(), []);
+  const shareStore = React.useMemo(() => createStore(), []);
   const dailyStore = React.useMemo(() => createStore(), []);
-  const persister = React.useMemo(() => createLocalPersister(store, 'celon-stats'), [store]);
+  const clickPersister = React.useMemo(() => createLocalPersister(clickStore, 'celon-click-stats'), [clickStore]);
+  const sharePersister = React.useMemo(() => createLocalPersister(shareStore, 'celon-share-stats'), [shareStore]);
   const dailyPersister = React.useMemo(() => createLocalPersister(dailyStore, 'celon-daily-stats'), [dailyStore]);
 
   useEffect(() => {
@@ -38,8 +40,11 @@ const TelegramMiniApp: React.FC = () => {
     initWebApp();
 
     // Initialize stores with default values
-    store.setTables({
-      stats: { clicks: { count: 0 }, shares: { count: 0 } }
+    clickStore.setTables({
+      stats: { clicks: { count: 0 } }
+    });
+    shareStore.setTables({
+      stats: { shares: { count: 0 } }
     });
     dailyStore.setTables({
       dailyStats: { clicks: { count: 0, lastReset: new Date().toISOString() } }
@@ -49,25 +54,25 @@ const TelegramMiniApp: React.FC = () => {
     loadPersistedData();
 
     // Add listeners for score and share changes
-    const scoreListenerId = store.addCellListener(
+    const scoreListenerId = clickStore.addCellListener(
       'stats',
       'clicks',
       'count',
       (_, __, ___, ____, newValue) => {
         setScore(newValue as number);
         console.log('Score updated:', newValue);
-        persister.save().catch(console.error);
+        clickPersister.save().catch(console.error);
       }
     );
 
-    const shareListenerId = store.addCellListener(
+    const shareListenerId = shareStore.addCellListener(
       'stats',
       'shares',
       'count',
       (_, __, ___, ____, newValue) => {
         setShares(newValue as number);
         console.log('Shares updated:', newValue);
-        persister.save().catch(console.error);
+        sharePersister.save().catch(console.error);
       }
     );
 
@@ -94,9 +99,10 @@ const TelegramMiniApp: React.FC = () => {
 
     // Cleanup
     return () => {
-      store.delListener(scoreListenerId);
-      store.delListener(shareListenerId);
-      persister.destroy();
+      clickStore.delListener(scoreListenerId);
+      shareStore.delListener(shareListenerId);
+      clickPersister.destroy();
+      sharePersister.destroy();
       dailyPersister.destroy();
       clearInterval(intervalId);
     };
@@ -104,11 +110,12 @@ const TelegramMiniApp: React.FC = () => {
 
   const loadPersistedData = async () => {
     try {
-      await persister.load();
+      await clickPersister.load();
+      await sharePersister.load();
       await dailyPersister.load();
       
-      const loadedScore = store.getCell('stats', 'clicks', 'count') as number;
-      const loadedShares = store.getCell('stats', 'shares', 'count') as number;
+      const loadedScore = clickStore.getCell('stats', 'clicks', 'count') as number;
+      const loadedShares = shareStore.getCell('stats', 'shares', 'count') as number;
       const loadedDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
       const lastReset = new Date(dailyStore.getCell('dailyStats', 'clicks', 'lastReset') as string || new Date().toISOString());
       
@@ -168,9 +175,9 @@ const TelegramMiniApp: React.FC = () => {
 
       if (result.success) {
         // Update the score in Tinybase
-        const currentScore = store.getCell('stats', 'clicks', 'count') as number;
+        const currentScore = clickStore.getCell('stats', 'clicks', 'count') as number;
         const newScore = currentScore + 1;
-        store.setCell('stats', 'clicks', 'count', newScore);
+        clickStore.setCell('stats', 'clicks', 'count', newScore);
         
         // Update daily taps
         const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
@@ -189,19 +196,19 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
-const handleShare = async () => {
+  const handleShare = async () => {
     try {
-      if (webApp && webApp.openTelegramLink) {
-        await webApp.openTelegramLink(SHARE_URL);
+      if (WebApp && WebApp.openTelegramLink) {
+        await WebApp.openTelegramLink(SHARE_URL);
       } else {
         // Fallback for when WebApp is not available
         window.open(SHARE_URL, '_blank');
       }
 
       // Update the share count
-      const currentShares = store.getCell('stats', 'shares', 'count') as number;
+      const currentShares = shareStore.getCell('stats', 'shares', 'count') as number;
       const newShares = currentShares + 1;
-      store.setCell('stats', 'shares', 'count', newShares);
+      shareStore.setCell('stats', 'shares', 'count', newShares);
 
       console.log('Share processed successfully');
     } catch (err) {
