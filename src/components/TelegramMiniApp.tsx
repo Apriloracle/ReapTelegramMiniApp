@@ -3,25 +3,7 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import { initUtils } from '@tma.js/sdk';
-
-interface TelegramWebApp {
-  ready: () => void;
-  MainButton: {
-    setText: (text: string) => void;
-    show: () => void;
-    onClick: (callback: () => void) => void;
-  };
-  showAlert: (message: string) => void;
-}
-
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: TelegramWebApp;
-    };
-  }
-}
+import { WebApp } from '@telegram-apps/sdk';
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
@@ -29,7 +11,7 @@ const TELEGRAM_BOT_URL = 'https://t.me/Reapmini_bot';
 const SHARE_URL = 'https://t.me/share/url?url=https://t.me/Reapmini_bot&text=%F0%9F%92%B0Reap%20Mini%3A%20Tap%2C%20Earn%2C%20Grow%20-%20Where%20Every%20Tap%20Leads%20to%20Crypto%20Rewards!%0A%F0%9F%8E%81Let%27s%20start%20earning%20now!';
 
 const TelegramMiniApp: React.FC = () => {
-  const [tg, setTg] = useState<TelegramWebApp | null>(null)
+  const [webApp, setWebApp] = useState<WebApp | null>(null);
   const { address } = useAccount()
 
   const [score, setScore] = useState<number>(0);
@@ -44,11 +26,17 @@ const TelegramMiniApp: React.FC = () => {
   const dailyPersister = React.useMemo(() => createLocalPersister(dailyStore, 'celon-daily-stats'), [dailyStore]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tgApp = window.Telegram.WebApp
-      setTg(tgApp)
-      tgApp.ready()
-    }
+    const initWebApp = async () => {
+      try {
+        const app = await WebApp.init();
+        setWebApp(app);
+        app.ready();
+      } catch (error) {
+        console.error('Failed to initialize WebApp:', error);
+      }
+    };
+
+    initWebApp();
 
     // Initialize stores with default values
     store.setTables({
@@ -204,8 +192,12 @@ const TelegramMiniApp: React.FC = () => {
 
   const handleShare = async () => {
     try {
-      const utils = initUtils();
-      utils.openTelegramLink(SHARE_URL);
+      if (webApp) {
+        await webApp.openTelegramLink(SHARE_URL);
+      } else {
+        // Fallback for when WebApp is not available
+        window.open(SHARE_URL, '_blank');
+      }
 
       // Update the share count
       const currentShares = store.getCell('stats', 'shares', 'count') as number;
@@ -307,7 +299,7 @@ const TelegramMiniApp: React.FC = () => {
           <p style={{ marginTop: '0.5rem', color: '#EF4444', fontSize: '0.875rem' }}>{error}</p>
         )}
       </div>
-    
+
       {/* Share Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
         <button
@@ -326,7 +318,7 @@ const TelegramMiniApp: React.FC = () => {
           }}
         >
           Share and Earn More!
-        </button>
+          </button>
       </div>
 
       {/* Share Count */}
