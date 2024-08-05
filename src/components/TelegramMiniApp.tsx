@@ -3,7 +3,7 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import { WebApp } from '@telegram-apps/sdk';
+import telegramSdk from '@telegram-apps/sdk';
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
@@ -11,7 +11,7 @@ const TELEGRAM_BOT_URL = 'https://t.me/Reapmini_bot';
 const SHARE_URL = 'https://t.me/share/url?url=https://t.me/Reapmini_bot&text=%F0%9F%92%B0Reap%20Mini%3A%20Tap%2C%20Earn%2C%20Grow%20-%20Where%20Every%20Tap%20Leads%20to%20Crypto%20Rewards!%0A%F0%9F%8E%81Let%27s%20start%20earning%20now!';
 
 const TelegramMiniApp: React.FC = () => {
-  const [webApp, setWebApp] = useState<WebApp | null>(null);
+  const [webApp, setWebApp] = useState<any>(null);
   const { address } = useAccount()
 
   const [score, setScore] = useState<number>(0);
@@ -28,7 +28,7 @@ const TelegramMiniApp: React.FC = () => {
   useEffect(() => {
     const initWebApp = async () => {
       try {
-        const app = await WebApp.init();
+        const app = await telegramSdk.init();
         setWebApp(app);
         app.ready();
       } catch (error) {
@@ -190,9 +190,9 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
-  const handleShare = async () => {
+const handleShare = async () => {
     try {
-      if (webApp) {
+      if (webApp && webApp.openTelegramLink) {
         await webApp.openTelegramLink(SHARE_URL);
       } else {
         // Fallback for when WebApp is not available
