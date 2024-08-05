@@ -3,6 +3,7 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
+import { initUtils } from '@tma.js/sdk';
 
 interface TelegramWebApp {
   ready: () => void;
@@ -24,6 +25,8 @@ declare global {
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
+const TELEGRAM_BOT_URL = 'https://t.me/Reapmini_bot';
+const SHARE_URL = 'https://t.me/share/url?url=https://t.me/Reapmini_bot&text=%F0%9F%92%B0Reap%20Mini%3A%20Tap%2C%20Earn%2C%20Grow%20-%20Where%20Every%20Tap%20Leads%20to%20Crypto%20Rewards!%0A%F0%9F%8E%81Let%27s%20start%20earning%20now!';
 
 const TelegramMiniApp: React.FC = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null)
@@ -33,6 +36,7 @@ const TelegramMiniApp: React.FC = () => {
   const [dailyTaps, setDailyTaps] = useState<number>(0);
   const [isDailyLimitReached, setIsDailyLimitReached] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [shares, setShares] = useState<number>(0);
 
   const store = React.useMemo(() => createStore(), []);
   const dailyStore = React.useMemo(() => createStore(), []);
@@ -48,7 +52,7 @@ const TelegramMiniApp: React.FC = () => {
 
     // Initialize stores with default values
     store.setTables({
-      stats: { clicks: { count: 0 } }
+      stats: { clicks: { count: 0 }, shares: { count: 0 } }
     });
     dailyStore.setTables({
       dailyStats: { clicks: { count: 0, lastReset: new Date().toISOString() } }
@@ -57,7 +61,7 @@ const TelegramMiniApp: React.FC = () => {
     // Load persisted data
     loadPersistedData();
 
-    // Add listeners for score changes
+    // Add listeners for score and share changes
     const scoreListenerId = store.addCellListener(
       'stats',
       'clicks',
@@ -65,6 +69,17 @@ const TelegramMiniApp: React.FC = () => {
       (_, __, ___, ____, newValue) => {
         setScore(newValue as number);
         console.log('Score updated:', newValue);
+        persister.save().catch(console.error);
+      }
+    );
+
+    const shareListenerId = store.addCellListener(
+      'stats',
+      'shares',
+      'count',
+      (_, __, ___, ____, newValue) => {
+        setShares(newValue as number);
+        console.log('Shares updated:', newValue);
         persister.save().catch(console.error);
       }
     );
@@ -93,6 +108,7 @@ const TelegramMiniApp: React.FC = () => {
     // Cleanup
     return () => {
       store.delListener(scoreListenerId);
+      store.delListener(shareListenerId);
       persister.destroy();
       dailyPersister.destroy();
       clearInterval(intervalId);
@@ -105,6 +121,7 @@ const TelegramMiniApp: React.FC = () => {
       await dailyPersister.load();
       
       const loadedScore = store.getCell('stats', 'clicks', 'count') as number;
+      const loadedShares = store.getCell('stats', 'shares', 'count') as number;
       const loadedDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
       const lastReset = new Date(dailyStore.getCell('dailyStats', 'clicks', 'lastReset') as string || new Date().toISOString());
       
@@ -112,11 +129,12 @@ const TelegramMiniApp: React.FC = () => {
         resetDailyTaps();
       } else {
         setScore(loadedScore);
+        setShares(loadedShares);
         setDailyTaps(loadedDailyTaps);
         setIsDailyLimitReached(loadedDailyTaps >= DAILY_TAP_LIMIT);
       }
       
-      console.log('Loaded score:', loadedScore, 'Daily taps:', loadedDailyTaps);
+      console.log('Loaded score:', loadedScore, 'Shares:', loadedShares, 'Daily taps:', loadedDailyTaps);
     } catch (error) {
       console.error('Error loading persisted data:', error);
     }
@@ -184,7 +202,23 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
-return (
+  const handleShare = async () => {
+    try {
+      const utils = initUtils();
+      utils.openTelegramLink(SHARE_URL);
+
+      // Update the share count
+      const currentShares = store.getCell('stats', 'shares', 'count') as number;
+      const newShares = currentShares + 1;
+      store.setCell('stats', 'shares', 'count', newShares);
+
+      console.log('Share processed successfully');
+    } catch (err) {
+      console.error('Error processing share:', err);
+    }
+  };
+
+  return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh' }}>
       {/* ConnectKit Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
@@ -273,6 +307,32 @@ return (
           <p style={{ marginTop: '0.5rem', color: '#EF4444', fontSize: '0.875rem' }}>{error}</p>
         )}
       </div>
+    
+      {/* Share Button */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+        <button
+          onClick={handleShare}
+          style={{
+            background: 'linear-gradient(135deg, #4CAF50, #45a049)',
+            color: 'white',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '9999px',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 300ms ease-in-out',
+            boxShadow: '0 4px 6px rgba(76,175,80,0.3)',
+          }}
+        >
+          Share and Earn More!
+        </button>
+      </div>
+
+      {/* Share Count */}
+      <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
+        Shares: {shares}
+      </p>
     </div>
   )
 }
