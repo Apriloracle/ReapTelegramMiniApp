@@ -11,25 +11,25 @@
   "dependencies": {
     "next": "14.2.4",
     "react": "^18.3.1",
-    "react-dom": "^18",
-    "wagmi": "^2.0.0",
-    "thirdweb": "^5",
+    "react-dom": "^18.3.1",
+    "wagmi": "^2.5.7",
+    "thirdweb": "^5.0.0",
     "@thirdweb-dev/react": "^4.9.4",
     "@thirdweb-dev/sdk": "^4.0.99",
     "@thirdweb-dev/chains": "^0.1.120",
-    "viem": "^2.0.0",
+    "viem": "^2.7.10",
     "tinybase": "^5.0.3",
-    "connectkit": "^1.5.0",
-    "telegram-apps/sdk": "^1.1.3",
-    "@tanstack/react-query": "^5.0.0"
+    "connectkit": "^1.6.0",
+    "@tanstack/react-query": "^5.24.1",
+    "@telegram-apps/sdk": "^1.1.3"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^20.11.19",
     "@types/react": "^18.3.1",
-    "@types/react-dom": "^18",
-    "typescript": "^5",
-    "autoprefixer": "^10.0.1",
-    "postcss": "^8",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.3.3",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1"
   }
 }
