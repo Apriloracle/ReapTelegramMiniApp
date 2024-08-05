@@ -3,7 +3,7 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import telegramSdk from '@telegram-apps/sdk';
+import WebApp from '@twa-dev/sdk'
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
@@ -26,11 +26,10 @@ const TelegramMiniApp: React.FC = () => {
   const dailyPersister = React.useMemo(() => createLocalPersister(dailyStore, 'celon-daily-stats'), [dailyStore]);
 
   useEffect(() => {
-    const initWebApp = async () => {
+    const initWebApp = () => {
       try {
-        const app = await telegramSdk.init();
-        setWebApp(app);
-        app.ready();
+        setWebApp(WebApp);
+        WebApp.ready();
       } catch (error) {
         console.error('Failed to initialize WebApp:', error);
       }
