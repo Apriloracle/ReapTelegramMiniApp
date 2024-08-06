@@ -19,6 +19,7 @@ const TelegramMiniApp: React.FC = () => {
   const [isDailyLimitReached, setIsDailyLimitReached] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [shares, setShares] = useState<number>(0);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const clickStore = React.useMemo(() => createStore(), []);
   const shareStore = React.useMemo(() => createStore(), []);
@@ -32,6 +33,17 @@ const TelegramMiniApp: React.FC = () => {
       try {
         setWebApp(WebApp);
         WebApp.ready();
+
+        // Parse the initData to get the user_id
+        const searchParams = new URLSearchParams(WebApp.initData);
+        const userDataStr = searchParams.get('user');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          setUserId(userData.id.toString());
+          console.log('User ID:', userData.id);
+        } else {
+          console.error('User data not found in initData');
+        }
       } catch (error) {
         console.error('Failed to initialize WebApp:', error);
       }
