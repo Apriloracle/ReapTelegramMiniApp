@@ -165,7 +165,7 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
-  const loadWallet = async (userId: string) => {
+ const loadWallet = async (userId: string) => {
     setLoading(true);
     try {
       const wallet = new LocalWallet();
@@ -179,7 +179,8 @@ const TelegramMiniApp: React.FC = () => {
       console.log('Loaded wallet address:', walletAddress);
     } catch (error) {
       console.error("Error loading local wallet:", error);
-      // If loading fails, we'll create a new wallet in handleLogin
+      setLocalWallet(null);
+      setLocalWalletAddress(null);
     } finally {
       setLoading(false);
     }
@@ -192,23 +193,32 @@ const TelegramMiniApp: React.FC = () => {
     }
     setLoading(true);
     try {
-      let wallet = localWallet;
-      if (!wallet) {
-        wallet = new LocalWallet();
+      let wallet = new LocalWallet();
+      
+      // Try to load existing wallet
+      try {
+        await wallet.load({
+          strategy: "encryptedJson",
+          password: userId,
+        });
+        console.log('Existing wallet loaded');
+      } catch (loadError) {
+        console.log('No existing wallet found, creating new one');
         await wallet.generate();
+        await wallet.save({
+          strategy: "encryptedJson",
+          password: userId,
+        });
       }
+
       await wallet.connect();
-      await wallet.save({
-        strategy: "encryptedJson",
-        password: userId,
-      });
       setLocalWallet(wallet);
       const walletAddress = await wallet.getAddress();
       setLocalWalletAddress(walletAddress);
-      console.log('New wallet created and saved. Address:', walletAddress);
+      console.log('Wallet connected. Address:', walletAddress);
     } catch (error) {
-      console.error("Error creating or saving local wallet:", error);
-      setError("Failed to create or save local wallet. Please try again.");
+      console.error("Error handling login:", error);
+      setError("Failed to login. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -220,8 +230,7 @@ const TelegramMiniApp: React.FC = () => {
         await localWallet.disconnect();
         setLocalWallet(null);
         setLocalWalletAddress(null);
-        // Clear the saved wallet data
-        localStorage.removeItem(`local-wallet-${userId}`);
+        // Note: We're not removing the wallet data from localStorage anymore
         console.log('Disconnected from local wallet');
       } catch (error) {
         console.error("Error disconnecting local wallet:", error);
