@@ -39,14 +39,13 @@ const TelegramMiniApp: React.FC = () => {
         setWebApp(WebApp);
         WebApp.ready();
 
-        // Parse the initData to get the user_id
+      // Parse the initData to get the user_id
         const searchParams = new URLSearchParams(WebApp.initData);
         const userDataStr = searchParams.get('user');
         if (userDataStr) {
           const userData = JSON.parse(userDataStr);
           setUserId(userData.id.toString());
           console.log('User ID:', userData.id);
-          loadWallet(userData.id.toString());
         } else {
           console.error('User data not found in initData');
         }
@@ -186,6 +185,7 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
+  
   const handleLogin = async () => {
     if (!userId) {
       setError("User ID not available. Please try reloading the app.");
@@ -230,7 +230,6 @@ const TelegramMiniApp: React.FC = () => {
         await localWallet.disconnect();
         setLocalWallet(null);
         setLocalWalletAddress(null);
-        // Note: We're not removing the wallet data from localStorage anymore
         console.log('Disconnected from local wallet');
       } catch (error) {
         console.error("Error disconnecting local wallet:", error);
@@ -310,7 +309,7 @@ const TelegramMiniApp: React.FC = () => {
   };
 
 
- return (
+return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh', position: 'relative' }}>
       {/* Settings Button */}
       {localWalletAddress && (
