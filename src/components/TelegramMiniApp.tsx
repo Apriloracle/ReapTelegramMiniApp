@@ -46,6 +46,7 @@ const TelegramMiniApp: React.FC = () => {
           const userData = JSON.parse(userDataStr);
           setUserId(userData.id.toString());
           console.log('User ID:', userData.id);
+          loadWallet(userData.id.toString());
         } else {
           console.error('User data not found in initData');
         }
@@ -164,23 +165,55 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
-  const handleLogin = async () => {
+  const loadWallet = async (userId: string) => {
     setLoading(true);
     try {
       const wallet = new LocalWallet();
-      await wallet.generate();
-      await wallet.connect();
+      await wallet.load({
+        strategy: "encryptedJson",
+        password: userId,
+      });
       setLocalWallet(wallet);
       const walletAddress = await wallet.getAddress();
       setLocalWalletAddress(walletAddress);
+      console.log('Loaded wallet address:', walletAddress);
     } catch (error) {
-      console.error("Error creating local wallet:", error);
-      setError("Failed to create local wallet. Please try again.");
+      console.error("Error loading local wallet:", error);
+      // If loading fails, we'll create a new wallet in handleLogin
     } finally {
       setLoading(false);
     }
   };
-  
+
+  const handleLogin = async () => {
+    if (!userId) {
+      setError("User ID not available. Please try reloading the app.");
+      return;
+    }
+    setLoading(true);
+    try {
+      let wallet = localWallet;
+      if (!wallet) {
+        wallet = new LocalWallet();
+        await wallet.generate();
+      }
+      await wallet.connect();
+      await wallet.save({
+        strategy: "encryptedJson",
+        password: userId,
+      });
+      setLocalWallet(wallet);
+      const walletAddress = await wallet.getAddress();
+      setLocalWalletAddress(walletAddress);
+      console.log('New wallet created and saved. Address:', walletAddress);
+    } catch (error) {
+      console.error("Error creating or saving local wallet:", error);
+      setError("Failed to create or save local wallet. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleTransfer = async () => {
     if (isDailyLimitReached) {
       setError("Tap limit reached. Please try again in a few minutes.");
@@ -257,17 +290,17 @@ const TelegramMiniApp: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
         <button 
           onClick={handleLogin}
-          disabled={loading}
+          disabled={loading || !!localWalletAddress}
           style={{
             backgroundColor: '#4A5568',
             color: 'white',
             padding: '0.5rem 1rem',
             borderRadius: '0.375rem',
             border: 'none',
-            cursor: loading ? 'not-allowed' : 'pointer',
+            cursor: loading || !!localWalletAddress ? 'not-allowed' : 'pointer',
             fontSize: '1rem',
             fontWeight: 'bold',
-            opacity: loading ? 0.5 : 1,
+            opacity: loading || !!localWalletAddress ? 0.5 : 1,
           }}
         >
           {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
@@ -295,7 +328,7 @@ const TelegramMiniApp: React.FC = () => {
         </div>
         <p style={{ fontSize: '0.875rem', color: '#A0AEC0' }}>Current Score</p>
       </div>
-
+      
       {/* Tap Button */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div style={{ position: 'relative', width: '13rem', height: '13rem' }}>
