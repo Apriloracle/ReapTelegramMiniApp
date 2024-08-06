@@ -199,7 +199,7 @@ const TelegramMiniApp: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ address }),
+        body: JSON.stringify({ address: walletAddress }),
       });
 
       if (!response.ok) {
