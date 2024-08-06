@@ -214,6 +214,22 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
+  const handleDisconnect = async () => {
+    if (localWallet) {
+      try {
+        await localWallet.disconnect();
+        setLocalWallet(null);
+        setLocalWalletAddress(null);
+        // Clear the saved wallet data
+        localStorage.removeItem(`local-wallet-${userId}`);
+        console.log('Disconnected from local wallet');
+      } catch (error) {
+        console.error("Error disconnecting local wallet:", error);
+        setError("Failed to disconnect local wallet. Please try again.");
+      }
+    }
+  };
+
   const handleTransfer = async () => {
     if (isDailyLimitReached) {
       setError("Tap limit reached. Please try again in a few minutes.");
@@ -284,8 +300,28 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
-  return (
-    <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh' }}>
+
+ return (
+    <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh', position: 'relative' }}>
+      {/* Settings Button */}
+      {localWalletAddress && (
+        <button
+          onClick={handleDisconnect}
+          style={{
+            position: 'absolute',
+            top: '1rem',
+            right: '1rem',
+            background: 'none',
+            border: 'none',
+            color: 'white',
+            fontSize: '1.5rem',
+            cursor: 'pointer',
+          }}
+        >
+          ⋮
+        </button>
+      )}
+
       {/* Login Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
         <button 
@@ -306,6 +342,7 @@ const TelegramMiniApp: React.FC = () => {
           {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
         </button>
       </div>
+
       {/* Display Local Wallet Address */}
       {localWalletAddress && (
         <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
@@ -314,9 +351,11 @@ const TelegramMiniApp: React.FC = () => {
       )}
 
       {/* ConnectKit Button */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-        <ConnectKitButton />
-      </div>
+      {!localWalletAddress && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <ConnectKitButton />
+        </div>
+      )}
 
       {/* Score Card */}
       <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -328,7 +367,7 @@ const TelegramMiniApp: React.FC = () => {
         </div>
         <p style={{ fontSize: '0.875rem', color: '#A0AEC0' }}>Current Score</p>
       </div>
-      
+
       {/* Tap Button */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div style={{ position: 'relative', width: '13rem', height: '13rem' }}>
