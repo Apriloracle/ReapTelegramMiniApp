@@ -373,7 +373,7 @@ return (
           </svg>
           <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#FFFFFF' }}>{score}</p>
         </div>
-        <p style={{ fontSize: '0.875rem', color: '#A0AEC0' }}>Current Score</p>
+        <p style={{ fontSize: '0.875rem', color: '#A0AEC0' }}></p>
       </div>
 
       {/* Tap Button */}
