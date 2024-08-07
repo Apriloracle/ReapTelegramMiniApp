@@ -448,7 +448,7 @@ return (
           </button>
         </div>
         <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
-          Taps: {dailyTaps} / {DAILY_TAP_LIMIT}
+           {dailyTaps} / {DAILY_TAP_LIMIT}
         </p>
         {error && (
           <p style={{ marginTop: '0.5rem', color: '#EF4444', fontSize: '0.875rem' }}>{error}</p>
@@ -478,7 +478,7 @@ return (
 
 {/* Share Count */}
 <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
-  Shares: {shares}
+   {shares}
 </p>
     </div>
   )
