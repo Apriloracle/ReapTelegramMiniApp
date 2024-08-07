@@ -449,30 +449,30 @@ return (
       </div>
 
       {/* Share Button */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
-        <button
-          onClick={handleShare}
-          style={{
-            background: 'linear-gradient(135deg, #4CAF50, #45a049)',
-            color: 'white',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '9999px',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 300ms ease-in-out',
-            boxShadow: '0 4px 6px rgba(76,175,80,0.3)',
-          }}
-        >
-          Share and Earn More!
-        </button>
-      </div>
+<div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+  <button
+    onClick={handleShare}
+    style={{
+      background: 'black',
+      color: '#f05e23', // Orange font color
+      padding: '0.75rem 1.5rem',
+      borderRadius: '9999px',
+      fontSize: '1rem',
+      fontWeight: 'bold',
+      border: '2px solid #f05e23', // Orange border
+      cursor: 'pointer',
+      transition: 'all 300ms ease-in-out',
+      boxShadow: '0 4px 6px rgba(240,94,35,0.3)',
+    }}
+  >
+    Share and Earn More!
+  </button>
+</div>
 
-      {/* Share Count */}
-      <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
-        Shares: {shares}
-      </p>
+{/* Share Count */}
+<p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
+  Shares: {shares}
+</p>
     </div>
   )
 }
