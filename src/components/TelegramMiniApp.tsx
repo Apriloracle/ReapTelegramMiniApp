@@ -354,7 +354,7 @@ return (
 {/* Display Local Wallet Address */}
 {localWalletAddress && (
   <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
-    Local Wallet: {localWalletAddress}
+     {localWalletAddress}
   </div>
 )}
 
