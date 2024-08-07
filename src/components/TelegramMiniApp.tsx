@@ -331,39 +331,46 @@ return (
       )}
 
       {/* Login Button */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-        <button 
-          onClick={handleLogin}
-          disabled={loading || !!localWalletAddress}
-          style={{
-            backgroundColor: '#4A5568',
-            color: 'white',
-            padding: '0.5rem 1rem',
-            borderRadius: '0.375rem',
-            border: 'none',
-            cursor: loading || !!localWalletAddress ? 'not-allowed' : 'pointer',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            opacity: loading || !!localWalletAddress ? 0.5 : 1,
-          }}
-        >
-          {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
-        </button>
-      </div>
+<div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+  <button 
+    onClick={handleLogin}
+    disabled={loading || !!localWalletAddress}
+    style={{
+      backgroundColor: 'black',
+      color: '#f05e23', // Orange font color
+      padding: '0.5rem 1rem',
+      borderRadius: '0.375rem',
+      border: '2px solid #f05e23', // Orange border
+      cursor: loading || !!localWalletAddress ? 'not-allowed' : 'pointer',
+      fontSize: '1rem',
+      fontWeight: 'bold',
+      opacity: loading || !!localWalletAddress ? 0.5 : 1,
+    }}
+  >
+    {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
+  </button>
+</div>
 
-      {/* Display Local Wallet Address */}
-      {localWalletAddress && (
-        <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
-          Local Wallet: {localWalletAddress}
-        </div>
-      )}
+{/* Display Local Wallet Address */}
+{localWalletAddress && (
+  <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
+    Local Wallet: {localWalletAddress}
+  </div>
+)}
 
-      {/* ConnectKit Button */}
-      {!localWalletAddress && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-          <ConnectKitButton />
-        </div>
-      )}
+{/* ConnectKit Button */}
+{!localWalletAddress && (
+  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+    <ConnectKitButton theme="retro" customTheme={{
+      "--ck-connectbutton-background": "black",
+      "--ck-connectbutton-color": "#f05e23",
+      "--ck-connectbutton-border-radius": "0.375rem",
+      "--ck-connectbutton-border-color": "#f05e23",
+      "--ck-connectbutton-hover-color": "#f05e23",
+      "--ck-connectbutton-active-color": "#f05e23",
+    }} />
+  </div>
+)}
 
       {/* Score Card */}
       <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
