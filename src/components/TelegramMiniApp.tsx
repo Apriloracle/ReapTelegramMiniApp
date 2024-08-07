@@ -330,24 +330,50 @@ return (
         </button>
       )}
 
-      {/* Login Button */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+      {/* Login and Connect Wallet Buttons */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <ConnectKitButton.Custom>
+          {({ show }) => (
+            <button 
+              onClick={show}
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '2rem',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ marginRight: '0.5rem' }}>🔗</span>
+              Connect Wallet
+            </button>
+          )}
+        </ConnectKitButton.Custom>
+        
         <button 
           onClick={handleLogin}
           disabled={loading || !!localWalletAddress}
           style={{
-            backgroundColor: '#4A5568',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
             color: 'white',
             padding: '0.5rem 1rem',
-            borderRadius: '0.375rem',
+            borderRadius: '2rem',
             border: 'none',
             cursor: loading || !!localWalletAddress ? 'not-allowed' : 'pointer',
-            fontSize: '1rem',
+            fontSize: '0.9rem',
             fontWeight: 'bold',
             opacity: loading || !!localWalletAddress ? 0.5 : 1,
+            display: 'flex',
+            alignItems: 'center',
           }}
         >
-          {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
+          <span style={{ marginRight: '0.5rem' }}>➡️</span>
+          {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login to Wallet')}
         </button>
       </div>
 
