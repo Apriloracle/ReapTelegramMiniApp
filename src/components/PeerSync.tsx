@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createMergeableStore } from 'tinybase';
 import { createWsSynchronizer } from 'tinybase/synchronizers/synchronizer-ws-client';
 
@@ -45,7 +45,8 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onPeerCountUpdate }) => {
     return store.getCell('peers', 'count', 'value') as number;
   }, [store]);
 
-  return { getPeerCount };
+  // Return null as this component doesn't render anything
+  return null;
 };
 
 export default PeerSync;
