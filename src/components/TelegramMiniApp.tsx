@@ -6,7 +6,7 @@ import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import WebApp from '@twa-dev/sdk'
 import { LocalWallet } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
-import PeerSync from './PeerSync'; // Import PeerSync component
+import PeerSync from './PeerSync';
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
@@ -27,6 +27,7 @@ const TelegramMiniApp: React.FC = () => {
   const [localWallet, setLocalWallet] = useState<LocalWallet | null>(null);
   const [localWalletAddress, setLocalWalletAddress] = useState<string | null>(null);
   const [peerCount, setPeerCount] = useState<number>(1);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   const clickStore = React.useMemo(() => createStore(), []);
   const shareStore = React.useMemo(() => createStore(), []);
@@ -297,9 +298,31 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
+  const handleConnectionStatus = (status: boolean) => {
+    setIsConnected(status);
+  };
+
   return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh', position: 'relative' }}>
-      <PeerSync onPeerCountUpdate={(count) => setPeerCount(count)} />
+      {/* Connection status icon */}
+      <div 
+        style={{
+          position: 'absolute',
+          top: '1rem',
+          left: '1rem',
+          width: '12px',
+          height: '12px',
+          borderRadius: '50%',
+          backgroundColor: isConnected ? '#22c55e' : '#ef4444',
+          transition: 'background-color 0.3s ease',
+        }}
+        title={isConnected ? 'Connected to sync server' : 'Disconnected from sync server'}
+      />
+
+      <PeerSync 
+        onPeerCountUpdate={(count) => setPeerCount(count)}
+        onConnectionStatus={handleConnectionStatus}
+      />
       
       {localWalletAddress && (
         <button
@@ -344,8 +367,8 @@ const TelegramMiniApp: React.FC = () => {
           Local Wallet: {localWalletAddress}
         </div>
       )}
-
-      {!localWalletAddress && (
+      
+{!localWalletAddress && (
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
           <ConnectKitButton theme="retro" customTheme={{
             "--ck-connectbutton-background": "black",
@@ -358,8 +381,7 @@ const TelegramMiniApp: React.FC = () => {
         </div>
       )}
 
-      {/* Score Card */}
-     <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
           <svg style={{ width: '2rem', height: '2rem', color: '#F59E0B', marginRight: '0.5rem' }} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
             <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h1V7a1 1 0 012 0v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H8a1 1 0 01-1-1z" clipRule="evenodd" fillRule="evenodd"></path>
