@@ -485,11 +485,6 @@ const TelegramMiniApp: React.FC = () => {
       <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
          {shares}
       </p>
-
-      {/* Add this new element to display peer count */}
-      <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
-        Active Users: {peerCount}
-      </div>
     </div>
   )
 }
