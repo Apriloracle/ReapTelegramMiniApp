@@ -4,11 +4,13 @@ import { createWsSynchronizer } from 'tinybase/synchronizers/synchronizer-ws-cli
 
 interface PeerSyncProps {
   onPeerCountUpdate?: (count: number) => void;
+  onConnectionStatus?: (status: boolean) => void;
 }
 
-const PeerSync: React.FC<PeerSyncProps> = ({ onPeerCountUpdate }) => {
+const PeerSync: React.FC<PeerSyncProps> = ({ onPeerCountUpdate, onConnectionStatus }) => {
   const [store] = useState(() => createMergeableStore());
   const [synchronizer, setSynchronizer] = useState<any>(null);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   useEffect(() => {
     const initializeSync = async () => {
@@ -16,20 +18,35 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onPeerCountUpdate }) => {
         store.setTable('peers', { count: { value: 1 } });
       }
 
-      const newSynchronizer = await createWsSynchronizer(
-        store,
-        new WebSocket('wss://todo.demo.tinybase.org')
-      );
+      try {
+        const webSocket = new WebSocket('wss://todo.demo.tinybase.org');
 
-      setSynchronizer(newSynchronizer);
+        webSocket.onopen = () => {
+          setIsConnected(true);
+          if (onConnectionStatus) onConnectionStatus(true);
+        };
 
-      store.addCellListener('peers', 'count', 'value', (_, __, ___, ____, newValue) => {
-        if (onPeerCountUpdate) {
-          onPeerCountUpdate(newValue as number);
-        }
-      });
+        webSocket.onclose = () => {
+          setIsConnected(false);
+          if (onConnectionStatus) onConnectionStatus(false);
+        };
 
-      await newSynchronizer.startSync();
+        const newSynchronizer = await createWsSynchronizer(store, webSocket);
+
+        setSynchronizer(newSynchronizer);
+
+        store.addCellListener('peers', 'count', 'value', (_, __, ___, ____, newValue) => {
+          if (onPeerCountUpdate) {
+            onPeerCountUpdate(newValue as number);
+          }
+        });
+
+        await newSynchronizer.startSync();
+      } catch (error) {
+        console.error('Failed to initialize WebSocket:', error);
+        setIsConnected(false);
+        if (onConnectionStatus) onConnectionStatus(false);
+      }
     };
 
     initializeSync();
@@ -39,13 +56,8 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onPeerCountUpdate }) => {
         synchronizer.destroy();
       }
     };
-  }, [store, onPeerCountUpdate]);
+  }, [store, onPeerCountUpdate, onConnectionStatus]);
 
-  const getPeerCount = useCallback(() => {
-    return store.getCell('peers', 'count', 'value') as number;
-  }, [store]);
-
-  // Return null as this component doesn't render anything
   return null;
 };
 
