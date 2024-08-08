@@ -6,6 +6,7 @@ import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import WebApp from '@twa-dev/sdk'
 import { LocalWallet } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
+import PeerSync from './PeerSync'; // New import for PeerSync
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
@@ -25,7 +26,7 @@ const TelegramMiniApp: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [localWallet, setLocalWallet] = useState<LocalWallet | null>(null);
   const [localWalletAddress, setLocalWalletAddress] = useState<string | null>(null);
-  const [peerCount, setPeerCount] = useState<number>(0);
+  const [peerCount, setPeerCount] = useState<number>(1);
 
   const clickStore = React.useMemo(() => createStore(), []);
   const shareStore = React.useMemo(() => createStore(), []);
@@ -33,7 +34,6 @@ const TelegramMiniApp: React.FC = () => {
   const clickPersister = React.useMemo(() => createLocalPersister(clickStore, 'celon-click-stats'), [clickStore]);
   const sharePersister = React.useMemo(() => createLocalPersister(shareStore, 'celon-share-stats'), [shareStore]);
   const dailyPersister = React.useMemo(() => createLocalPersister(dailyStore, 'celon-daily-stats'), [dailyStore]);
-  const peerStore = React.useMemo(() => createMergeableStore('peer-store'), []);
 
   useEffect(() => {
     const initWebApp = () => {
@@ -41,7 +41,6 @@ const TelegramMiniApp: React.FC = () => {
         setWebApp(WebApp);
         WebApp.ready();
 
-        // Parse the initData to get the user_id
         const searchParams = new URLSearchParams(WebApp.initData);
         const userDataStr = searchParams.get('user');
         if (userDataStr) {
@@ -58,7 +57,6 @@ const TelegramMiniApp: React.FC = () => {
 
     initWebApp();
 
-    // Initialize stores with default values
     clickStore.setTables({
       stats: { clicks: { count: 0 } }
     });
@@ -68,14 +66,9 @@ const TelegramMiniApp: React.FC = () => {
     dailyStore.setTables({
       dailyStats: { clicks: { count: 0, lastReset: new Date().toISOString() } }
     });
-    peerStore.setTables({
-      peers: { count: { value: 1 } }
-    });
 
-    // Load persisted data
     loadPersistedData();
 
-    // Add listeners for score and share changes
     const scoreListenerId = clickStore.addCellListener(
       'stats',
       'clicks',
@@ -111,18 +104,6 @@ const TelegramMiniApp: React.FC = () => {
       }
     );
 
-    // Add listener for peer count changes
-    peerStore.addCellListener(
-      'peers',
-      'count',
-      'value',
-      (_, __, ___, ____, newValue) => {
-        setPeerCount(newValue as number);
-        console.log('Peer count updated:', newValue);
-      }
-    );
-
-    // Check for reset every minute
     const intervalId = setInterval(() => {
       const lastReset = new Date(dailyStore.getCell('dailyStats', 'clicks', 'lastReset') as string);
       if (shouldResetDailyTaps(lastReset)) {
@@ -130,7 +111,6 @@ const TelegramMiniApp: React.FC = () => {
       }
     }, 60000);
 
-    // Cleanup
     return () => {
       clickStore.delListener(scoreListenerId);
       shareStore.delListener(shareListenerId);
@@ -140,6 +120,18 @@ const TelegramMiniApp: React.FC = () => {
       clearInterval(intervalId);
     };
   }, [])
+
+  // New useEffect for PeerSync
+  useEffect(() => {
+    const { getPeerCount } = PeerSync({
+      onPeerCountUpdate: (count) => {
+        setPeerCount(count);
+        console.log('Peer count updated:', count);
+      }
+    });
+
+    setPeerCount(getPeerCount());
+  }, []);
 
   const loadPersistedData = async () => {
     try {
@@ -180,7 +172,7 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
- const loadWallet = async (userId: string) => {
+  const loadWallet = async (userId: string) => {
     setLoading(true);
     try {
       const wallet = new LocalWallet();
@@ -201,7 +193,6 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
-  
   const handleLogin = async () => {
     if (!userId) {
       setError("User ID not available. Please try reloading the app.");
@@ -211,7 +202,6 @@ const TelegramMiniApp: React.FC = () => {
     try {
       let wallet = new LocalWallet();
       
-      // Try to load existing wallet
       try {
         await wallet.load({
           strategy: "encryptedJson",
@@ -266,7 +256,6 @@ const TelegramMiniApp: React.FC = () => {
         throw new Error("No wallet connected");
       }
 
-      // Call the cloud function for ERC20 transfer
       const response = await fetch('https://nodejsapiproxy-production.up.railway.app/handleTap1', {
         method: 'POST',
         headers: {
@@ -282,12 +271,10 @@ const TelegramMiniApp: React.FC = () => {
       const result = await response.json();
 
       if (result.success) {
-        // Update the score in Tinybase
         const currentScore = clickStore.getCell('stats', 'clicks', 'count') as number;
         const newScore = currentScore + 1;
         clickStore.setCell('stats', 'clicks', 'count', newScore);
         
-        // Update daily taps
         const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
         const newDailyTaps = currentDailyTaps + 1;
         dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
@@ -309,11 +296,9 @@ const TelegramMiniApp: React.FC = () => {
       if (WebApp && WebApp.openTelegramLink) {
         await WebApp.openTelegramLink(SHARE_URL);
       } else {
-        // Fallback for when WebApp is not available
         window.open(SHARE_URL, '_blank');
       }
 
-      // Update the share count
       const currentShares = shareStore.getCell('stats', 'shares', 'count') as number;
       const newShares = currentShares + 1;
       shareStore.setCell('stats', 'shares', 'count', newShares);
