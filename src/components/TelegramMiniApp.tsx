@@ -6,7 +6,7 @@ import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import WebApp from '@twa-dev/sdk'
 import { LocalWallet } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
-import PeerSync from './PeerSync'; // New import for PeerSync
+import PeerSync from './PeerSync'; // Import PeerSync component
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
@@ -120,18 +120,6 @@ const TelegramMiniApp: React.FC = () => {
       clearInterval(intervalId);
     };
   }, [])
-
-  // New useEffect for PeerSync
-  useEffect(() => {
-    const { getPeerCount } = PeerSync({
-      onPeerCountUpdate: (count) => {
-        setPeerCount(count);
-        console.log('Peer count updated:', count);
-      }
-    });
-
-    setPeerCount(getPeerCount());
-  }, []);
 
   const loadPersistedData = async () => {
     try {
@@ -309,10 +297,10 @@ const TelegramMiniApp: React.FC = () => {
     }
   };
 
-
-return (
+  return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh', position: 'relative' }}>
-      {/* Settings Button */}
+      <PeerSync onPeerCountUpdate={(count) => setPeerCount(count)} />
+      
       {localWalletAddress && (
         <button
           onClick={handleDisconnect}
@@ -331,50 +319,47 @@ return (
         </button>
       )}
 
-      {/* Login Button */}
-<div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-  <button 
-    onClick={handleLogin}
-    disabled={loading || !!localWalletAddress}
-    style={{
-      backgroundColor: 'black',
-      color: '#f05e23', // Orange font color
-      padding: '0.5rem 1rem',
-      borderRadius: '0.375rem',
-      border: '2px solid #f05e23', // Orange border
-      cursor: loading || !!localWalletAddress ? 'not-allowed' : 'pointer',
-      fontSize: '1rem',
-      fontWeight: 'bold',
-      opacity: loading || !!localWalletAddress ? 0.5 : 1,
-    }}
-  >
-    {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
-  </button>
-</div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+        <button 
+          onClick={handleLogin}
+          disabled={loading || !!localWalletAddress}
+          style={{
+            backgroundColor: 'black',
+            color: '#f05e23',
+            padding: '0.5rem 1rem',
+            borderRadius: '0.375rem',
+            border: '2px solid #f05e23',
+            cursor: loading || !!localWalletAddress ? 'not-allowed' : 'pointer',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            opacity: loading || !!localWalletAddress ? 0.5 : 1,
+          }}
+        >
+          {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
+        </button>
+      </div>
 
-{/* Display Local Wallet Address */}
-{localWalletAddress && (
-  <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
-     Local Wallet: {localWalletAddress}
-  </div>
-)}
+      {localWalletAddress && (
+        <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
+          Local Wallet: {localWalletAddress}
+        </div>
+      )}
 
-{/* ConnectKit Button */}
-{!localWalletAddress && (
-  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-    <ConnectKitButton theme="retro" customTheme={{
-      "--ck-connectbutton-background": "black",
-      "--ck-connectbutton-color": "#f05e23",
-      "--ck-connectbutton-border-radius": "0.375rem",
-      "--ck-connectbutton-border-color": "#f05e23",
-      "--ck-connectbutton-hover-color": "#f05e23",
-      "--ck-connectbutton-active-color": "#f05e23",
-    }} />
-  </div>
-)}
+      {!localWalletAddress && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <ConnectKitButton theme="retro" customTheme={{
+            "--ck-connectbutton-background": "black",
+            "--ck-connectbutton-color": "#f05e23",
+            "--ck-connectbutton-border-radius": "0.375rem",
+            "--ck-connectbutton-border-color": "#f05e23",
+            "--ck-connectbutton-hover-color": "#f05e23",
+            "--ck-connectbutton-active-color": "#f05e23",
+          }} />
+        </div>
+      )}
 
       {/* Score Card */}
-      <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+     <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
           <svg style={{ width: '2rem', height: '2rem', color: '#F59E0B', marginRight: '0.5rem' }} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
             <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h1V7a1 1 0 012 0v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H8a1 1 0 01-1-1z" clipRule="evenodd" fillRule="evenodd"></path>
@@ -384,7 +369,6 @@ return (
         <p style={{ fontSize: '0.875rem', color: '#A0AEC0' }}></p>
       </div>
 
-      {/* Tap Button */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div style={{ position: 'relative', width: '13rem', height: '13rem' }}>
           <div style={{ 
@@ -456,31 +440,34 @@ return (
         )}
       </div>
 
-      {/* Share Button */}
-<div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
-  <button
-    onClick={handleShare}
-    style={{
-      background: 'black',
-      color: '#f05e23', // Orange font color
-      padding: '0.75rem 1.5rem',
-      borderRadius: '9999px',
-      fontSize: '1rem',
-      fontWeight: 'bold',
-      border: '2px solid #f05e23', // Orange border
-      cursor: 'pointer',
-      transition: 'all 300ms ease-in-out',
-      boxShadow: '0 4px 6px rgba(240,94,35,0.3)',
-    }}
-  >
-    Share and Earn More!
-  </button>
-</div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+        <button
+          onClick={handleShare}
+          style={{
+            background: 'black',
+            color: '#f05e23',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '9999px',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            border: '2px solid #f05e23',
+            cursor: 'pointer',
+            transition: 'all 300ms ease-in-out',
+            boxShadow: '0 4px 6px rgba(240,94,35,0.3)',
+          }}
+        >
+          Share and Earn More!
+        </button>
+      </div>
 
-{/* Share Count */}
-<p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
-   {shares}
-</p>
+      <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
+         {shares}
+      </p>
+
+      {/* Add this new element to display peer count */}
+      <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
+        Active Users: {peerCount}
+      </div>
     </div>
   )
 }
