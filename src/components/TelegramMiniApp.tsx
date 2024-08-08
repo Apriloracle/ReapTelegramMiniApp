@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
-import { createStore } from 'tinybase';
+import { createStore, createMergeableStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import WebApp from '@twa-dev/sdk'
 import { LocalWallet } from "@thirdweb-dev/wallets";
@@ -25,6 +25,7 @@ const TelegramMiniApp: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [localWallet, setLocalWallet] = useState<LocalWallet | null>(null);
   const [localWalletAddress, setLocalWalletAddress] = useState<string | null>(null);
+  const [peerCount, setPeerCount] = useState<number>(0);
 
   const clickStore = React.useMemo(() => createStore(), []);
   const shareStore = React.useMemo(() => createStore(), []);
@@ -32,6 +33,7 @@ const TelegramMiniApp: React.FC = () => {
   const clickPersister = React.useMemo(() => createLocalPersister(clickStore, 'celon-click-stats'), [clickStore]);
   const sharePersister = React.useMemo(() => createLocalPersister(shareStore, 'celon-share-stats'), [shareStore]);
   const dailyPersister = React.useMemo(() => createLocalPersister(dailyStore, 'celon-daily-stats'), [dailyStore]);
+  const peerStore = React.useMemo(() => createMergeableStore('peer-store'), []);
 
   useEffect(() => {
     const initWebApp = () => {
@@ -39,7 +41,7 @@ const TelegramMiniApp: React.FC = () => {
         setWebApp(WebApp);
         WebApp.ready();
 
-      // Parse the initData to get the user_id
+        // Parse the initData to get the user_id
         const searchParams = new URLSearchParams(WebApp.initData);
         const userDataStr = searchParams.get('user');
         if (userDataStr) {
@@ -65,6 +67,9 @@ const TelegramMiniApp: React.FC = () => {
     });
     dailyStore.setTables({
       dailyStats: { clicks: { count: 0, lastReset: new Date().toISOString() } }
+    });
+    peerStore.setTables({
+      peers: { count: { value: 1 } }
     });
 
     // Load persisted data
@@ -103,6 +108,17 @@ const TelegramMiniApp: React.FC = () => {
         setIsDailyLimitReached(newDailyTaps >= DAILY_TAP_LIMIT);
         console.log('Daily taps updated:', newDailyTaps);
         dailyPersister.save().catch(console.error);
+      }
+    );
+
+    // Add listener for peer count changes
+    peerStore.addCellListener(
+      'peers',
+      'count',
+      'value',
+      (_, __, ___, ____, newValue) => {
+        setPeerCount(newValue as number);
+        console.log('Peer count updated:', newValue);
       }
     );
 
