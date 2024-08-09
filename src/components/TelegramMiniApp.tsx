@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
-import { createStore, createMergeableStore } from 'tinybase';
+import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import WebApp from '@twa-dev/sdk'
 import { LocalWallet } from "@thirdweb-dev/wallets";
@@ -26,7 +26,6 @@ const TelegramMiniApp: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [localWallet, setLocalWallet] = useState<LocalWallet | null>(null);
   const [localWalletAddress, setLocalWalletAddress] = useState<string | null>(null);
-  const [peerCount, setPeerCount] = useState<number>(1);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   const clickStore = React.useMemo(() => createStore(), []);
@@ -320,7 +319,6 @@ const TelegramMiniApp: React.FC = () => {
       />
 
       <PeerSync 
-        onPeerCountUpdate={(count) => setPeerCount(count)}
         onConnectionStatus={handleConnectionStatus}
       />
       
@@ -368,12 +366,12 @@ const TelegramMiniApp: React.FC = () => {
         </div>
       )}
       
-{!localWalletAddress && (
+      {!localWalletAddress && (
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
           <ConnectKitButton theme="retro" customTheme={{
             "--ck-connectbutton-background": "black",
             "--ck-connectbutton-color": "#f05e23",
-            "--ck-connectbutton-border-radius": "0.375rem",
+          "--ck-connectbutton-border-radius": "0.375rem",
             "--ck-connectbutton-border-color": "#f05e23",
             "--ck-connectbutton-hover-color": "#f05e23",
             "--ck-connectbutton-active-color": "#f05e23",
