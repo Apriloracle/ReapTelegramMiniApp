@@ -1,25 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createMergeableStore } from 'tinybase';
 import { createWsSynchronizer } from 'tinybase/synchronizers/synchronizer-ws-client';
 
 interface PeerSyncProps {
-  onPeerCountUpdate?: (count: number) => void;
   onConnectionStatus?: (status: boolean) => void;
 }
 
-const PeerSync: React.FC<PeerSyncProps> = ({ onPeerCountUpdate, onConnectionStatus }) => {
+const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus }) => {
   const [store] = useState(() => createMergeableStore());
   const [synchronizer, setSynchronizer] = useState<any>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   useEffect(() => {
     const initializeSync = async () => {
-      if (!store.hasTable('peers')) {
-        store.setTable('peers', { count: { value: 1 } });
-      }
-
       try {
-        const webSocket = new WebSocket('');
+        const webSocket = new WebSocket('wss://tinybasewsserver-production.up.railway.app');
 
         webSocket.onopen = () => {
           setIsConnected(true);
@@ -34,12 +29,6 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onPeerCountUpdate, onConnectionStat
         const newSynchronizer = await createWsSynchronizer(store, webSocket);
 
         setSynchronizer(newSynchronizer);
-
-        store.addCellListener('peers', 'count', 'value', (_, __, ___, ____, newValue) => {
-          if (onPeerCountUpdate) {
-            onPeerCountUpdate(newValue as number);
-          }
-        });
 
         await newSynchronizer.startSync();
       } catch (error) {
@@ -56,7 +45,7 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onPeerCountUpdate, onConnectionStat
         synchronizer.destroy();
       }
     };
-  }, [store, onPeerCountUpdate, onConnectionStatus]);
+  }, [store, onConnectionStatus]);
 
   return null;
 };
