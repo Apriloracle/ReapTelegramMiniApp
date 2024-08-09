@@ -19,7 +19,7 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onPeerCountUpdate, onConnectionStat
       }
 
       try {
-        const webSocket = new WebSocket('');
+        const webSocket = new WebSocket('wss://tinybasewsserver-production.up.railway.app');
 
         webSocket.onopen = () => {
           setIsConnected(true);
