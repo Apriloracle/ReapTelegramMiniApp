@@ -1,36 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { createMergeableStore } from 'tinybase';
-import { createWsSynchronizer } from 'tinybase/synchronizers/synchronizer-ws-client';
 
 interface PeerSyncProps {
   onConnectionStatus?: (status: boolean) => void;
 }
 
 const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus }) => {
-  const [store] = useState(() => createMergeableStore());
-  const [synchronizer, setSynchronizer] = useState<any>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   useEffect(() => {
-    const initializeSync = async () => {
+    let webSocket: WebSocket;
+
+    const initializeWebSocket = () => {
       try {
-        const webSocket = new WebSocket('');
+        webSocket = new WebSocket('wss://tinybasewsserver-production.up.railway.app');  // Replace with your actual WebSocket server URL
 
         webSocket.onopen = () => {
           setIsConnected(true);
           if (onConnectionStatus) onConnectionStatus(true);
+          console.log('WebSocket connection established');
         };
 
         webSocket.onclose = () => {
           setIsConnected(false);
           if (onConnectionStatus) onConnectionStatus(false);
+          console.log('WebSocket connection closed');
         };
 
-        const newSynchronizer = await createWsSynchronizer(store, webSocket);
+        webSocket.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          setIsConnected(false);
+          if (onConnectionStatus) onConnectionStatus(false);
+        };
 
-        setSynchronizer(newSynchronizer);
-
-        await newSynchronizer.startSync();
       } catch (error) {
         console.error('Failed to initialize WebSocket:', error);
         setIsConnected(false);
@@ -38,14 +39,14 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus }) => {
       }
     };
 
-    initializeSync();
+    initializeWebSocket();
 
     return () => {
-      if (synchronizer) {
-        synchronizer.destroy();
+      if (webSocket) {
+        webSocket.close();
       }
     };
-  }, [store, onConnectionStatus]);
+  }, [onConnectionStatus]);
 
   return null;
 };
