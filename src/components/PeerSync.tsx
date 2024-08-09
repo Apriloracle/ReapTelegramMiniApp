@@ -1,37 +1,36 @@
 import React, { useState, useEffect } from 'react';
+import { createMergeableStore } from 'tinybase';
+import { createWsSynchronizer } from 'tinybase/synchronizers/synchronizer-ws-client';
 
 interface PeerSyncProps {
   onConnectionStatus?: (status: boolean) => void;
 }
 
 const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus }) => {
+  const [store] = useState(() => createMergeableStore());
+  const [synchronizer, setSynchronizer] = useState<any>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   useEffect(() => {
-    let webSocket: WebSocket;
-
-    const initializeWebSocket = () => {
+    const initializeSync = async () => {
       try {
-        webSocket = new WebSocket('');  // Replace with your actual WebSocket server URL
+        const webSocket = new WebSocket('');
 
         webSocket.onopen = () => {
           setIsConnected(true);
           if (onConnectionStatus) onConnectionStatus(true);
-          console.log('WebSocket connection established');
         };
 
         webSocket.onclose = () => {
           setIsConnected(false);
           if (onConnectionStatus) onConnectionStatus(false);
-          console.log('WebSocket connection closed');
         };
 
-        webSocket.onerror = (error) => {
-          console.error('WebSocket error:', error);
-          setIsConnected(false);
-          if (onConnectionStatus) onConnectionStatus(false);
-        };
+        const newSynchronizer = await createWsSynchronizer(store, webSocket);
 
+        setSynchronizer(newSynchronizer);
+
+        await newSynchronizer.startSync();
       } catch (error) {
         console.error('Failed to initialize WebSocket:', error);
         setIsConnected(false);
@@ -39,16 +38,17 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus }) => {
       }
     };
 
-    initializeWebSocket();
+    initializeSync();
 
     return () => {
-      if (webSocket) {
-        webSocket.close();
+      if (synchronizer) {
+        synchronizer.destroy();
       }
     };
-  }, [onConnectionStatus]);
+  }, [store, onConnectionStatus]);
 
   return null;
 };
 
 export default PeerSync;
+
