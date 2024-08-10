@@ -104,9 +104,6 @@ const DealsComponent: React.FC = () => {
                   </li>
                 ))}
               </ul>
-              <p style={{ color: '#A0AEC0', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                Valid until: {new Date(deal.endDate).toLocaleDateString()}
-              </p>
             </li>
           ))}
         </ul>
