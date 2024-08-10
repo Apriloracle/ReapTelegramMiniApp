@@ -45,9 +45,12 @@ const useIPGeolocation = () => {
 
     const loadPersistedGeolocation = async () => {
       await geolocationPersister.load();
-      const persistedData = geolocationStore.getRow('geolocation', 'userGeo') as GeolocationData | undefined;
-      if (persistedData) {
-        setGeolocationData(persistedData);
+      const persistedData = geolocationStore.getRow('geolocation', 'userGeo');
+      if (persistedData && 'countryCode' in persistedData && 'ip' in persistedData) {
+        setGeolocationData({
+          countryCode: persistedData.countryCode as string,
+          ip: persistedData.ip as string,
+        });
       } else {
         fetchGeolocation();
       }
