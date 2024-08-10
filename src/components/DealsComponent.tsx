@@ -82,9 +82,21 @@ const DealsComponent: React.FC = () => {
         <ul style={{ listStyleType: 'none', padding: 0 }}>
           {deals.map((deal) => (
             <li key={deal.id} style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#111111', borderRadius: '0.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <img src={deal.logoAbsoluteUrl} alt={deal.merchantName} style={{ width: '40px', height: '40px', marginRight: '1rem', borderRadius: '4px' }} />
-                <h3 style={{ color: '#f05e23', margin: 0 }}>{deal.merchantName}</h3>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+                <img 
+                  src={deal.logoAbsoluteUrl} 
+                  alt={deal.merchantName} 
+                  style={{ 
+                    width: '60px', 
+                    height: '60px', 
+                    marginRight: '1rem', 
+                    borderRadius: '8px',
+                    objectFit: 'contain',
+                    backgroundColor: 'white',
+                    padding: '4px'
+                  }} 
+                />
+                <h3 style={{ color: '#f05e23', margin: 0, fontSize: '1.2rem' }}>{deal.merchantName}</h3>
               </div>
               {deal.cashback > 0 && (
                 <p style={{ color: '#22c55e', fontWeight: 'bold', marginBottom: '0.5rem' }}>
