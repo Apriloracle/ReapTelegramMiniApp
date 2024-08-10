@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 
@@ -7,9 +7,8 @@ interface GeolocationData {
   ip: string;
 }
 
-const IPGeolocation: React.FC = () => {
+const useIPGeolocation = () => {
   const [geolocationData, setGeolocationData] = useState<GeolocationData | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const geolocationStore = createStore();
@@ -37,7 +36,7 @@ const IPGeolocation: React.FC = () => {
         // Persist the data
         await geolocationPersister.save();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        console.error('Error fetching geolocation:', err);
       }
     };
 
@@ -58,20 +57,7 @@ const IPGeolocation: React.FC = () => {
     };
   }, []);
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  if (!geolocationData) {
-    return <div>Loading geolocation data...</div>;
-  }
-
-  return (
-    <div>
-      <p>Country Code: {geolocationData.countryCode}</p>
-      <p>IP Address: {geolocationData.ip}</p>
-    </div>
-  );
+  return geolocationData;
 };
 
-export default IPGeolocation;
+export default useIPGeolocation;
