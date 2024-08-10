@@ -6,8 +6,9 @@ import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import WebApp from '@twa-dev/sdk'
 import { LocalWallet } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import PeerSync from './PeerSync';
-import IPGeolocation from './IPGeolocation';
+import DealsComponent from './DealsComponent';
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
@@ -120,7 +121,7 @@ const TelegramMiniApp: React.FC = () => {
       dailyPersister.destroy();
       clearInterval(intervalId);
     };
-  }, [])
+  }, []);
 
   const loadPersistedData = async () => {
     try {
@@ -302,189 +303,224 @@ const TelegramMiniApp: React.FC = () => {
     setIsConnected(status);
   };
 
-  return (
-    <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh', position: 'relative' }}>
-      {/* Connection status icon */}
-      <div 
-        style={{
-          position: 'absolute',
-          top: '1rem',
-          left: '1rem',
-          width: '12px',
-          height: '12px',
-          borderRadius: '50%',
-          backgroundColor: isConnected ? '#22c55e' : '#ef4444',
-          transition: 'background-color 0.3s ease',
-        }}
-        title={isConnected ? 'Connected to sync server' : 'Disconnected from sync server'}
-      />
+  const MainPage: React.FC = () => {
+    const navigate = useNavigate();
 
-      <PeerSync 
-        onConnectionStatus={handleConnectionStatus}
-      />
-      
-      {localWalletAddress && (
-        <button
-          onClick={handleDisconnect}
+    return (
+      <>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+          <button 
+            onClick={handleLogin}
+            disabled={loading || !!localWalletAddress}
+            style={{
+              backgroundColor: 'black',
+              color: '#f05e23',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.375rem',
+              border: '2px solid #f05e23',
+              cursor: loading || !!localWalletAddress ? 'not-allowed' : 'pointer',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              opacity: loading || !!localWalletAddress ? 0.5 : 1,
+            }}
+          >
+            {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
+          </button>
+        </div>
+
+        {localWalletAddress && (
+          <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
+            Local Wallet: {localWalletAddress}
+          </div>
+        )}
+        
+        {!localWalletAddress && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+            <ConnectKitButton theme="retro" customTheme={{
+              "--ck-connectbutton-background": "black",
+              "--ck-connectbutton-color": "#f05e23",
+              "--ck-connectbutton-border-radius": "0.375rem",
+              "--ck-connectbutton-border-color": "#f05e23",
+              "--ck-connectbutton-hover-color": "#f05e23",
+              "--ck-connectbutton-active-color": "#f05e23",
+            }} />
+          </div>
+        )}
+
+        <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <svg style={{ width: '2rem', height: '2rem', color: '#F59E0B', marginRight: '0.5rem' }} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+           <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h1V7a1 1 0 012 0v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H8a1 1 0 01-1-1z" clipRule="evenodd" fillRule="evenodd"></path>
+            </svg>
+            <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#FFFFFF' }}>{score}</p>
+          </div>
+          <p style={{ fontSize: '0.875rem', color: '#A0AEC0' }}></p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ position: 'relative', width: '13rem', height: '13rem' }}>
+            <div style={{ 
+              position: 'absolute', 
+              inset: 0, 
+              background: 'linear-gradient(135deg, #f05e23, #d54d1b)', 
+              borderRadius: '9999px', 
+              opacity: 0.3, 
+              animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite'
+            }}></div>
+            <div style={{ 
+              position: 'absolute', 
+              inset: 0, 
+              background: 'linear-gradient(135deg, #f05e23, #d54d1b)', 
+              borderRadius: '9999px', 
+              opacity: 0.3, 
+              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite', 
+              animationDelay: '0.5s'
+            }}></div>
+            <button
+              onClick={handleTransfer}
+              disabled={isDailyLimitReached || (!localWalletAddress && !address)}
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(135deg, #f05e23, #d54d1b)',
+                color: 'white',
+                borderRadius: '9999px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                border: 'none',
+                cursor: isDailyLimitReached || (!localWalletAddress && !address) ? 'not-allowed' : 'pointer',
+                transition: 'all 300ms ease-in-out',
+                boxShadow: '0 10px 20px rgba(240,94,35,0.3), inset 0 -5px 10px rgba(0,0,0,0.2), 0 0 0 6px rgba(240,94,35,0.2), 0 0 0 12px rgba(240,94,35,0.1)',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                transform: 'translateY(0)',
+                opacity: isDailyLimitReached || (!localWalletAddress && !address) ? 0.5 : 1,
+              }}
+            >
+              <span style={{
+                position: 'relative',
+                zIndex: 2,
+              }}>
+                {isDailyLimitReached ? 'Limit Reached' : (!localWalletAddress && !address ? 'Connect Wallet' : 'Tap to earn')}
+              </span>
+              <div style={{
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                borderRadius: '9999px',
+                background: 'linear-gradient(to bottom, rgba(255,255,255,0.3), transparent)',
+                opacity: 1,
+                transition: 'opacity 300ms ease-in-out',
+              }}></div>
+            </button>
+          </div>
+          <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
+             {dailyTaps} / {DAILY_TAP_LIMIT}
+          </p>
+          {error && (
+            <p style={{ marginTop: '0.5rem', color: '#EF4444', fontSize: '0.875rem' }}>{error}</p>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+          <button
+            onClick={handleShare}
+            style={{
+              background: 'black',
+              color: '#f05e23',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '9999px',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              border: '2px solid #f05e23',
+              cursor: 'pointer',
+              transition: 'all 300ms ease-in-out',
+              boxShadow: '0 4px 6px rgba(240,94,35,0.3)',
+            }}
+          >
+            Share and Earn More!
+          </button>
+        </div>
+
+        <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
+           {shares}
+        </p>
+
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+          <button
+            onClick={() => navigate('/deals')}
+            style={{
+              background: 'black',
+              color: '#f05e23',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '9999px',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              border: '2px solid #f05e23',
+              cursor: 'pointer',
+              transition: 'all 300ms ease-in-out',
+              boxShadow: '0 4px 6px rgba(240,94,35,0.3)',
+            }}
+          >
+            View Deals
+          </button>
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <Router>
+      <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif', minHeight: '100vh', position: 'relative' }}>
+        {/* Connection status icon */}
+        <div 
           style={{
             position: 'absolute',
             top: '1rem',
-            right: '1rem',
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            fontSize: '1.5rem',
-            cursor: 'pointer',
+            left: '1rem',
+            width: '12px',
+            height: '12px',
+            borderRadius: '50%',
+            backgroundColor: isConnected ? '#22c55e' : '#ef4444',
+            transition: 'background-color 0.3s ease',
           }}
-        >
-          ⋮
-        </button>
-      )}
+          title={isConnected ? 'Connected to sync server' : 'Disconnected from sync server'}
+        />
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-        <button 
-          onClick={handleLogin}
-          disabled={loading || !!localWalletAddress}
-          style={{
-            backgroundColor: 'black',
-            color: '#f05e23',
-            padding: '0.5rem 1rem',
-            borderRadius: '0.375rem',
-            border: '2px solid #f05e23',
-            cursor: loading || !!localWalletAddress ? 'not-allowed' : 'pointer',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            opacity: loading || !!localWalletAddress ? 0.5 : 1,
-          }}
-        >
-          {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
-        </button>
-      </div>
-
-      {localWalletAddress && (
-        <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
-          Local Wallet: {localWalletAddress}
-        </div>
-      )}
-      
-      {!localWalletAddress && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-          <ConnectKitButton theme="retro" customTheme={{
-            "--ck-connectbutton-background": "black",
-            "--ck-connectbutton-color": "#f05e23",
-          "--ck-connectbutton-border-radius": "0.375rem",
-            "--ck-connectbutton-border-color": "#f05e23",
-            "--ck-connectbutton-hover-color": "#f05e23",
-            "--ck-connectbutton-active-color": "#f05e23",
-          }} />
-        </div>
-      )}
-
-      <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-          <svg style={{ width: '2rem', height: '2rem', color: '#F59E0B', marginRight: '0.5rem' }} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h1V7a1 1 0 012 0v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H8a1 1 0 01-1-1z" clipRule="evenodd" fillRule="evenodd"></path>
-          </svg>
-          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#FFFFFF' }}>{score}</p>
-        </div>
-        <p style={{ fontSize: '0.875rem', color: '#A0AEC0' }}></p>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div style={{ position: 'relative', width: '13rem', height: '13rem' }}>
-          <div style={{ 
-            position: 'absolute', 
-            inset: 0, 
-            background: 'linear-gradient(135deg, #f05e23, #d54d1b)', 
-            borderRadius: '9999px', 
-            opacity: 0.3, 
-            animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite'
-          }}></div>
-          <div style={{ 
-            position: 'absolute', 
-            inset: 0, 
-            background: 'linear-gradient(135deg, #f05e23, #d54d1b)', 
-            borderRadius: '9999px', 
-            opacity: 0.3, 
-            animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite', 
-            animationDelay: '0.5s'
-          }}></div>
+        <PeerSync 
+          onConnectionStatus={handleConnectionStatus}
+        />
+        
+        {localWalletAddress && (
           <button
-            onClick={handleTransfer}
-            disabled={isDailyLimitReached || (!localWalletAddress && !address)}
+            onClick={handleDisconnect}
             style={{
-              position: 'relative',
-              width: '100%',
-              height: '100%',
-              background: 'linear-gradient(135deg, #f05e23, #d54d1b)',
-              color: 'white',
-              borderRadius: '9999px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.25rem',
-              fontWeight: 'bold',
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: 'none',
               border: 'none',
-              cursor: isDailyLimitReached || (!localWalletAddress && !address) ? 'not-allowed' : 'pointer',
-              transition: 'all 300ms ease-in-out',
-              boxShadow: '0 10px 20px rgba(240,94,35,0.3), inset 0 -5px 10px rgba(0,0,0,0.2), 0 0 0 6px rgba(240,94,35,0.2), 0 0 0 12px rgba(240,94,35,0.1)',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              transform: 'translateY(0)',
-              opacity: isDailyLimitReached || (!localWalletAddress && !address) ? 0.5 : 1,
+              color: 'white',
+              fontSize: '1.5rem',
+              cursor: 'pointer',
             }}
           >
-            <span style={{
-              position: 'relative',
-              zIndex: 2,
-            }}>
-              {isDailyLimitReached ? 'Limit Reached' : (!localWalletAddress && !address ? 'Connect Wallet' : 'Tap to earn')}
-            </span>
-            <div style={{
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              borderRadius: '9999px',
-              background: 'linear-gradient(to bottom, rgba(255,255,255,0.3), transparent)',
-              opacity: 1,
-              transition: 'opacity 300ms ease-in-out',
-            }}></div>
+            ⋮
           </button>
-        </div>
-        <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
-           {dailyTaps} / {DAILY_TAP_LIMIT}
-        </p>
-        {error && (
-          <p style={{ marginTop: '0.5rem', color: '#EF4444', fontSize: '0.875rem' }}>{error}</p>
         )}
-      </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
-        <button
-          onClick={handleShare}
-          style={{
-            background: 'black',
-            color: '#f05e23',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '9999px',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            border: '2px solid #f05e23',
-            cursor: 'pointer',
-            transition: 'all 300ms ease-in-out',
-            boxShadow: '0 4px 6px rgba(240,94,35,0.3)',
-          }}
-        >
-          Share and Earn More!
-        </button>
+        <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/deals" element={<DealsComponent />} />
+        </Routes>
       </div>
-
-      <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
-         {shares}
-      </p>
-    </div>
+    </Router>
   )
 }
 
