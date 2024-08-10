@@ -49,13 +49,13 @@ const DealsComponent: React.FC = () => {
           throw new Error('Failed to fetch deals');
         }
 
-        const data = await response.json();
+        const data: Deal[] = await response.json();
         
         // Store the fetched deals in TinyBase
-        dealsStore.setTable('deals', data.reduce((acc: any, deal: Deal) => {
+        dealsStore.setTable('deals', data.reduce((acc, deal) => {
           acc[deal.id] = deal;
           return acc;
-        }, {}));
+        }, {} as Record<string, Deal>));
 
         // Store the last fetch time
         dealsStore.setValue('lastFetchTime', Date.now());
@@ -74,12 +74,12 @@ const DealsComponent: React.FC = () => {
 
     const loadDealsFromStore = async () => {
       await dealsPersister.load();
-      const lastFetchTime = dealsStore.getValue('lastFetchTime') as number;
-      const storedDeals = Object.values(dealsStore.getTable('deals')) as Deal[];
+      const lastFetchTime = dealsStore.getValue('lastFetchTime') as number | undefined;
+      const storedDeals = dealsStore.getTable('deals');
 
-      if (lastFetchTime && Date.now() - lastFetchTime < 24 * 60 * 60 * 1000 && storedDeals.length > 0) {
+      if (lastFetchTime && Date.now() - lastFetchTime < 24 * 60 * 60 * 1000 && Object.keys(storedDeals).length > 0) {
         // If less than 24 hours have passed and we have stored deals, use the stored deals
-        setDeals(storedDeals);
+        setDeals(Object.values(storedDeals));
         setLoading(false);
       } else {
         // Otherwise, fetch new deals
