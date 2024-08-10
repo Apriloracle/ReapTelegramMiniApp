@@ -45,7 +45,7 @@ const DealsComponent: React.FC = () => {
       try {
         // Load data from local storage
         await dealsPersister.load();
-        const storedDeals = dealsStore.getTable('deals');
+        const storedDeals = dealsStore.getTable('deals') as Record<string, Deal>;
         const lastFetchTime = dealsStore.getCell('metadata', 'lastFetch', 'time') as number | undefined;
         
         const now = Date.now();
@@ -65,13 +65,15 @@ const DealsComponent: React.FC = () => {
           throw new Error('Failed to fetch deals');
         }
 
-        const data = await response.json();
+        const data: Deal[] = await response.json();
         
         // Store the fetched deals in local storage
-        dealsStore.setTable('deals', data.reduce((acc: Record<string, Deal>, deal: Deal) => {
+        const dealsRecord: Record<string, Deal> = data.reduce((acc, deal) => {
           acc[deal.id] = deal;
           return acc;
-        }, {}));
+        }, {} as Record<string, Deal>);
+        
+        dealsStore.setTable('deals', dealsRecord);
         
         // Update the last fetch time
         dealsStore.setCell('metadata', 'lastFetch', 'time', now);
