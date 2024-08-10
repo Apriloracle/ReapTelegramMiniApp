@@ -7,6 +7,7 @@ import WebApp from '@twa-dev/sdk'
 import { LocalWallet } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
 import PeerSync from './PeerSync';
+import IPGeolocation from './IPGeolocation';
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
