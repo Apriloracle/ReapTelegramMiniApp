@@ -96,7 +96,11 @@ const DealsComponent: React.FC = () => {
                 {deal.codes.map((code, index) => (
                   <li key={index} style={{ marginBottom: '0.5rem', backgroundColor: '#1c1c1c', padding: '0.5rem', borderRadius: '4px' }}>
                     <p style={{ color: '#f05e23', fontWeight: 'bold', marginBottom: '0.25rem' }}>{code.code}</p>
-                    <p style={{ color: '#A0AEC0', fontSize: '0.9rem' }}>{code.summary}</p>
+                    <p style={{ color: '#A0AEC0', fontSize: '0.9rem' }}>
+                      {code.summary.includes("Please note the codes can not be used for orders to") 
+                        ? "Restrictions apply in some regions" 
+                        : code.summary}
+                    </p>
                   </li>
                 ))}
               </ul>
