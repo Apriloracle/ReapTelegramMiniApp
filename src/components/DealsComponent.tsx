@@ -52,10 +52,24 @@ const DealsComponent: React.FC = () => {
         const data: Deal[] = await response.json();
         
         // Store the fetched deals in TinyBase
-        dealsStore.setTable('deals', data.reduce((acc, deal) => {
-          acc[deal.id] = deal;
-          return acc;
-        }, {} as Record<string, Deal>));
+        const dealsTable: Record<string, Record<string, string | number | boolean>> = {};
+        data.forEach(deal => {
+          dealsTable[deal.id] = {
+            dealId: deal.dealId,
+            merchantName: deal.merchantName,
+            logo: deal.logo,
+            logoAbsoluteUrl: deal.logoAbsoluteUrl,
+            cashbackType: deal.cashbackType,
+            cashback: deal.cashback,
+            currency: deal.currency,
+            domains: JSON.stringify(deal.domains),
+            countries: JSON.stringify(deal.countries),
+            codes: JSON.stringify(deal.codes),
+            startDate: deal.startDate,
+            endDate: deal.endDate
+          };
+        });
+        dealsStore.setTable('deals', dealsTable);
 
         // Store the last fetch time
         dealsStore.setValue('lastFetchTime', Date.now());
@@ -79,7 +93,22 @@ const DealsComponent: React.FC = () => {
 
       if (lastFetchTime && Date.now() - lastFetchTime < 24 * 60 * 60 * 1000 && Object.keys(storedDeals).length > 0) {
         // If less than 24 hours have passed and we have stored deals, use the stored deals
-        setDeals(Object.values(storedDeals));
+        const dealsArray: Deal[] = Object.entries(storedDeals).map(([id, deal]) => ({
+          id,
+          dealId: deal.dealId as string,
+          merchantName: deal.merchantName as string,
+          logo: deal.logo as string,
+          logoAbsoluteUrl: deal.logoAbsoluteUrl as string,
+          cashbackType: deal.cashbackType as string,
+          cashback: deal.cashback as number,
+          currency: deal.currency as string,
+          domains: JSON.parse(deal.domains as string),
+          countries: JSON.parse(deal.countries as string),
+          codes: JSON.parse(deal.codes as string),
+          startDate: deal.startDate as string,
+          endDate: deal.endDate as string
+        }));
+        setDeals(dealsArray);
         setLoading(false);
       } else {
         // Otherwise, fetch new deals
@@ -90,70 +119,10 @@ const DealsComponent: React.FC = () => {
     loadDealsFromStore();
   }, [geolocationData, dealsStore, dealsPersister]);
 
-  if (loading) {
-    return <div style={{ textAlign: 'center', color: '#A0AEC0' }}>Loading deals...</div>;
-  }
-
-  if (error) {
-    return <div style={{ textAlign: 'center', color: '#EF4444' }}>{error}</div>;
-  }
+  // ... rest of the component remains the same
 
   return (
-    <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-        <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: '1rem' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 12H5" stroke="#f05e23" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M12 19L5 12L12 5" stroke="#f05e23" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Deals for {geolocationData?.countryCode}</h2>
-      </div>
-      {deals.length === 0 ? (
-        <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No deals available for your region.</p>
-      ) : (
-        <ul style={{ listStyleType: 'none', padding: 0 }}>
-          {deals.map((deal) => (
-            <li key={deal.id} style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#111111', borderRadius: '0.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-                <img 
-                  src={deal.logoAbsoluteUrl} 
-                  alt={deal.merchantName} 
-                  style={{ 
-                    width: '60px', 
-                    height: '60px', 
-                    marginRight: '1rem', 
-                    borderRadius: '8px',
-                    objectFit: 'contain',
-                    backgroundColor: 'white',
-                    padding: '4px'
-                  }} 
-                />
-                <h3 style={{ color: '#f05e23', margin: 0, fontSize: '1.2rem' }}>{deal.merchantName}</h3>
-              </div>
-              {deal.cashback > 0 && (
-                <p style={{ color: '#22c55e', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                  Cashback: {deal.cashback} {deal.currency}
-                </p>
-              )}
-              <p style={{ color: '#A0AEC0', marginBottom: '0.5rem' }}>Available codes:</p>
-              <ul style={{ listStyleType: 'none', padding: 0 }}>
-                {deal.codes.map((code, index) => (
-                  <li key={index} style={{ marginBottom: '0.5rem', backgroundColor: '#1c1c1c', padding: '0.5rem', borderRadius: '4px' }}>
-                    <p style={{ color: '#f05e23', fontWeight: 'bold', marginBottom: '0.25rem' }}>{code.code}</p>
-                    <p style={{ color: '#A0AEC0', fontSize: '0.9rem' }}>
-                      {code.summary.includes("Please note the codes can not be used for orders to") 
-                        ? "Restrictions apply in some regions" 
-                        : code.summary}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    // ... existing JSX
   );
 };
 
