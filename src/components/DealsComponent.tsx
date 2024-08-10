@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
-import { createStore, Store, Table } from 'tinybase';
-import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 
 interface Code {
   code: string;
@@ -25,35 +23,12 @@ interface Deal {
   endDate: string;
 }
 
-function isDeal(obj: any): obj is Deal {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    typeof obj.id === 'string' &&
-    typeof obj.dealId === 'string' &&
-    typeof obj.merchantName === 'string' &&
-    typeof obj.logo === 'string' &&
-    typeof obj.logoAbsoluteUrl === 'string' &&
-    typeof obj.cashbackType === 'string' &&
-    typeof obj.cashback === 'number' &&
-    typeof obj.currency === 'string' &&
-    Array.isArray(obj.domains) &&
-    Array.isArray(obj.countries) &&
-    Array.isArray(obj.codes) &&
-    typeof obj.startDate === 'string' &&
-    typeof obj.endDate === 'string'
-  );
-}
-
 const DealsComponent: React.FC = () => {
   const navigate = useNavigate();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const geolocationData = useIPGeolocation();
-
-  const dealsStore = React.useMemo(() => createStore(), []);
-  const dealsPersister = React.useMemo(() => createLocalPersister(dealsStore, 'deals-data'), [dealsStore]);
 
   useEffect(() => {
     const fetchDeals = async () => {
@@ -63,31 +38,6 @@ const DealsComponent: React.FC = () => {
       setError(null);
 
       try {
-        // Load data from local storage
-        await dealsPersister.load();
-        const lastFetchTime = dealsStore.getCell('metadata', 'lastFetch', 'time') as number | undefined;
-        
-        const now = Date.now();
-        const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-
-        if (dealsStore.hasTable('deals') && lastFetchTime && (now - lastFetchTime) < twentyFourHours) {
-          // If deals are in local storage and less than 24 hours old, use them
-          const storedDeals: Deal[] = [];
-          dealsStore.forEachRow('deals', (rowId) => {
-            const deal = dealsStore.getRow('deals', rowId);
-            if (isDeal(deal)) {
-              storedDeals.push(deal);
-            }
-          });
-
-          if (storedDeals.length > 0) {
-            setDeals(storedDeals);
-            setLoading(false);
-            return;
-          }
-        }
-
-        // If no valid deals in local storage or deals are older than 24 hours, fetch from API
         const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${geolocationData.countryCode}`);
         
         if (!response.ok) {
@@ -95,37 +45,7 @@ const DealsComponent: React.FC = () => {
         }
 
         const data = await response.json();
-        
-        if (Array.isArray(data) && data.every(isDeal)) {
-          // Store the fetched deals in local storage
-          const dealsTable: Table = {};
-          data.forEach((deal) => {
-            dealsTable[deal.id] = {
-              dealId: deal.dealId,
-              merchantName: deal.merchantName,
-              logo: deal.logo,
-              logoAbsoluteUrl: deal.logoAbsoluteUrl,
-              cashbackType: deal.cashbackType,
-              cashback: deal.cashback,
-              currency: deal.currency,
-              domains: JSON.stringify(deal.domains),
-              countries: JSON.stringify(deal.countries),
-              codes: JSON.stringify(deal.codes),
-              startDate: deal.startDate,
-              endDate: deal.endDate,
-            };
-          });
-          dealsStore.setTable('deals', dealsTable);
-          
-          // Update the last fetch time
-          dealsStore.setCell('metadata', 'lastFetch', 'time', now);
-          
-          await dealsPersister.save();
-
-          setDeals(data);
-        } else {
-          throw new Error('Invalid data format received from API');
-        }
+        setDeals(data);
       } catch (err) {
         setError('Failed to load deals. Please try again later.');
         console.error('Error fetching deals:', err);
@@ -135,7 +55,7 @@ const DealsComponent: React.FC = () => {
     };
 
     fetchDeals();
-  }, [geolocationData, dealsStore, dealsPersister]);
+  }, [geolocationData]);
 
   if (loading) {
     return <div style={{ textAlign: 'center', color: '#A0AEC0' }}>Loading deals...</div>;
