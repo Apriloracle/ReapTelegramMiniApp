@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
-import { createStore, Store } from 'tinybase';
+import { createStore, Store, Table } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 
 interface Code {
@@ -98,10 +98,24 @@ const DealsComponent: React.FC = () => {
         
         if (Array.isArray(data) && data.every(isDeal)) {
           // Store the fetched deals in local storage
-          dealsStore.setTable('deals', data.reduce((acc, deal) => {
-            acc[deal.id] = deal;
-            return acc;
-          }, {} as Record<string, Deal>));
+          const dealsTable: Table = {};
+          data.forEach((deal) => {
+            dealsTable[deal.id] = {
+              dealId: deal.dealId,
+              merchantName: deal.merchantName,
+              logo: deal.logo,
+              logoAbsoluteUrl: deal.logoAbsoluteUrl,
+              cashbackType: deal.cashbackType,
+              cashback: deal.cashback,
+              currency: deal.currency,
+              domains: JSON.stringify(deal.domains),
+              countries: JSON.stringify(deal.countries),
+              codes: JSON.stringify(deal.codes),
+              startDate: deal.startDate,
+              endDate: deal.endDate,
+            };
+          });
+          dealsStore.setTable('deals', dealsTable);
           
           // Update the last fetch time
           dealsStore.setCell('metadata', 'lastFetch', 'time', now);
