@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
-import { createStore } from 'tinybase';
+import { createStore, Table } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 
 interface Code {
@@ -25,6 +25,27 @@ interface Deal {
   endDate: string;
 }
 
+// Type guard to check if an object is a Deal
+function isDeal(obj: any): obj is Deal {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.dealId === 'string' &&
+    typeof obj.merchantName === 'string' &&
+    typeof obj.logo === 'string' &&
+    typeof obj.logoAbsoluteUrl === 'string' &&
+    typeof obj.cashbackType === 'string' &&
+    typeof obj.cashback === 'number' &&
+    typeof obj.currency === 'string' &&
+    Array.isArray(obj.domains) &&
+    Array.isArray(obj.countries) &&
+    Array.isArray(obj.codes) &&
+    typeof obj.startDate === 'string' &&
+    typeof obj.endDate === 'string'
+  );
+}
+
 const DealsComponent: React.FC = () => {
   const navigate = useNavigate();
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -45,42 +66,49 @@ const DealsComponent: React.FC = () => {
       try {
         // Load data from local storage
         await dealsPersister.load();
-        const storedDeals = dealsStore.getTable('deals') as Record<string, Deal>;
+        const storedDealsTable = dealsStore.getTable('deals');
         const lastFetchTime = dealsStore.getCell('metadata', 'lastFetch', 'time') as number | undefined;
         
         const now = Date.now();
         const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-        if (storedDeals && Object.keys(storedDeals).length > 0 && lastFetchTime && (now - lastFetchTime) < twentyFourHours) {
+        if (storedDealsTable && Object.keys(storedDealsTable).length > 0 && lastFetchTime && (now - lastFetchTime) < twentyFourHours) {
           // If deals are in local storage and less than 24 hours old, use them
-          setDeals(Object.values(storedDeals));
-          setLoading(false);
-          return;
+          const storedDeals = Object.values(storedDealsTable).filter(isDeal);
+          if (storedDeals.length > 0) {
+            setDeals(storedDeals);
+            setLoading(false);
+            return;
+          }
         }
 
-        // If no deals in local storage or deals are older than 24 hours, fetch from API
+        // If no valid deals in local storage or deals are older than 24 hours, fetch from API
         const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${geolocationData.countryCode}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch deals');
         }
 
-        const data: Deal[] = await response.json();
+        const data = await response.json();
         
-        // Store the fetched deals in local storage
-        const dealsRecord: Record<string, Deal> = data.reduce((acc, deal) => {
-          acc[deal.id] = deal;
-          return acc;
-        }, {} as Record<string, Deal>);
-        
-        dealsStore.setTable('deals', dealsRecord);
-        
-        // Update the last fetch time
-        dealsStore.setCell('metadata', 'lastFetch', 'time', now);
-        
-        await dealsPersister.save();
+        if (Array.isArray(data) && data.every(isDeal)) {
+          // Store the fetched deals in local storage
+          const dealsRecord: Record<string, Deal> = data.reduce((acc, deal) => {
+            acc[deal.id] = deal;
+            return acc;
+          }, {} as Record<string, Deal>);
+          
+          dealsStore.setTable('deals', dealsRecord);
+          
+          // Update the last fetch time
+          dealsStore.setCell('metadata', 'lastFetch', 'time', now);
+          
+          await dealsPersister.save();
 
-        setDeals(data);
+          setDeals(data);
+        } else {
+          throw new Error('Invalid data format received from API');
+        }
       } catch (err) {
         setError('Failed to load deals. Please try again later.');
         console.error('Error fetching deals:', err);
