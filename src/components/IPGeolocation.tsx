@@ -30,7 +30,10 @@ const useIPGeolocation = () => {
 
         // Store the data in TinyBase
         geolocationStore.setTable('geolocation', {
-          userGeo: newGeolocationData,
+          userGeo: {
+            countryCode: newGeolocationData.countryCode,
+            ip: newGeolocationData.ip,
+          },
         });
 
         // Persist the data
