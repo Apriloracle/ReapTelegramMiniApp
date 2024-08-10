@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
-import { createStore, Table } from 'tinybase';
+import { createStore, Store } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 
 interface Code {
@@ -25,7 +25,6 @@ interface Deal {
   endDate: string;
 }
 
-// Type guard to check if an object is a Deal
 function isDeal(obj: any): obj is Deal {
   return (
     typeof obj === 'object' &&
@@ -66,15 +65,21 @@ const DealsComponent: React.FC = () => {
       try {
         // Load data from local storage
         await dealsPersister.load();
-        const storedDealsTable = dealsStore.getTable('deals');
         const lastFetchTime = dealsStore.getCell('metadata', 'lastFetch', 'time') as number | undefined;
         
         const now = Date.now();
         const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-        if (storedDealsTable && Object.keys(storedDealsTable).length > 0 && lastFetchTime && (now - lastFetchTime) < twentyFourHours) {
+        if (dealsStore.hasTable('deals') && lastFetchTime && (now - lastFetchTime) < twentyFourHours) {
           // If deals are in local storage and less than 24 hours old, use them
-          const storedDeals = Object.values(storedDealsTable).filter(isDeal);
+          const storedDeals: Deal[] = [];
+          dealsStore.forEachRow('deals', (rowId) => {
+            const deal = dealsStore.getRow('deals', rowId);
+            if (isDeal(deal)) {
+              storedDeals.push(deal);
+            }
+          });
+
           if (storedDeals.length > 0) {
             setDeals(storedDeals);
             setLoading(false);
@@ -93,12 +98,10 @@ const DealsComponent: React.FC = () => {
         
         if (Array.isArray(data) && data.every(isDeal)) {
           // Store the fetched deals in local storage
-          const dealsRecord: Record<string, Deal> = data.reduce((acc, deal) => {
+          dealsStore.setTable('deals', data.reduce((acc, deal) => {
             acc[deal.id] = deal;
             return acc;
-          }, {} as Record<string, Deal>);
-          
-          dealsStore.setTable('deals', dealsRecord);
+          }, {} as Record<string, Deal>));
           
           // Update the last fetch time
           dealsStore.setCell('metadata', 'lastFetch', 'time', now);
