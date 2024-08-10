@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
+import { createStore } from 'tinybase';
+import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 
 interface Code {
   code: string;
@@ -30,6 +32,9 @@ const DealsComponent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const geolocationData = useIPGeolocation();
 
+  const dealsStore = React.useMemo(() => createStore(), []);
+  const dealsPersister = React.useMemo(() => createLocalPersister(dealsStore, 'deals-data'), [dealsStore]);
+
   useEffect(() => {
     const fetchDeals = async () => {
       if (!geolocationData) return;
@@ -38,6 +43,22 @@ const DealsComponent: React.FC = () => {
       setError(null);
 
       try {
+        // Load data from local storage
+        await dealsPersister.load();
+        const storedDeals = dealsStore.getTable('deals');
+        const lastFetchTime = dealsStore.getCell('metadata', 'lastFetch', 'time');
+        
+        const now = new Date().getTime();
+        const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+        if (storedDeals && Object.keys(storedDeals).length > 0 && lastFetchTime && (now - lastFetchTime) < twentyFourHours) {
+          // If deals are in local storage and less than 24 hours old, use them
+          setDeals(Object.values(storedDeals));
+          setLoading(false);
+          return;
+        }
+
+        // If no deals in local storage or deals are older than 24 hours, fetch from API
         const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${geolocationData.countryCode}`);
         
         if (!response.ok) {
@@ -45,6 +66,18 @@ const DealsComponent: React.FC = () => {
         }
 
         const data = await response.json();
+        
+        // Store the fetched deals in local storage
+        dealsStore.setTable('deals', data.reduce((acc: any, deal: Deal) => {
+          acc[deal.id] = deal;
+          return acc;
+        }, {}));
+        
+        // Update the last fetch time
+        dealsStore.setCell('metadata', 'lastFetch', 'time', now);
+        
+        await dealsPersister.save();
+
         setDeals(data);
       } catch (err) {
         setError('Failed to load deals. Please try again later.');
@@ -55,7 +88,7 @@ const DealsComponent: React.FC = () => {
     };
 
     fetchDeals();
-  }, [geolocationData]);
+  }, [geolocationData, dealsStore, dealsPersister]);
 
   if (loading) {
     return <div style={{ textAlign: 'center', color: '#A0AEC0' }}>Loading deals...</div>;
