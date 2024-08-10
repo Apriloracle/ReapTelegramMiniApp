@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
+import { createStore } from 'tinybase';
+import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 
 interface Code {
   code: string;
@@ -30,8 +32,11 @@ const DealsComponent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const geolocationData = useIPGeolocation();
 
+  const dealsStore = React.useMemo(() => createStore(), []);
+  const dealsPersister = React.useMemo(() => createLocalPersister(dealsStore, 'kindred-deals'), [dealsStore]);
+
   useEffect(() => {
-    const fetchDeals = async () => {
+    const fetchAndStoreDeals = async () => {
       if (!geolocationData) return;
 
       setLoading(true);
@@ -45,6 +50,19 @@ const DealsComponent: React.FC = () => {
         }
 
         const data = await response.json();
+        
+        // Store the fetched deals in TinyBase
+        dealsStore.setTable('deals', data.reduce((acc: any, deal: Deal) => {
+          acc[deal.id] = deal;
+          return acc;
+        }, {}));
+
+        // Store the last fetch time
+        dealsStore.setValue('lastFetchTime', Date.now());
+
+        // Persist the data
+        await dealsPersister.save();
+
         setDeals(data);
       } catch (err) {
         setError('Failed to load deals. Please try again later.');
@@ -54,8 +72,23 @@ const DealsComponent: React.FC = () => {
       }
     };
 
-    fetchDeals();
-  }, [geolocationData]);
+    const loadDealsFromStore = async () => {
+      await dealsPersister.load();
+      const lastFetchTime = dealsStore.getValue('lastFetchTime') as number;
+      const storedDeals = Object.values(dealsStore.getTable('deals')) as Deal[];
+
+      if (lastFetchTime && Date.now() - lastFetchTime < 24 * 60 * 60 * 1000 && storedDeals.length > 0) {
+        // If less than 24 hours have passed and we have stored deals, use the stored deals
+        setDeals(storedDeals);
+        setLoading(false);
+      } else {
+        // Otherwise, fetch new deals
+        fetchAndStoreDeals();
+      }
+    };
+
+    loadDealsFromStore();
+  }, [geolocationData, dealsStore, dealsPersister]);
 
   if (loading) {
     return <div style={{ textAlign: 'center', color: '#A0AEC0' }}>Loading deals...</div>;
