@@ -46,9 +46,9 @@ const DealsComponent: React.FC = () => {
         // Load data from local storage
         await dealsPersister.load();
         const storedDeals = dealsStore.getTable('deals');
-        const lastFetchTime = dealsStore.getCell('metadata', 'lastFetch', 'time');
+        const lastFetchTime = dealsStore.getCell('metadata', 'lastFetch', 'time') as number | undefined;
         
-        const now = new Date().getTime();
+        const now = Date.now();
         const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
         if (storedDeals && Object.keys(storedDeals).length > 0 && lastFetchTime && (now - lastFetchTime) < twentyFourHours) {
@@ -68,7 +68,7 @@ const DealsComponent: React.FC = () => {
         const data = await response.json();
         
         // Store the fetched deals in local storage
-        dealsStore.setTable('deals', data.reduce((acc: any, deal: Deal) => {
+        dealsStore.setTable('deals', data.reduce((acc: Record<string, Deal>, deal: Deal) => {
           acc[deal.id] = deal;
           return acc;
         }, {}));
