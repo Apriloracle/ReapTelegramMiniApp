@@ -137,9 +137,9 @@ const DealsComponent: React.FC = () => {
     loadDealsFromStore();
   }, [geolocationData, dealsStore, dealsPersister]);
 
-  const handleActivateDeal = (dealId: string) => {
-    // This function will be implemented later when we want to activate the deal
-    console.log(`Deal ${dealId} activation requested`);
+  const handleActivateDeal = (dealId: string, code: string) => {
+    // This function will be implemented later when we want to activate the specific deal code
+    console.log(`Deal ${dealId} with code ${code} activation requested`);
   };
 
   if (loading) {
@@ -150,7 +150,7 @@ const DealsComponent: React.FC = () => {
     return <div style={{ textAlign: 'center', color: '#EF4444' }}>{error}</div>;
   }
 
-  return (
+ return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
         <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: '1rem' }}>
@@ -208,32 +208,32 @@ const DealsComponent: React.FC = () => {
               <p style={{ color: '#A0AEC0', marginBottom: '0.5rem' }}>Available codes:</p>
               <ul style={{ listStyleType: 'none', padding: 0 }}>
                 {deal.codes.map((code, index) => (
-                  <li key={index} style={{ marginBottom: '0.5rem', backgroundColor: '#1c1c1c', padding: '0.5rem', borderRadius: '4px' }}>
+                  <li key={index} style={{ marginBottom: '1rem', backgroundColor: '#1c1c1c', padding: '0.5rem', borderRadius: '4px' }}>
                     <p style={{ color: '#f05e23', fontWeight: 'bold', marginBottom: '0.25rem' }}>{code.code}</p>
-                    <p style={{ color: '#A0AEC0', fontSize: '0.9rem' }}>
+                    <p style={{ color: '#A0AEC0', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
                       {code.summary.includes("Please note the codes can not be used for orders to") 
                         ? "Restrictions apply in some regions" 
                         : code.summary}
                     </p>
+                    <button 
+                      onClick={() => handleActivateDeal(deal.id, code.code)}
+                      disabled={true}
+                      style={{
+                        backgroundColor: '#f05e23',
+                        color: '#FFFFFF',
+                        padding: '0.5rem 1rem',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'not-allowed',
+                        opacity: 0.6,
+                        width: '100%'
+                      }}
+                    >
+                      Activate Deal
+                    </button>
                   </li>
                 ))}
               </ul>
-              <button 
-                onClick={() => handleActivateDeal(deal.id)}
-                disabled={true}
-                style={{
-                  backgroundColor: '#f05e23',
-                  color: '#FFFFFF',
-                  padding: '0.5rem 1rem',
-                  border: 'none',
-                  borderRadius: '4px',
-                  marginTop: '1rem',
-                  cursor: 'not-allowed',
-                  opacity: 0.6
-                }}
-              >
-                Activate Deal
-              </button>
             </li>
           ))}
         </ul>
