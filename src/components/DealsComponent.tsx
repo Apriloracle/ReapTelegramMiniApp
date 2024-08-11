@@ -137,6 +137,11 @@ const DealsComponent: React.FC = () => {
     loadDealsFromStore();
   }, [geolocationData, dealsStore, dealsPersister]);
 
+  const handleActivateDeal = (dealId: string) => {
+    // This function will be implemented later when we want to activate the deal
+    console.log(`Deal ${dealId} activation requested`);
+  };
+
   if (loading) {
     return <div style={{ textAlign: 'center', color: '#A0AEC0' }}>Loading deals...</div>;
   }
@@ -213,6 +218,22 @@ const DealsComponent: React.FC = () => {
                   </li>
                 ))}
               </ul>
+              <button 
+                onClick={() => handleActivateDeal(deal.id)}
+                disabled={true}
+                style={{
+                  backgroundColor: '#f05e23',
+                  color: '#FFFFFF',
+                  padding: '0.5rem 1rem',
+                  border: 'none',
+                  borderRadius: '4px',
+                  marginTop: '1rem',
+                  cursor: 'not-allowed',
+                  opacity: 0.6
+                }}
+              >
+                Activate Deal
+              </button>
             </li>
           ))}
         </ul>
