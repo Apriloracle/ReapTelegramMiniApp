@@ -32,6 +32,7 @@ const DealsComponent: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [activatingDeal, setActivatingDeal] = useState<string | null>(null);
   const geolocationData = useIPGeolocation();
 
   const dealsStore = React.useMemo(() => createStore(), []);
@@ -137,18 +138,39 @@ const DealsComponent: React.FC = () => {
     loadDealsFromStore();
   }, [geolocationData, dealsStore, dealsPersister]);
 
-  const handleActivateDeal = (dealId: string, code: string) => {
-    // This function will be implemented later when we want to activate the specific deal code
-    console.log(`Deal ${dealId} with code ${code} activation requested`);
+  const handleActivateDeal = async (dealId: string, code: string) => {
+    setActivatingDeal(`${dealId}-${code}`);
+    try {
+      // In a real application, you'd want to securely manage the userId
+      // For this example, we'll use a placeholder
+      const userId = 'example-user-id';
+      
+      const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredDealActivation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, dealId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to activate deal');
+      }
+
+      const data = await response.json();
+      if (data.success && data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        throw new Error('Invalid response from activation endpoint');
+      }
+    } catch (err) {
+      console.error('Error activating deal:', err);
+      setError('Failed to activate deal. Please try again later.');
+    } finally {
+      setActivatingDeal(null);
+    }
   };
 
-  if (loading) {
-    return <div style={{ textAlign: 'center', color: '#A0AEC0' }}>Loading deals...</div>;
-  }
-
-  if (error) {
-    return <div style={{ textAlign: 'center', color: '#EF4444' }}>{error}</div>;
-  }
 
  return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
@@ -178,7 +200,7 @@ const DealsComponent: React.FC = () => {
         }}
       />
 
-      {filteredDeals.length === 0 ? (
+     {filteredDeals.length === 0 ? (
         <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No deals available for your search.</p>
       ) : (
         <ul style={{ listStyleType: 'none', padding: 0 }}>
@@ -216,20 +238,20 @@ const DealsComponent: React.FC = () => {
                         : code.summary}
                     </p>
                     <button 
-                      onClick={() => handleActivateDeal(deal.id, code.code)}
-                      disabled={true}
+                      onClick={() => handleActivateDeal(deal.dealId, code.code)}
+                      disabled={activatingDeal === `${deal.dealId}-${code.code}`}
                       style={{
                         backgroundColor: '#f05e23',
                         color: '#FFFFFF',
                         padding: '0.5rem 1rem',
                         border: 'none',
                         borderRadius: '4px',
-                        cursor: 'not-allowed',
-                        opacity: 0.6,
+                        cursor: activatingDeal === `${deal.dealId}-${code.code}` ? 'not-allowed' : 'pointer',
+                        opacity: activatingDeal === `${deal.dealId}-${code.code}` ? 0.6 : 1,
                         width: '100%'
                       }}
                     >
-                      Activate Deal
+                      {activatingDeal === `${deal.dealId}-${code.code}` ? 'Activating...' : 'Activate Deal'}
                     </button>
                   </li>
                 ))}
@@ -237,6 +259,11 @@ const DealsComponent: React.FC = () => {
             </li>
           ))}
         </ul>
+      )}
+      {error && (
+        <div style={{ color: '#EF4444', textAlign: 'center', marginTop: '1rem' }}>
+          {error}
+        </div>
       )}
     </div>
   );
