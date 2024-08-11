@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
+import { useAccount } from 'wagmi';
 
 interface Code {
   code: string;
@@ -25,7 +26,11 @@ interface Deal {
   endDate: string;
 }
 
-const DealsComponent: React.FC = () => {
+interface DealsComponentProps {
+  localWalletAddress: string | null;
+}
+
+const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) => {
   const navigate = useNavigate();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [filteredDeals, setFilteredDeals] = useState<Deal[]>([]);
@@ -34,6 +39,7 @@ const DealsComponent: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [activatingDeal, setActivatingDeal] = useState<string | null>(null);
   const geolocationData = useIPGeolocation();
+  const { address } = useAccount();
 
   const dealsStore = React.useMemo(() => createStore(), []);
   const dealsPersister = React.useMemo(() => createLocalPersister(dealsStore, 'kindred-deals'), [dealsStore]);
@@ -138,12 +144,15 @@ const DealsComponent: React.FC = () => {
     loadDealsFromStore();
   }, [geolocationData, dealsStore, dealsPersister]);
 
-  const handleActivateDeal = async (dealId: string, code: string) => {
+ const handleActivateDeal = async (dealId: string, code: string) => {
     setActivatingDeal(`${dealId}-${code}`);
     try {
-      // In a real application, you'd want to securely manage the userId
-      // For this example, we'll use a placeholder
-      const userId = 'example-user-id';
+      // Use localWalletAddress if available, otherwise use the connected wallet address
+      const userId = localWalletAddress || address;
+
+      if (!userId) {
+        throw new Error('No wallet address available');
+      }
       
       const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredDealActivation', {
         method: 'POST',
