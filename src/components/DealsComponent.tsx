@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
 import { createStore } from 'tinybase';
@@ -28,12 +28,28 @@ interface Deal {
 const DealsComponent: React.FC = () => {
   const navigate = useNavigate();
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [filteredDeals, setFilteredDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const geolocationData = useIPGeolocation();
 
   const dealsStore = React.useMemo(() => createStore(), []);
   const dealsPersister = React.useMemo(() => createLocalPersister(dealsStore, 'kindred-deals'), [dealsStore]);
+
+  const searchDeals = useCallback((term: string) => {
+    const lowercasedTerm = term.toLowerCase();
+    const filtered = deals.filter(deal => 
+      deal.merchantName.toLowerCase().includes(lowercasedTerm) ||
+      deal.codes.some(code => code.code.toLowerCase().includes(lowercasedTerm)) ||
+      deal.cashbackType.toLowerCase().includes(lowercasedTerm)
+    );
+    setFilteredDeals(filtered);
+  }, [deals]);
+
+  useEffect(() => {
+    searchDeals(searchTerm);
+  }, [searchTerm, searchDeals]);
 
   useEffect(() => {
     const fetchAndStoreDeals = async () => {
@@ -78,6 +94,7 @@ const DealsComponent: React.FC = () => {
         await dealsPersister.save();
 
         setDeals(data);
+        setFilteredDeals(data);
       } catch (err) {
         setError('Failed to load deals. Please try again later.');
         console.error('Error fetching deals:', err);
@@ -109,6 +126,7 @@ const DealsComponent: React.FC = () => {
           endDate: deal.endDate as string
         }));
         setDeals(dealsArray);
+        setFilteredDeals(dealsArray);
         setLoading(false);
       } else {
         // Otherwise, fetch new deals
@@ -138,11 +156,28 @@ const DealsComponent: React.FC = () => {
         </button>
         <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Deals for {geolocationData?.countryCode}</h2>
       </div>
-      {deals.length === 0 ? (
-        <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No deals available for your region.</p>
+      
+      <input
+        type="text"
+        placeholder="Search deals..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '0.5rem',
+          marginBottom: '1rem',
+          backgroundColor: '#333',
+          color: '#fff',
+          border: '1px solid #555',
+          borderRadius: '4px'
+        }}
+      />
+
+      {filteredDeals.length === 0 ? (
+        <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No deals available for your search.</p>
       ) : (
         <ul style={{ listStyleType: 'none', padding: 0 }}>
-          {deals.map((deal) => (
+          {filteredDeals.map((deal) => (
             <li key={deal.id} style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#111111', borderRadius: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
                 <img 
