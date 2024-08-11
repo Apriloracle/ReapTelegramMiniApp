@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import { useAccount } from 'wagmi';
 
 interface Code {
   code: string;
@@ -26,20 +25,14 @@ interface Deal {
   endDate: string;
 }
 
-interface DealsComponentProps {
-  localWalletAddress: string | null;
-}
-
-const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) => {
+const DealsComponent: React.FC = () => {
   const navigate = useNavigate();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [filteredDeals, setFilteredDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [activatingDeal, setActivatingDeal] = useState<string | null>(null);
   const geolocationData = useIPGeolocation();
-  const { address } = useAccount();
 
   const dealsStore = React.useMemo(() => createStore(), []);
   const dealsPersister = React.useMemo(() => createLocalPersister(dealsStore, 'kindred-deals'), [dealsStore]);
@@ -144,42 +137,18 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
     loadDealsFromStore();
   }, [geolocationData, dealsStore, dealsPersister]);
 
- const handleActivateDeal = async (dealId: string, code: string) => {
-    setActivatingDeal(`${dealId}-${code}`);
-    try {
-      // Use localWalletAddress if available, otherwise use the connected wallet address
-      const userId = localWalletAddress || address;
-
-      if (!userId) {
-        throw new Error('No wallet address available');
-      }
-      
-      const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredDealActivation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, dealId }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to activate deal');
-      }
-
-      const data = await response.json();
-      if (data.success && data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      } else {
-        throw new Error('Invalid response from activation endpoint');
-      }
-    } catch (err) {
-      console.error('Error activating deal:', err);
-      setError('Failed to activate deal. Please try again later.');
-    } finally {
-      setActivatingDeal(null);
-    }
+  const handleActivateDeal = (dealId: string, code: string) => {
+    // This function will be implemented later when we want to activate the specific deal code
+    console.log(`Deal ${dealId} with code ${code} activation requested`);
   };
 
+  if (loading) {
+    return <div style={{ textAlign: 'center', color: '#A0AEC0' }}>Loading deals...</div>;
+  }
+
+  if (error) {
+    return <div style={{ textAlign: 'center', color: '#EF4444' }}>{error}</div>;
+  }
 
  return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
@@ -209,7 +178,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         }}
       />
 
-     {filteredDeals.length === 0 ? (
+      {filteredDeals.length === 0 ? (
         <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No deals available for your search.</p>
       ) : (
         <ul style={{ listStyleType: 'none', padding: 0 }}>
@@ -247,20 +216,20 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
                         : code.summary}
                     </p>
                     <button 
-                      onClick={() => handleActivateDeal(deal.dealId, code.code)}
-                      disabled={activatingDeal === `${deal.dealId}-${code.code}`}
+                      onClick={() => handleActivateDeal(deal.id, code.code)}
+                      disabled={true}
                       style={{
                         backgroundColor: '#f05e23',
                         color: '#FFFFFF',
                         padding: '0.5rem 1rem',
                         border: 'none',
                         borderRadius: '4px',
-                        cursor: activatingDeal === `${deal.dealId}-${code.code}` ? 'not-allowed' : 'pointer',
-                        opacity: activatingDeal === `${deal.dealId}-${code.code}` ? 0.6 : 1,
+                        cursor: 'not-allowed',
+                        opacity: 0.6,
                         width: '100%'
                       }}
                     >
-                      {activatingDeal === `${deal.dealId}-${code.code}` ? 'Activating...' : 'Activate Deal'}
+                      Activate Deal
                     </button>
                   </li>
                 ))}
@@ -268,11 +237,6 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
             </li>
           ))}
         </ul>
-      )}
-      {error && (
-        <div style={{ color: '#EF4444', textAlign: 'center', marginTop: '1rem' }}>
-          {error}
-        </div>
       )}
     </div>
   );
