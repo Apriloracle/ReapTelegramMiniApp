@@ -32,50 +32,151 @@ const DealsComponent: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [activatingDeal, setActivatingDeal] = useState<string | null>(null);
   const geolocationData = useIPGeolocation();
 
   const dealsStore = React.useMemo(() => createStore(), []);
   const dealsPersister = React.useMemo(() => createLocalPersister(dealsStore, 'kindred-deals'), [dealsStore]);
 
-  // ... (previous useEffects and other logic remain the same)
+  const searchDeals = useCallback((term: string) => {
+    const lowercasedTerm = term.toLowerCase();
+    const filtered = deals.filter(deal => 
+      deal.merchantName.toLowerCase().includes(lowercasedTerm) ||
+      deal.codes.some(code => code.code.toLowerCase().includes(lowercasedTerm)) ||
+      deal.cashbackType.toLowerCase().includes(lowercasedTerm)
+    );
+    setFilteredDeals(filtered);
+  }, [deals]);
 
-  const handleActivateDeal = async (dealId: string, code: string) => {
-    setActivatingDeal(`${dealId}-${code}`);
-    try {
-      // In a real application, you'd want to securely manage the userId
-      // For this example, we'll use a placeholder
-      const userId = 'example-user-id';
-      
-      const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredDealActivation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, dealId }),
-      });
+  useEffect(() => {
+    searchDeals(searchTerm);
+  }, [searchTerm, searchDeals]);
 
-      if (!response.ok) {
-        throw new Error('Failed to activate deal');
+  useEffect(() => {
+    const fetchAndStoreDeals = async () => {
+      if (!geolocationData) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${geolocationData.countryCode}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch deals');
+        }
+
+        const data: Deal[] = await response.json();
+        
+        // Store the fetched deals in TinyBase
+        const dealsTable: Record<string, Record<string, string | number | boolean>> = {};
+        data.forEach(deal => {
+          dealsTable[deal.id] = {
+            dealId: deal.dealId,
+            merchantName: deal.merchantName,
+            logo: deal.logo,
+            logoAbsoluteUrl: deal.logoAbsoluteUrl,
+            cashbackType: deal.cashbackType,
+            cashback: deal.cashback,
+            currency: deal.currency,
+            domains: JSON.stringify(deal.domains),
+            countries: JSON.stringify(deal.countries),
+            codes: JSON.stringify(deal.codes),
+            startDate: deal.startDate,
+            endDate: deal.endDate
+          };
+        });
+        dealsStore.setTable('deals', dealsTable);
+
+        // Store the last fetch time
+        dealsStore.setValue('lastFetchTime', Date.now());
+
+        // Persist the data
+        await dealsPersister.save();
+
+        setDeals(data);
+        setFilteredDeals(data);
+      } catch (err) {
+        setError('Failed to load deals. Please try again later.');
+        console.error('Error fetching deals:', err);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const data = await response.json();
-      if (data.success && data.redirectUrl) {
-        window.location.href = data.redirectUrl;
+    const loadDealsFromStore = async () => {
+      await dealsPersister.load();
+      const lastFetchTime = dealsStore.getValue('lastFetchTime') as number | undefined;
+      const storedDeals = dealsStore.getTable('deals');
+
+      if (lastFetchTime && Date.now() - lastFetchTime < 24 * 60 * 60 * 1000 && Object.keys(storedDeals).length > 0) {
+        // If less than 24 hours have passed and we have stored deals, use the stored deals
+        const dealsArray: Deal[] = Object.entries(storedDeals).map(([id, deal]) => ({
+          id,
+          dealId: deal.dealId as string,
+          merchantName: deal.merchantName as string,
+          logo: deal.logo as string,
+          logoAbsoluteUrl: deal.logoAbsoluteUrl as string,
+          cashbackType: deal.cashbackType as string,
+          cashback: deal.cashback as number,
+          currency: deal.currency as string,
+          domains: JSON.parse(deal.domains as string),
+          countries: JSON.parse(deal.countries as string),
+          codes: JSON.parse(deal.codes as string),
+          startDate: deal.startDate as string,
+          endDate: deal.endDate as string
+        }));
+        setDeals(dealsArray);
+        setFilteredDeals(dealsArray);
+        setLoading(false);
       } else {
-        throw new Error('Invalid response from activation endpoint');
+        // Otherwise, fetch new deals
+        fetchAndStoreDeals();
       }
-    } catch (err) {
-      console.error('Error activating deal:', err);
-      setError('Failed to activate deal. Please try again later.');
-    } finally {
-      setActivatingDeal(null);
-    }
+    };
+
+    loadDealsFromStore();
+  }, [geolocationData, dealsStore, dealsPersister]);
+
+  const handleActivateDeal = (dealId: string, code: string) => {
+    // This function will be implemented later when we want to activate the specific deal code
+    console.log(`Deal ${dealId} with code ${code} activation requested`);
   };
 
-  return (
+  if (loading) {
+    return <div style={{ textAlign: 'center', color: '#A0AEC0' }}>Loading deals...</div>;
+  }
+
+  if (error) {
+    return <div style={{ textAlign: 'center', color: '#EF4444' }}>{error}</div>;
+  }
+
+ return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      {/* ... (header and search input remain the same) */}
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+        <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: '1rem' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 12H5" stroke="#f05e23" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 19L5 12L12 5" stroke="#f05e23" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Deals for {geolocationData?.countryCode}</h2>
+      </div>
+      
+      <input
+        type="text"
+        placeholder="Search deals..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '0.5rem',
+          marginBottom: '1rem',
+          backgroundColor: '#333',
+          color: '#fff',
+          border: '1px solid #555',
+          borderRadius: '4px'
+        }}
+      />
 
       {filteredDeals.length === 0 ? (
         <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No deals available for your search.</p>
@@ -115,20 +216,20 @@ const DealsComponent: React.FC = () => {
                         : code.summary}
                     </p>
                     <button 
-                      onClick={() => handleActivateDeal(deal.dealId, code.code)}
-                      disabled={activatingDeal === `${deal.dealId}-${code.code}`}
+                      onClick={() => handleActivateDeal(deal.id, code.code)}
+                      disabled={true}
                       style={{
                         backgroundColor: '#f05e23',
                         color: '#FFFFFF',
                         padding: '0.5rem 1rem',
                         border: 'none',
                         borderRadius: '4px',
-                        cursor: activatingDeal === `${deal.dealId}-${code.code}` ? 'not-allowed' : 'pointer',
-                        opacity: activatingDeal === `${deal.dealId}-${code.code}` ? 0.6 : 1,
+                        cursor: 'not-allowed',
+                        opacity: 0.6,
                         width: '100%'
                       }}
                     >
-                      {activatingDeal === `${deal.dealId}-${code.code}` ? 'Activating...' : 'Activate Deal'}
+                      Activate Deal
                     </button>
                   </li>
                 ))}
@@ -136,11 +237,6 @@ const DealsComponent: React.FC = () => {
             </li>
           ))}
         </ul>
-      )}
-      {error && (
-        <div style={{ color: '#EF4444', textAlign: 'center', marginTop: '1rem' }}>
-          {error}
-        </div>
       )}
     </div>
   );
