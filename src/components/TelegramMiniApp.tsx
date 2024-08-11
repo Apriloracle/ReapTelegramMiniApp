@@ -518,6 +518,7 @@ const TelegramMiniApp: React.FC = () => {
         <Routes>
           <Route path="/" element={<MainPage />} />
           <Route path="/deals" element={<DealsComponent />} />
+          <Route path="/deals" element={<DealsComponent localWalletAddress={localWalletAddress} />} />
         </Routes>
       </div>
     </Router>
