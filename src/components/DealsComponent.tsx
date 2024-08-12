@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
 import { createStore } from 'tinybase';
@@ -156,6 +156,13 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   }, [activatedDealsPersister, activatedDealsStore]);
 
   const handleActivateDeal = async (dealId: string, code: string) => {
+    const isLoggedIn = !!localWalletAddress || !!address;
+    
+    if (!isLoggedIn) {
+      setError('Please login or connect wallet to activate deals');
+      return;
+    }
+
     setActivatingDeal(`${dealId}-${code}`);
     try {
       const userId = localWalletAddress || address;
@@ -195,6 +202,8 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
       setActivatingDeal(null);
     }
   };
+
+  const isLoggedIn = !!localWalletAddress || !!address;
 
   return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
@@ -273,8 +282,8 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
                           padding: '0.5rem 1rem',
                           border: 'none',
                           borderRadius: '4px',
-                          cursor: activatingDeal === dealKey || isActivated ? 'not-allowed' : 'pointer',
-                          opacity: activatingDeal === dealKey ? 0.6 : 1,
+                          cursor: activatingDeal === dealKey || isActivated || !isLoggedIn ? 'not-allowed' : 'pointer',
+                          opacity: activatingDeal === dealKey || !isLoggedIn ? 0.6 : 1,
                           width: '100%'
                         }}
                       >
