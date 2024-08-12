@@ -38,11 +38,15 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [activatingDeal, setActivatingDeal] = useState<string | null>(null);
+  const [activatedDeals, setActivatedDeals] = useState<Set<string>>(new Set());
   const geolocationData = useIPGeolocation();
   const { address } = useAccount();
 
   const dealsStore = React.useMemo(() => createStore(), []);
   const dealsPersister = React.useMemo(() => createLocalPersister(dealsStore, 'kindred-deals'), [dealsStore]);
+  
+  const activatedDealsStore = React.useMemo(() => createStore(), []);
+  const activatedDealsPersister = React.useMemo(() => createLocalPersister(activatedDealsStore, 'activated-deals'), [activatedDealsStore]);
 
   const searchDeals = useCallback((term: string) => {
     const lowercasedTerm = term.toLowerCase();
@@ -74,7 +78,6 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 
         const data: Deal[] = await response.json();
         
-        // Store the fetched deals in TinyBase
         const dealsTable: Record<string, Record<string, string | number | boolean>> = {};
         data.forEach(deal => {
           dealsTable[deal.id] = {
@@ -94,10 +97,8 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         });
         dealsStore.setTable('deals', dealsTable);
 
-        // Store the last fetch time
         dealsStore.setValue('lastFetchTime', Date.now());
 
-        // Persist the data
         await dealsPersister.save();
 
         setDeals(data);
@@ -116,7 +117,6 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
       const storedDeals = dealsStore.getTable('deals');
 
       if (lastFetchTime && Date.now() - lastFetchTime < 24 * 60 * 60 * 1000 && Object.keys(storedDeals).length > 0) {
-        // If less than 24 hours have passed and we have stored deals, use the stored deals
         const dealsArray: Deal[] = Object.entries(storedDeals).map(([id, deal]) => ({
           id,
           dealId: deal.dealId as string,
@@ -136,7 +136,6 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         setFilteredDeals(dealsArray);
         setLoading(false);
       } else {
-        // Otherwise, fetch new deals
         fetchAndStoreDeals();
       }
     };
@@ -144,10 +143,21 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
     loadDealsFromStore();
   }, [geolocationData, dealsStore, dealsPersister]);
 
- const handleActivateDeal = async (dealId: string, code: string) => {
+  useEffect(() => {
+    const loadActivatedDeals = async () => {
+      await activatedDealsPersister.load();
+      const storedActivatedDeals = activatedDealsStore.getTable('activatedDeals');
+      if (storedActivatedDeals) {
+        setActivatedDeals(new Set(Object.keys(storedActivatedDeals)));
+      }
+    };
+
+    loadActivatedDeals();
+  }, [activatedDealsPersister, activatedDealsStore]);
+
+  const handleActivateDeal = async (dealId: string, code: string) => {
     setActivatingDeal(`${dealId}-${code}`);
     try {
-      // Use localWalletAddress if available, otherwise use the connected wallet address
       const userId = localWalletAddress || address;
 
       if (!userId) {
@@ -168,6 +178,12 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 
       const data = await response.json();
       if (data.success && data.redirectUrl) {
+        const dealKey = `${dealId}-${code}`;
+        activatedDealsStore.setCell('activatedDeals', dealKey, 'activated', true);
+        await activatedDealsPersister.save();
+
+        setActivatedDeals(prevDeals => new Set(prevDeals).add(dealKey));
+        
         window.location.href = data.redirectUrl;
       } else {
         throw new Error('Invalid response from activation endpoint');
@@ -180,8 +196,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
     }
   };
 
-
- return (
+  return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
         <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: '1rem' }}>
@@ -209,7 +224,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         }}
       />
 
-     {filteredDeals.length === 0 ? (
+      {filteredDeals.length === 0 ? (
         <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No deals available for your search.</p>
       ) : (
         <ul style={{ listStyleType: 'none', padding: 0 }}>
@@ -238,32 +253,40 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
               )}
               <p style={{ color: '#A0AEC0', marginBottom: '0.5rem' }}>Available codes:</p>
               <ul style={{ listStyleType: 'none', padding: 0 }}>
-                {deal.codes.map((code, index) => (
-                  <li key={index} style={{ marginBottom: '1rem', backgroundColor: '#1c1c1c', padding: '0.5rem', borderRadius: '4px' }}>
-                    <p style={{ color: '#f05e23', fontWeight: 'bold', marginBottom: '0.25rem' }}>{code.code}</p>
-                    <p style={{ color: '#A0AEC0', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                      {code.summary.includes("Please note the codes can not be used for orders to") 
-                        ? "Restrictions apply in some regions" 
-                        : code.summary}
-                    </p>
-                    <button 
-                      onClick={() => handleActivateDeal(deal.dealId, code.code)}
-                      disabled={activatingDeal === `${deal.dealId}-${code.code}`}
-                      style={{
-                        backgroundColor: '#f05e23',
-                        color: '#FFFFFF',
-                        padding: '0.5rem 1rem',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: activatingDeal === `${deal.dealId}-${code.code}` ? 'not-allowed' : 'pointer',
-                        opacity: activatingDeal === `${deal.dealId}-${code.code}` ? 0.6 : 1,
-                        width: '100%'
-                      }}
-                    >
-                      {activatingDeal === `${deal.dealId}-${code.code}` ? 'Activating...' : 'Activate Deal'}
-                    </button>
-                  </li>
-                ))}
+                {deal.codes.map((code, index) => {
+                  const dealKey = `${deal.dealId}-${code.code}`;
+                  const isActivated = activatedDeals.has(dealKey);
+                  return (
+                    <li key={index} style={{ marginBottom: '1rem', backgroundColor: '#1c1c1c', padding: '0.5rem', borderRadius: '4px' }}>
+                      <p style={{ color: '#f05e23', fontWeight: 'bold', marginBottom: '0.25rem' }}>{code.code}</p>
+                      <p style={{ color: '#A0AEC0', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                        {code.summary.includes("Please note the codes can not be used for orders to") 
+                          ? "Restrictions apply in some regions" 
+                          : code.summary}
+                      </p>
+                      <button 
+                        onClick={() => handleActivateDeal(deal.dealId, code.code)}
+                        disabled={activatingDeal === dealKey || isActivated}
+                        style={{
+                          backgroundColor: isActivated ? '#22c55e' : '#f05e23',
+                          color: '#FFFFFF',
+                          padding: '0.5rem 1rem',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: activatingDeal === dealKey || isActivated ? 'not-allowed' : 'pointer',
+                          opacity: activatingDeal === dealKey ? 0.6 : 1,
+                          width: '100%'
+                        }}
+                      >
+                        {activatingDeal === dealKey 
+                          ? 'Activating...' 
+                          : isActivated 
+                            ? 'Deal Activated' 
+                            : 'Activate Deal'}
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </li>
           ))}
