@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
+import { useAccount } from 'wagmi';
 
 interface Code {
   code: string;
@@ -25,14 +26,20 @@ interface Deal {
   endDate: string;
 }
 
-const DealsComponent: React.FC = () => {
+interface DealsComponentProps {
+  localWalletAddress: string | null;
+}
+
+const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) => {
   const navigate = useNavigate();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [filteredDeals, setFilteredDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [activatingDeal, setActivatingDeal] = useState<string | null>(null);
   const geolocationData = useIPGeolocation();
+  const { address } = useAccount();
 
   const dealsStore = React.useMemo(() => createStore(), []);
   const dealsPersister = React.useMemo(() => createLocalPersister(dealsStore, 'kindred-deals'), [dealsStore]);
@@ -137,15 +144,44 @@ const DealsComponent: React.FC = () => {
     loadDealsFromStore();
   }, [geolocationData, dealsStore, dealsPersister]);
 
-  if (loading) {
-    return <div style={{ textAlign: 'center', color: '#A0AEC0' }}>Loading deals...</div>;
-  }
+ const handleActivateDeal = async (dealId: string, code: string) => {
+    setActivatingDeal(`${dealId}-${code}`);
+    try {
+      // Use localWalletAddress if available, otherwise use the connected wallet address
+      const userId = localWalletAddress || address;
 
-  if (error) {
-    return <div style={{ textAlign: 'center', color: '#EF4444' }}>{error}</div>;
-  }
+      if (!userId) {
+        throw new Error('No wallet address available');
+      }
+      
+      const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredDealActivation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, dealId }),
+      });
 
-  return (
+      if (!response.ok) {
+        throw new Error('Failed to activate deal');
+      }
+
+      const data = await response.json();
+      if (data.success && data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        throw new Error('Invalid response from activation endpoint');
+      }
+    } catch (err) {
+      console.error('Error activating deal:', err);
+      setError('Failed to activate deal. Please try again later.');
+    } finally {
+      setActivatingDeal(null);
+    }
+  };
+
+
+ return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
         <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: '1rem' }}>
@@ -173,7 +209,7 @@ const DealsComponent: React.FC = () => {
         }}
       />
 
-      {filteredDeals.length === 0 ? (
+     {filteredDeals.length === 0 ? (
         <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No deals available for your search.</p>
       ) : (
         <ul style={{ listStyleType: 'none', padding: 0 }}>
@@ -203,19 +239,40 @@ const DealsComponent: React.FC = () => {
               <p style={{ color: '#A0AEC0', marginBottom: '0.5rem' }}>Available codes:</p>
               <ul style={{ listStyleType: 'none', padding: 0 }}>
                 {deal.codes.map((code, index) => (
-                  <li key={index} style={{ marginBottom: '0.5rem', backgroundColor: '#1c1c1c', padding: '0.5rem', borderRadius: '4px' }}>
+                  <li key={index} style={{ marginBottom: '1rem', backgroundColor: '#1c1c1c', padding: '0.5rem', borderRadius: '4px' }}>
                     <p style={{ color: '#f05e23', fontWeight: 'bold', marginBottom: '0.25rem' }}>{code.code}</p>
-                    <p style={{ color: '#A0AEC0', fontSize: '0.9rem' }}>
+                    <p style={{ color: '#A0AEC0', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
                       {code.summary.includes("Please note the codes can not be used for orders to") 
                         ? "Restrictions apply in some regions" 
                         : code.summary}
                     </p>
+                    <button 
+                      onClick={() => handleActivateDeal(deal.dealId, code.code)}
+                      disabled={activatingDeal === `${deal.dealId}-${code.code}`}
+                      style={{
+                        backgroundColor: '#f05e23',
+                        color: '#FFFFFF',
+                        padding: '0.5rem 1rem',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: activatingDeal === `${deal.dealId}-${code.code}` ? 'not-allowed' : 'pointer',
+                        opacity: activatingDeal === `${deal.dealId}-${code.code}` ? 0.6 : 1,
+                        width: '100%'
+                      }}
+                    >
+                      {activatingDeal === `${deal.dealId}-${code.code}` ? 'Activating...' : 'Activate Deal'}
+                    </button>
                   </li>
                 ))}
               </ul>
             </li>
           ))}
         </ul>
+      )}
+      {error && (
+        <div style={{ color: '#EF4444', textAlign: 'center', marginTop: '1rem' }}>
+          {error}
+        </div>
       )}
     </div>
   );
