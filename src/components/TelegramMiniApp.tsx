@@ -350,7 +350,7 @@ const TelegramMiniApp: React.FC = () => {
         <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
             <svg style={{ width: '2rem', height: '2rem', color: '#F59E0B', marginRight: '0.5rem' }} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-           <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h1V7a1 1 0 012 0v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H8a1 1 0 01-1-1z" clipRule="evenodd" fillRule="evenodd"></path>
+              <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h1V7a1 1 0 012 0v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H8a1 1 0 01-1-1z" clipRule="evenodd" fillRule="evenodd"></path>
             </svg>
             <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#FFFFFF' }}>{score}</p>
           </div>
@@ -456,19 +456,29 @@ const TelegramMiniApp: React.FC = () => {
           <button
             onClick={() => navigate('/deals')}
             style={{
-              background: 'black',
-              color: '#f05e23',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '9999px',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              border: '2px solid #f05e23',
+              background: '#f05e23',
+              color: 'white',
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              fontSize: '1.5rem',
+              border: 'none',
               cursor: 'pointer',
               transition: 'all 300ms ease-in-out',
               boxShadow: '0 4px 6px rgba(240,94,35,0.3)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
             }}
           >
-            View Deals
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              viewBox="0 0 24 24" 
+              fill="currentColor" 
+              style={{ width: '30px', height: '30px' }}
+            >
+              <path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" />
+            </svg>
           </button>
         </div>
       </>
