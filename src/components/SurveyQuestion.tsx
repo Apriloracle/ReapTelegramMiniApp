@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@libsql/client';
-import { createStore } from 'tinybase';
-import { createLibSqlPersister } from 'tinybase/persisters/persister-libsql';
 
 interface SurveyQuestionProps {
   onResponse: (question: string, response: string) => void;
@@ -12,8 +9,6 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
   const [question, setQuestion] = useState<string>('');
   const [options, setOptions] = useState<string[]>([]);
   const [isInteractionEnabled, setIsInteractionEnabled] = useState<boolean>(false);
-  const [store, setStore] = useState<any>(null);
-  const [persister, setPersister] = useState<any>(null);
 
   const surveyQuestions = [
     { question: "Which do you prefer?", options: ["Fashion", "Electronics"] },
@@ -24,34 +19,13 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
   ];
 
   useEffect(() => {
-    const initStore = async () => {
-      const client = createClient({ url: 'file:survey.db' });
-      const newStore = createStore();
-      const newPersister = createLibSqlPersister(newStore, client, 'survey_responses');
-
-      try {
-        await newPersister.load();
-      } catch (error) {
-        console.error('Error loading persister:', error);
-      }
-
-      setStore(newStore);
-      setPersister(newPersister);
-    };
-
-    initStore();
     selectRandomSurveyQuestion();
-    
+    // Delay enabling interaction for 3 second
     const timer = setTimeout(() => {
       setIsInteractionEnabled(true);
     }, 3000);
 
-    return () => {
-      clearTimeout(timer);
-      if (persister) {
-        persister.destroy();
-      }
-    };
+    return () => clearTimeout(timer);
   }, []);
 
   const selectRandomSurveyQuestion = () => {
@@ -60,23 +34,8 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
     setOptions(randomQuestion.options);
   };
 
-  const handleResponse = async (response: string) => {
-    if (isInteractionEnabled && store && persister) {
-      const timestamp = new Date().toISOString();
-      store.setTable('survey_responses', {
-        [timestamp]: {
-          question,
-          response,
-        },
-      });
-
-      try {
-        await persister.save();
-        console.log('Survey response saved successfully');
-      } catch (error) {
-        console.error('Error saving survey response:', error);
-      }
-
+  const handleResponse = (response: string) => {
+    if (isInteractionEnabled) {
       onResponse(question, response);
       onClose();
     }
@@ -153,3 +112,4 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
 };
 
 export default SurveyQuestion;
+
