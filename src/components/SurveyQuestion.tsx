@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { createStore } from 'tinybase';
+import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 
 interface SurveyQuestionProps {
   onResponse: (question: string, response: string) => void;
@@ -9,6 +11,9 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
   const [question, setQuestion] = useState<string>('');
   const [options, setOptions] = useState<string[]>([]);
   const [isInteractionEnabled, setIsInteractionEnabled] = useState<boolean>(false);
+  const [surveyStore] = useState(() => createStore());
+  const [surveyPersister] = useState(() => createLocalPersister(surveyStore, 'survey-responses'));
+  const [allQuestionsAnswered, setAllQuestionsAnswered] = useState<boolean>(false);
 
   const surveyQuestions = [
     { question: "Which do you prefer?", options: ["Fashion", "Electronics"] },
@@ -19,27 +24,52 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
   ];
 
   useEffect(() => {
-    selectRandomSurveyQuestion();
-    // Delay enabling interaction for 3 second
+    const loadSurveyData = async () => {
+      await surveyPersister.load();
+      checkAndSelectQuestion();
+    };
+
+    loadSurveyData();
+
     const timer = setTimeout(() => {
       setIsInteractionEnabled(true);
     }, 3000);
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      clearTimeout(timer);
+      surveyPersister.destroy();
+    };
+  }, [surveyPersister]);
 
-  const selectRandomSurveyQuestion = () => {
-    const randomQuestion = surveyQuestions[Math.floor(Math.random() * surveyQuestions.length)];
-    setQuestion(randomQuestion.question);
-    setOptions(randomQuestion.options);
-  };
-
-  const handleResponse = (response: string) => {
-    if (isInteractionEnabled) {
-      onResponse(question, response);
-      onClose();
+  const checkAndSelectQuestion = () => {
+    const answeredQuestions = surveyStore.getTable('answeredQuestions') || {};
+    const unansweredQuestions = surveyQuestions.filter(q => !answeredQuestions[q.question]);
+    
+    if (unansweredQuestions.length === 0) {
+      setAllQuestionsAnswered(true);
+      onClose(); // Close the survey component as all questions have been answered
+    } else {
+      const randomQuestion = unansweredQuestions[Math.floor(Math.random() * unansweredQuestions.length)];
+      setQuestion(randomQuestion.question);
+      setOptions(randomQuestion.options);
     }
   };
+
+  const handleResponse = async (response: string) => {
+    if (isInteractionEnabled) {
+      onResponse(question, response);
+      
+      // Store the response
+      surveyStore.setCell('answeredQuestions', question, 'answer', response);
+      await surveyPersister.save();
+
+      checkAndSelectQuestion(); // Check for the next question or close if all are answered
+    }
+  };
+
+  if (allQuestionsAnswered) {
+    return null; // Don't render anything if all questions have been answered
+  }
 
   return (
     <div style={{
