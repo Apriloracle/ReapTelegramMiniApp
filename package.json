@@ -23,6 +23,7 @@
     "connectkit": "^1.5.0",
     "@tanstack/react-query": "^5.0.0",
     "@twa-dev/sdk": "^7.8.0",
+    "@libsql/client": "^0.9.0",
     "@telegram-apps/sdk": "^1.1.3"
   },
   "devDependencies": {
