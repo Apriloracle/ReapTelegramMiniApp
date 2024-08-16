@@ -8,6 +8,7 @@ interface SurveyQuestionProps {
 const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) => {
   const [question, setQuestion] = useState<string>('');
   const [options, setOptions] = useState<string[]>([]);
+  const [isInteractionEnabled, setIsInteractionEnabled] = useState<boolean>(false);
 
   const surveyQuestions = [
     { question: "Which do you prefer?", options: ["Fashion", "Electronics"] },
@@ -19,6 +20,12 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
 
   useEffect(() => {
     selectRandomSurveyQuestion();
+    // Delay enabling interaction for 1 second
+    const timer = setTimeout(() => {
+      setIsInteractionEnabled(true);
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const selectRandomSurveyQuestion = () => {
@@ -28,8 +35,10 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
   };
 
   const handleResponse = (response: string) => {
-    onResponse(question, response);
-    onClose();
+    if (isInteractionEnabled) {
+      onResponse(question, response);
+      onClose();
+    }
   };
 
   return (
@@ -59,37 +68,44 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
           <button
             key={index}
             onClick={() => handleResponse(option)}
+            disabled={!isInteractionEnabled}
             style={{
-              backgroundColor: '#f05e23',
+              backgroundColor: isInteractionEnabled ? '#f05e23' : '#a0522d',
               color: 'white',
               padding: '0.75rem 1rem',
               margin: '0.5rem 0',
               border: 'none',
               borderRadius: '0.25rem',
-              cursor: 'pointer',
+              cursor: isInteractionEnabled ? 'pointer' : 'not-allowed',
               width: '100%',
               fontSize: '1rem',
-              transition: 'background-color 0.3s',
+              transition: 'background-color 0.3s, opacity 0.3s',
+              opacity: isInteractionEnabled ? 1 : 0.7,
             }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#d54d1b'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f05e23'}
           >
             {option}
           </button>
         ))}
         <button
           onClick={onClose}
+          disabled={!isInteractionEnabled}
           style={{
             backgroundColor: 'transparent',
-            color: '#a0aec0',
+            color: isInteractionEnabled ? '#a0aec0' : '#6b7280',
             border: 'none',
             marginTop: '1rem',
-            cursor: 'pointer',
+            cursor: isInteractionEnabled ? 'pointer' : 'not-allowed',
             fontSize: '0.9rem',
+            opacity: isInteractionEnabled ? 1 : 0.7,
           }}
         >
           Skip
         </button>
+        {!isInteractionEnabled && (
+          <p style={{ color: '#a0aec0', fontSize: '0.8rem', marginTop: '0.5rem' }}>
+            Survey will be active in a moment...
+          </p>
+        )}
       </div>
     </div>
   );
