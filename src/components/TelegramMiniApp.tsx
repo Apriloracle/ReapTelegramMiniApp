@@ -9,6 +9,7 @@ import { ThirdwebSDK } from "@thirdweb-dev/sdk";
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import PeerSync from './PeerSync';
 import DealsComponent from './DealsComponent';
+import SurveyQuestion from './SurveyQuestion';
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
@@ -29,6 +30,7 @@ const TelegramMiniApp: React.FC = () => {
   const [localWallet, setLocalWallet] = useState<LocalWallet | null>(null);
   const [localWalletAddress, setLocalWalletAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [showSurvey, setShowSurvey] = useState<boolean>(false);
 
   const clickStore = React.useMemo(() => createStore(), []);
   const shareStore = React.useMemo(() => createStore(), []);
@@ -162,27 +164,6 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
-  const loadWallet = async (userId: string) => {
-    setLoading(true);
-    try {
-      const wallet = new LocalWallet();
-      await wallet.load({
-        strategy: "encryptedJson",
-        password: userId,
-      });
-      setLocalWallet(wallet);
-      const walletAddress = await wallet.getAddress();
-      setLocalWalletAddress(walletAddress);
-      console.log('Loaded wallet address:', walletAddress);
-    } catch (error) {
-      console.error("Error loading local wallet:", error);
-      setLocalWallet(null);
-      setLocalWalletAddress(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleLogin = async () => {
     if (!userId) {
       setError("User ID not available. Please try reloading the app.");
@@ -271,6 +252,11 @@ const TelegramMiniApp: React.FC = () => {
 
         setError(null);
         console.log('Tap processed successfully');
+
+        // Randomly show a survey question (e.g., 20% chance)
+        if (Math.random() < 0.2) {
+          setShowSurvey(true);
+        }
       } else {
         throw new Error(result.message || 'Unknown error occurred');
       }
@@ -301,6 +287,14 @@ const TelegramMiniApp: React.FC = () => {
 
   const handleConnectionStatus = (status: boolean) => {
     setIsConnected(status);
+  };
+
+  const handleSurveyResponse = async (question: string, response: string) => {
+    console.log(`Survey question: ${question}`);
+    console.log(`Survey response: ${response}`);
+    // Here you would typically send the survey response to your backend
+    // For example:
+    // await updateUserPreferences(userId, question, response);
   };
 
   const MainPage: React.FC = () => {
@@ -348,7 +342,7 @@ const TelegramMiniApp: React.FC = () => {
         <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
             <svg style={{ width: '2rem', height: '2rem', color: '#F59E0B', marginRight: '0.5rem' }} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h1V7a1 1 0 012 0v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H8a1 1 0 01-1-1z" clipRule="evenodd" fillRule="evenodd"></path>
+               <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h1V7a1 1 0 012 0v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H8a1 1 0 01-1-1z" clipRule="evenodd" fillRule="evenodd"></path>
             </svg>
             <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#FFFFFF' }}>{score}</p>
           </div>
@@ -449,6 +443,13 @@ const TelegramMiniApp: React.FC = () => {
         <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
            {shares}
         </p>
+
+        {showSurvey && (
+          <SurveyQuestion
+            onResponse={handleSurveyResponse}
+            onClose={() => setShowSurvey(false)}
+          />
+        )}
       </>
     );
   };
@@ -459,46 +460,46 @@ const TelegramMiniApp: React.FC = () => {
 
     return (
       <div style={{
-      position: 'fixed',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      display: 'flex',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      backgroundColor: '#1a1a1a',
-      height: '60px',
-      borderTop: '1px solid #333'
-    }}>
-      <button
-        onClick={() => navigate('/')}
-        style={{
-          background: 'none',
-          border: 'none',
-          color: location.pathname === '/' ? '#f05e23' : '#fff',
-          fontSize: '24px',
-          cursor: 'pointer',
-        }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-          <path d="M7 21H3V10l-3 3v-3l9-9 9 9v3l-3-3v11h-4v-7H7v7zm8-11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z"/>
-        </svg>
-      </button>
-      <button
-        onClick={() => navigate('/deals')}
-        style={{
-          background: 'none',
-          border: 'none',
-          color: location.pathname === '/deals' ? '#f05e23' : '#fff',
-          fontSize: '24px',
-          cursor: 'pointer',
-        }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-          <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
-        </svg>
-      </button>
-    </div>
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        display: 'flex',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        backgroundColor: '#1a1a1a',
+        height: '60px',
+        borderTop: '1px solid #333'
+      }}>
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: location.pathname === '/' ? '#f05e23' : '#fff',
+            fontSize: '24px',
+            cursor: 'pointer',
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+            <path d="M7 21H3V10l-3 3v-3l9-9 9 9v3l-3-3v11h-4v-7H7v7zm8-11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z"/>
+          </svg>
+        </button>
+        <button
+          onClick={() => navigate('/deals')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: location.pathname === '/deals' ? '#f05e23' : '#fff',
+            fontSize: '24px',
+            cursor: 'pointer',
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+            <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+          </svg>
+        </button>
+      </div>
     );
   };
 
