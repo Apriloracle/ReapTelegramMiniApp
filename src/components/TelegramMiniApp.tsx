@@ -216,56 +216,56 @@ const TelegramMiniApp: React.FC = () => {
   };
 
   const handleTransfer = async () => {
-    if (isDailyLimitReached) {
-      setError("Tap limit reached. Please try again in a few minutes.");
-      return;
+  if (isDailyLimitReached) {
+    setError("Tap limit reached. Please try again in a few minutes.");
+    return;
+  }
+
+  try {
+    const walletAddress = localWalletAddress || address;
+    if (!walletAddress) {
+      throw new Error("No wallet connected");
     }
 
-    try {
-      const walletAddress = localWalletAddress || address;
-      if (!walletAddress) {
-        throw new Error("No wallet connected");
-      }
+    const response = await fetch('https://nodejsapiproxy-production.up.railway.app/handleTap1', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ address: walletAddress }),
+    });
 
-      const response = await fetch('https://nodejsapiproxy-production.up.railway.app/handleTap1', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ address: walletAddress }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to process the tap');
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
-        const currentScore = clickStore.getCell('stats', 'clicks', 'count') as number;
-        const newScore = currentScore + 1;
-        clickStore.setCell('stats', 'clicks', 'count', newScore);
-        
-        const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
-        const newDailyTaps = currentDailyTaps + 1;
-        dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
-
-        setError(null);
-        console.log('Tap processed successfully');
-
-        // Randomly show a survey question (e.g., 20% chance)
-        if (Math.random() < 0.2) {
-          setShowSurvey(true);
-        }
-      } else {
-        throw new Error(result.message || 'Unknown error occurred');
-      }
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      console.error('Error processing tap:', err);
+    if (!response.ok) {
+      throw new Error('Failed to process the tap');
     }
-  };
+
+    const result = await response.json();
+
+    if (result.success) {
+      const currentScore = clickStore.getCell('stats', 'clicks', 'count') as number;
+      const newScore = currentScore + 1;
+      clickStore.setCell('stats', 'clicks', 'count', newScore);
+      
+      const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
+      const newDailyTaps = currentDailyTaps + 1;
+      dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
+
+      setError(null);
+      console.log('Tap processed successfully');
+
+      // Randomly show a survey question (1% chance)
+      if (Math.random() < 0.01) {
+        setShowSurvey(true);
+      }
+    } else {
+      throw new Error(result.message || 'Unknown error occurred');
+    }
+
+  } catch (err) {
+    setError(err instanceof Error ? err.message : String(err));
+    console.error('Error processing tap:', err);
+  }
+};
 
   const handleShare = async () => {
     try {
