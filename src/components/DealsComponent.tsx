@@ -214,7 +214,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
             <path d="M12 19L5 12L12 5" stroke="#f05e23" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Deals for {geolocationData?.countryCode}</h2>
+        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Shop and earn in {geolocationData?.countryCode}</h2>
       </div>
       
       <input
