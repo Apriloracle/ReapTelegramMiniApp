@@ -6,7 +6,7 @@ import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import WebApp from '@twa-dev/sdk'
 import { LocalWallet } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
-import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import PeerSync from './PeerSync';
 import DealsComponent from './DealsComponent';
 
@@ -304,8 +304,6 @@ const TelegramMiniApp: React.FC = () => {
   };
 
   const MainPage: React.FC = () => {
-    const navigate = useNavigate();
-
     return (
       <>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
@@ -451,37 +449,56 @@ const TelegramMiniApp: React.FC = () => {
         <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
            {shares}
         </p>
-
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
-  <button
-    onClick={() => navigate('/deals')}
-    style={{
-      background: '#f05e23',
-      color: 'white',
-      width: '70px',  // Increased from 60px
-      height: '70px', // Increased from 60px
-      borderRadius: '50%',
-      fontSize: '1.5rem',
-      border: 'none',
-      cursor: 'pointer',
-      transition: 'all 300ms ease-in-out',
-      boxShadow: '0 4px 6px rgba(240,94,35,0.3)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-    }}
-  >
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="currentColor" 
-      style={{ width: '40px', height: '40px' }} // Increased from 30px
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-    </svg>
-  </button>
-</div>
       </>
+    );
+  };
+
+  const BottomNavBar: React.FC = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    return (
+      <div style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        display: 'flex',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        backgroundColor: '#1a1a1a',
+        height: '60px',
+        borderTop: '1px solid #333'
+      }}>
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: location.pathname === '/' ? '#f05e23' : '#fff',
+            fontSize: '24px',
+            cursor: 'pointer',
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+          </svg>
+        </button>
+        <button
+          onClick={() => navigate('/deals')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: location.pathname === '/deals' ? '#f05e23' : '#fff',
+            fontSize: '24px',
+            cursor: 'pointer',
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+            <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+          </svg>
+        </button>
+      </div>
     );
   };
 
@@ -525,10 +542,12 @@ const TelegramMiniApp: React.FC = () => {
           </button>
         )}
 
-         <Routes>
+        <Routes>
           <Route path="/" element={<MainPage />} />
           <Route path="/deals" element={<DealsComponent localWalletAddress={localWalletAddress} />} />
         </Routes>
+        
+        <BottomNavBar />
       </div>
     </Router>
   )
