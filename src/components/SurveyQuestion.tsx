@@ -26,7 +26,7 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
   useEffect(() => {
     const loadSurveyData = async () => {
       await surveyPersister.load();
-      checkAndSelectQuestion();
+      selectQuestion();
     };
 
     loadSurveyData();
@@ -41,7 +41,7 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
     };
   }, [surveyPersister]);
 
-  const checkAndSelectQuestion = () => {
+  const selectQuestion = () => {
     const answeredQuestions = surveyStore.getTable('answeredQuestions') || {};
     const unansweredQuestions = surveyQuestions.filter(q => !answeredQuestions[q.question]);
     
@@ -63,7 +63,7 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
       surveyStore.setCell('answeredQuestions', question, 'answer', response);
       await surveyPersister.save();
 
-      checkAndSelectQuestion(); // Check for the next question or close if all are answered
+      onClose(); // Close the current question
     }
   };
 
