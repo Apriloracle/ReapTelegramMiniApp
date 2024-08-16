@@ -20,10 +20,10 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
 
   useEffect(() => {
     selectRandomSurveyQuestion();
-    // Delay enabling interaction for 1 second
+    // Delay enabling interaction for 3 second
     const timer = setTimeout(() => {
       setIsInteractionEnabled(true);
-    }, 1000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
