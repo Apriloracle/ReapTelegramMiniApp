@@ -10,6 +10,7 @@ import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from
 import PeerSync from './PeerSync';
 import DealsComponent from './DealsComponent';
 import SurveyQuestion from './SurveyQuestion';
+import ProfilePage from './ProfilePage';
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
