@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent, FormEvent } from 'react';
 
-const ProfilePage = () => {
-  const [formData, setFormData] = useState({
+interface FormData {
+  sex: string;
+  age: string;
+  shoppingFrequency: string;
+  interests: string[];
+  shoppingCategories: string[];
+}
+
+const ProfilePage: React.FC = () => {
+  const [formData, setFormData] = useState<FormData>({
     sex: '',
     age: '',
     shoppingFrequency: '',
@@ -9,21 +17,21 @@ const ProfilePage = () => {
     shoppingCategories: []
   });
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     if (type === 'checkbox') {
       setFormData(prev => ({
         ...prev,
         [name]: checked 
-          ? [...prev[name], value]
-          : prev[name].filter(item => item !== value)
+          ? [...prev[name as keyof FormData] as string[], value]
+          : (prev[name as keyof FormData] as string[]).filter(item => item !== value)
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log(formData);
     // Here you would typically send the data to your backend
@@ -32,7 +40,7 @@ const ProfilePage = () => {
   return (
     <div className="bg-black text-white p-4 min-h-screen">
       <h1 className="text-2xl font-bold mb-4">Survey</h1>
-      <p className="mb-4">Complete your Profile and earn rewards</p>
+      <p className="mb-4">Complete your profile and earn rewards</p>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
