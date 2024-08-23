@@ -11,6 +11,7 @@ import PeerSync from './PeerSync';
 import DealsComponent from './DealsComponent';
 import SurveyQuestion from './SurveyQuestion';
 import ProfilePage from './ProfilePage';
+import BalanceCard from './BalanceCard';
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
@@ -301,6 +302,12 @@ const TelegramMiniApp: React.FC = () => {
   const MainPage: React.FC = () => {
     return (
       <>
+        <BalanceCard
+          totalBalance={5.6}
+          availableApril={4000}
+          pendingApril={15.0}
+        />
+
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
           <button 
             onClick={handleLogin}
@@ -557,3 +564,4 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
