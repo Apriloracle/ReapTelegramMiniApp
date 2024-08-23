@@ -303,9 +303,8 @@ const TelegramMiniApp: React.FC = () => {
     return (
       <>
         <BalanceCard
-          totalBalance={5.6}
-          availableApril={4000}
-          pendingApril={15.0}
+          totalBalance={0}
+          availableApril={0}
         />
 
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
