@@ -34,6 +34,7 @@ const TelegramMiniApp: React.FC = () => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [showSurvey, setShowSurvey] = useState<boolean>(false);
   const [aprilBalance, setAprilBalance] = useState<{ value: string; displayValue: string }>({ value: '0', displayValue: '0' });
+  const [aprilUsdPrice, setAprilUsdPrice] = useState<number | null>(null);
 
   const clickStore = React.useMemo(() => createStore(), []);
   const shareStore = React.useMemo(() => createStore(), []);
@@ -43,6 +44,8 @@ const TelegramMiniApp: React.FC = () => {
   const dailyPersister = React.useMemo(() => createLocalPersister(dailyStore, 'celon-daily-stats'), [dailyStore]);
   const aprilBalanceStore = React.useMemo(() => createStore(), []);
   const aprilBalancePersister = React.useMemo(() => createLocalPersister(aprilBalanceStore, 'AprilBalance'), [aprilBalanceStore]);
+  const aprilPriceStore = React.useMemo(() => createStore(), []);
+  const aprilPricePersister = React.useMemo(() => createLocalPersister(aprilPriceStore, 'AprilUsdPrice'), [aprilPriceStore]);
 
   useEffect(() => {
     const initWebApp = () => {
@@ -173,6 +176,44 @@ const TelegramMiniApp: React.FC = () => {
       }
     }, 60000);
 
+    const fetchAprilPrice = async () => {
+      try {
+        const response = await fetch('https://us-central1-postback-server.cloudfunctions.net/getCoinMarketCapQuotes');
+        const data = await response.json();
+        const price = data.data.APRIL.quote.USD.price;
+        aprilPriceStore.setCell('price', 'APRIL', 'usd', price);
+        aprilPriceStore.setCell('price', 'APRIL', 'lastFetchTime', Date.now());
+        await aprilPricePersister.save();
+        setAprilUsdPrice(price);
+        console.log('APRIL USD Price:', price);
+      } catch (error) {
+        console.error('Error fetching APRIL price:', error);
+      }
+    };
+
+    const loadAprilPrice = async () => {
+      await aprilPricePersister.load();
+      const storedPrice = aprilPriceStore.getCell('price', 'APRIL', 'usd') as number | undefined;
+      const lastFetchTime = aprilPriceStore.getCell('price', 'APRIL', 'lastFetchTime') as number | undefined;
+
+      if (storedPrice && lastFetchTime) {
+        const timeSinceLastFetch = Date.now() - lastFetchTime;
+        if (timeSinceLastFetch < 2 * 60 * 60 * 1000) { // Less than 2 hours
+          setAprilUsdPrice(storedPrice);
+          console.log('APRIL USD Price (from local store):', storedPrice);
+          return;
+        }
+      }
+
+      fetchAprilPrice();
+    };
+
+    loadAprilPrice();
+
+    const intervalId3 = setInterval(() => {
+      loadAprilPrice();
+    }, 2 * 60 * 60 * 1000); // 2 hours
+
     return () => {
       clickStore.delListener(scoreListenerId);
       shareStore.delListener(shareListenerId);
@@ -183,6 +224,8 @@ const TelegramMiniApp: React.FC = () => {
       aprilBalancePersister.destroy();
       clearInterval(intervalId);
       clearInterval(intervalId2);
+      clearInterval(intervalId3);
+      aprilPricePersister.destroy();
     };
   }, [localWalletAddress, address]);
 
@@ -625,6 +668,7 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
 
 
 
