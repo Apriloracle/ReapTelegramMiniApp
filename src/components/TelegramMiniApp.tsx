@@ -33,6 +33,7 @@ const TelegramMiniApp: React.FC = () => {
   const [localWalletAddress, setLocalWalletAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [showSurvey, setShowSurvey] = useState<boolean>(false);
+  const [aprilBalance, setAprilBalance] = useState<{ value: string; displayValue: string }>({ value: '0', displayValue: '0' });
 
   const clickStore = React.useMemo(() => createStore(), []);
   const shareStore = React.useMemo(() => createStore(), []);
@@ -40,6 +41,8 @@ const TelegramMiniApp: React.FC = () => {
   const clickPersister = React.useMemo(() => createLocalPersister(clickStore, 'celon-click-stats'), [clickStore]);
   const sharePersister = React.useMemo(() => createLocalPersister(shareStore, 'celon-share-stats'), [shareStore]);
   const dailyPersister = React.useMemo(() => createLocalPersister(dailyStore, 'celon-daily-stats'), [dailyStore]);
+  const aprilBalanceStore = React.useMemo(() => createStore(), []);
+  const aprilBalancePersister = React.useMemo(() => createLocalPersister(aprilBalanceStore, 'AprilBalance'), [aprilBalanceStore]);
 
   useEffect(() => {
     const initWebApp = () => {
@@ -71,6 +74,9 @@ const TelegramMiniApp: React.FC = () => {
     });
     dailyStore.setTables({
       dailyStats: { clicks: { count: 0, lastReset: new Date().toISOString() } }
+    });
+    aprilBalanceStore.setTables({
+      balance: { april: { value: '0', displayValue: '0' } }
     });
 
     loadPersistedData();
@@ -110,7 +116,57 @@ const TelegramMiniApp: React.FC = () => {
       }
     );
 
-    const intervalId = setInterval(() => {
+    // Load persisted APRIL balance
+    aprilBalancePersister.load().then(() => {
+      const loadedValue = aprilBalanceStore.getCell('balance', 'april', 'value') as string;
+      const loadedDisplayValue = aprilBalanceStore.getCell('balance', 'april', 'displayValue') as string;
+      setAprilBalance({ value: loadedValue || '0', displayValue: loadedDisplayValue || '0' });
+    }).catch(console.error);
+
+    // Set up APRIL balance listener
+    const aprilBalanceListenerId = aprilBalanceStore.addCellListener(
+      'balance',
+      'april',
+      'value',
+      (_, __, ___, ____, newValue) => {
+        const newDisplayValue = aprilBalanceStore.getCell('balance', 'april', 'displayValue') as string;
+        setAprilBalance({ value: newValue as string, displayValue: newDisplayValue });
+        console.log('APRIL balance updated:', newValue);
+        aprilBalancePersister.save().catch(console.error);
+      }
+    );
+
+    // Fetch APRIL balance
+    const fetchAprilBalance = async () => {
+      const walletAddress = localWalletAddress || address;
+      if (walletAddress) {
+        try {
+          const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/getAprilBalance?address=${walletAddress}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch APRIL balance');
+          }
+
+          const data = await response.json();
+          setAprilBalance({ value: data.result.value, displayValue: data.result.displayValue });
+          aprilBalanceStore.setCell('balance', 'april', 'value', data.result.value);
+          aprilBalanceStore.setCell('balance', 'april', 'displayValue', data.result.displayValue);
+        } catch (error) {
+          console.error('Error fetching APRIL balance:', error);
+        }
+      }
+    };
+
+    fetchAprilBalance();
+    // Set up an interval to fetch APRIL balance periodically (e.g., every 60 seconds)
+    const intervalId = setInterval(fetchAprilBalance, 60000);
+
+    const intervalId2 = setInterval(() => {
       const lastReset = new Date(dailyStore.getCell('dailyStats', 'clicks', 'lastReset') as string);
       if (shouldResetDailyTaps(lastReset)) {
         resetDailyTaps();
@@ -123,9 +179,12 @@ const TelegramMiniApp: React.FC = () => {
       clickPersister.destroy();
       sharePersister.destroy();
       dailyPersister.destroy();
+      aprilBalanceStore.delListener(aprilBalanceListenerId);
+      aprilBalancePersister.destroy();
       clearInterval(intervalId);
+      clearInterval(intervalId2);
     };
-  }, []);
+  }, [localWalletAddress, address]);
 
   const loadPersistedData = async () => {
     try {
@@ -304,7 +363,10 @@ const TelegramMiniApp: React.FC = () => {
       <>
         <BalanceCard
           totalBalance={0}
-          availableApril={0}
+          availableApril={{
+            value: aprilBalance.value,
+            display: aprilBalance.displayValue
+          }}
         />
 
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
@@ -563,4 +625,6 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
+
 
