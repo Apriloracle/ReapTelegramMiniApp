@@ -214,7 +214,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
             <path d="M12 19L5 12L12 5" stroke="#f05e23" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Shop and earn in {geolocationData?.countryCode}</h2>
+        <h2 style={{ textAlign: 'center', color: '#f05e23', fontSize: '1.5rem', fontWeight: 'bold' }}>Shop and earn in {geolocationData?.countryCode}</h2>
       </div>
       
       <input
@@ -224,21 +224,22 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         onChange={(e) => setSearchTerm(e.target.value)}
         style={{
           width: '100%',
-          padding: '0.5rem',
+          padding: '0.75rem',
           marginBottom: '1rem',
-          backgroundColor: '#333',
+          backgroundColor: '#1a1a1a',
           color: '#fff',
-          border: '1px solid #555',
-          borderRadius: '4px'
+          border: '1px solid #333',
+          borderRadius: '0.5rem',
+          fontSize: '1rem'
         }}
       />
 
       {filteredDeals.length === 0 ? (
-        <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No deals available for your search.</p>
+        <p style={{ textAlign: 'center', color: '#A0AEC0', fontSize: '1rem' }}>No deals available for your search.</p>
       ) : (
         <ul style={{ listStyleType: 'none', padding: 0 }}>
           {filteredDeals.map((deal) => (
-            <li key={deal.id} style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#111111', borderRadius: '0.5rem' }}>
+            <li key={deal.id} style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#1a1a1a', borderRadius: '0.5rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
                 <img 
                   src={deal.logoAbsoluteUrl} 
@@ -253,21 +254,21 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
                     padding: '4px'
                   }} 
                 />
-                <h3 style={{ color: '#f05e23', margin: 0, fontSize: '1.2rem' }}>{deal.merchantName}</h3>
+                <h3 style={{ color: '#f05e23', margin: 0, fontSize: '1.2rem', fontWeight: 'bold' }}>{deal.merchantName}</h3>
               </div>
               {deal.cashback > 0 && (
-                <p style={{ color: '#22c55e', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                <p style={{ color: '#22c55e', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '1rem' }}>
                   Cashback: {deal.cashback} {deal.currency}
                 </p>
               )}
-              <p style={{ color: '#A0AEC0', marginBottom: '0.5rem' }}>Available codes:</p>
+              <p style={{ color: '#A0AEC0', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Available codes:</p>
               <ul style={{ listStyleType: 'none', padding: 0 }}>
                 {deal.codes.map((code, index) => {
                   const dealKey = `${deal.dealId}-${code.code}`;
                   const isActivated = activatedDeals.has(dealKey);
                   return (
-                    <li key={index} style={{ marginBottom: '1rem', backgroundColor: '#1c1c1c', padding: '0.5rem', borderRadius: '4px' }}>
-                      <p style={{ color: '#f05e23', fontWeight: 'bold', marginBottom: '0.25rem' }}>{code.code}</p>
+                    <li key={index} style={{ marginBottom: '1rem', backgroundColor: '#2a2a2a', padding: '0.75rem', borderRadius: '0.5rem' }}>
+                      <p style={{ color: '#f05e23', fontWeight: 'bold', marginBottom: '0.25rem', fontSize: '1rem' }}>{code.code}</p>
                       <p style={{ color: '#A0AEC0', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
                         {code.summary.includes("Please note the codes can not be used for orders to") 
                           ? "Restrictions apply in some regions" 
@@ -279,12 +280,16 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
                         style={{
                           backgroundColor: isActivated ? '#22c55e' : '#f05e23',
                           color: '#FFFFFF',
-                          padding: '0.5rem 1rem',
+                          padding: '0.75rem 1rem',
                           border: 'none',
-                          borderRadius: '4px',
+                          borderRadius: '0.5rem',
                           cursor: activatingDeal === dealKey || isActivated || !isLoggedIn ? 'not-allowed' : 'pointer',
                           opacity: activatingDeal === dealKey || !isLoggedIn ? 0.6 : 1,
-                          width: '100%'
+                          width: '100%',
+                          fontSize: '1rem',
+                          fontWeight: 'bold',
+                          transition: 'all 300ms ease-in-out',
+                          boxShadow: '0 4px 6px rgba(240,94,35,0.3)',
                         }}
                       >
                         {activatingDeal === dealKey 
@@ -302,7 +307,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         </ul>
       )}
       {error && (
-        <div style={{ color: '#EF4444', textAlign: 'center', marginTop: '1rem' }}>
+        <div style={{ color: '#EF4444', textAlign: 'center', marginTop: '1rem', fontSize: '1rem' }}>
           {error}
         </div>
       )}
@@ -311,3 +316,4 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
+
