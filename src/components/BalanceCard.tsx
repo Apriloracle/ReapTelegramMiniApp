@@ -9,6 +9,15 @@ interface BalanceCardProps {
 }
 
 const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril }) => {
+  const formatUsdBalance = (balance: number): string => {
+    return balance.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
   return (
     <div style={{
       backgroundColor: '#f05e23',
@@ -20,7 +29,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <div>
           <div style={{ fontSize: '14px', fontWeight: 'bold' }}>Total Balance</div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>${totalBalance.toFixed(2)}</div>
+          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{formatUsdBalance(totalBalance)}</div>
         </div>
         <button style={{
           backgroundColor: 'white',
