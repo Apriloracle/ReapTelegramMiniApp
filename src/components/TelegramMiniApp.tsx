@@ -37,6 +37,7 @@ const TelegramMiniApp: React.FC = () => {
   const [showSurvey, setShowSurvey] = useState<boolean>(false);
   const [aprilBalance, setAprilBalance] = useState<{ value: string; displayValue: string }>({ value: '0', displayValue: '0' });
   const [aprilUsdPrice, setAprilUsdPrice] = useState<number | null>(null);
+  const [totalBalanceUsd, setTotalBalanceUsd] = useState<number>(0);
 
   const clickStore = React.useMemo(() => createStore(), []);
   const shareStore = React.useMemo(() => createStore(), []);
@@ -456,11 +457,31 @@ const TelegramMiniApp: React.FC = () => {
     // await updateUserPreferences(userId, question, response);
   };
 
+  const calculateTotalBalanceUsd = (aprilBalance: { value: string; displayValue: string }, aprilPrice: number | null) => {
+    if (!aprilPrice) return 0;
+    const balance = parseFloat(aprilBalance.displayValue);
+    return balance * aprilPrice;
+  };
+
+  const formatUsdBalance = (balance: number): string => {
+    return balance.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  useEffect(() => {
+    const calculatedBalance = calculateTotalBalanceUsd(aprilBalance, aprilUsdPrice);
+    setTotalBalanceUsd(calculatedBalance);
+  }, [aprilBalance.displayValue, aprilUsdPrice]);
+
   const MainPage: React.FC = () => {
     return (
       <>
         <BalanceCard
-          totalBalance={0}
+          totalBalance={totalBalanceUsd}  // Pass the raw number
           availableApril={{
             value: aprilBalance.value,
             display: aprilBalance.displayValue
@@ -723,6 +744,9 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
+
+
 
 
 
