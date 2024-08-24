@@ -18,6 +18,8 @@ const RESET_MINUTES = 60;
 const TELEGRAM_BOT_URL = 'https://t.me/Reapmini_bot';
 const SHARE_URL = 'https://t.me/share/url?url=https://t.me/Reapmini_bot&text=%F0%9F%92%B0Reap%20Mini%3A%20Tap%2C%20Earn%2C%20Grow%20-%20Where%20Every%20Tap%20Leads%20to%20Crypto%20Rewards!%0A%F0%9F%8E%81Let%27s%20start%20earning%20now!';
 
+const DEFAULT_APRIL_PRICE = 0; // Updated default price to 0
+
 const TelegramMiniApp: React.FC = () => {
   const [webApp, setWebApp] = useState<any>(null);
   const { address } = useAccount()
@@ -178,34 +180,87 @@ const TelegramMiniApp: React.FC = () => {
 
     const fetchAprilPrice = async () => {
       try {
-        const response = await fetch('https://us-central1-postback-server.cloudfunctions.net/getCoinMarketCapQuotes');
-        const data = await response.json();
-        const price = data.data.APRIL.quote.USD.price;
-        aprilPriceStore.setCell('price', 'APRIL', 'usd', price);
+        const response = await fetch('https://us-central1-fourth-buffer-421320.cloudfunctions.net/getAprilPrice', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+    
+        if (!response.ok) {
+          throw new Error('Failed to fetch APRIL price');
+        }
+    
+        const rawData = await response.text(); // Get the response as text
+        console.log('Raw API response:', rawData); // Log the raw response
+
+        // Try to parse the response as JSON, if it fails, assume it's a plain number
+        let data;
+        try {
+          data = JSON.parse(rawData);
+        } catch (e) {
+          // If parsing fails, assume the response is a plain number
+          data = parseFloat(rawData.replace('Current April price: ', '').trim());
+        }
+
+        let price: number;
+        if (typeof data === 'string') {
+          price = parseFloat(data);
+        } else if (typeof data === 'number') {
+          price = data;
+        } else if (typeof data === 'object' && data !== null) {
+          // If the response is an object, try to find a numeric property
+          const numericValue = Object.values(data).find(value => typeof value === 'number');
+          if (numericValue !== undefined) {
+            price = numericValue;
+          } else {
+            throw new Error('Unexpected response format');
+          }
+        } else {
+          throw new Error('Unexpected response format');
+        }
+
+        if (isNaN(price)) {
+          throw new Error('Invalid price value');
+        }
+
+        const formattedPrice = price.toFixed(6); // Format to 6 decimal places
+        console.log('Parsed APRIL USD Price:', formattedPrice); // Log the parsed price
+
+        aprilPriceStore.setCell('price', 'APRIL', 'usd', formattedPrice);
         aprilPriceStore.setCell('price', 'APRIL', 'lastFetchTime', Date.now());
         await aprilPricePersister.save();
-        setAprilUsdPrice(price);
-        console.log('APRIL USD Price:', price);
+        setAprilUsdPrice(parseFloat(formattedPrice));
       } catch (error) {
         console.error('Error fetching APRIL price:', error);
+        // If there's an error, we'll use the last stored price if available
+        const storedPrice = aprilPriceStore.getCell('price', 'APRIL', 'usd') as string | undefined;
+        if (storedPrice) {
+          setAprilUsdPrice(parseFloat(storedPrice));
+          console.log('Using stored APRIL USD Price:', storedPrice);
+        } else {
+          // If no stored price is available, we set the price to the default value (0)
+          setAprilUsdPrice(DEFAULT_APRIL_PRICE);
+          console.log('Using default APRIL USD Price:', DEFAULT_APRIL_PRICE);
+        }
       }
     };
 
     const loadAprilPrice = async () => {
       await aprilPricePersister.load();
-      const storedPrice = aprilPriceStore.getCell('price', 'APRIL', 'usd') as number | undefined;
+      const storedPrice = aprilPriceStore.getCell('price', 'APRIL', 'usd') as string | undefined;
       const lastFetchTime = aprilPriceStore.getCell('price', 'APRIL', 'lastFetchTime') as number | undefined;
 
       if (storedPrice && lastFetchTime) {
         const timeSinceLastFetch = Date.now() - lastFetchTime;
         if (timeSinceLastFetch < 2 * 60 * 60 * 1000) { // Less than 2 hours
-          setAprilUsdPrice(storedPrice);
+          setAprilUsdPrice(parseFloat(storedPrice));
           console.log('APRIL USD Price (from local store):', storedPrice);
           return;
         }
       }
 
-      fetchAprilPrice();
+      await fetchAprilPrice();
     };
 
     loadAprilPrice();
@@ -668,6 +723,8 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
+
 
 
 
