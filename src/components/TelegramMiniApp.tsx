@@ -17,7 +17,6 @@ const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
 const TELEGRAM_BOT_URL = 'https://t.me/Reapmini_bot';
 const SHARE_URL = 'https://t.me/share/url?url=https://t.me/Reapmini_bot&text=%F0%9F%92%B0Reap%20Mini%3A%20Tap%2C%20Earn%2C%20Grow%20-%20Where%20Every%20Tap%20Leads%20to%20Crypto%20Rewards!%0A%F0%9F%8E%81Let%27s%20start%20earning%20now!';
-const PRICE_UPDATE_INTERVAL = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
 
 const TelegramMiniApp: React.FC = () => {
   const [webApp, setWebApp] = useState<any>(null);
@@ -35,11 +34,6 @@ const TelegramMiniApp: React.FC = () => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [showSurvey, setShowSurvey] = useState<boolean>(false);
   const [aprilBalance, setAprilBalance] = useState<{ value: string; displayValue: string }>({ value: '0', displayValue: '0' });
-  const [isAprilBalanceLoading, setIsAprilBalanceLoading] = useState<boolean>(true);
-  const [isTapping, setIsTapping] = useState<boolean>(false);
-  const [balanceIntervalId, setBalanceIntervalId] = useState<NodeJS.Timeout | null>(null);
-  const [tapCount, setTapCount] = useState<number>(0);
-  const [perAprilPrice, setPerAprilPrice] = useState<number>(0);
 
   const clickStore = React.useMemo(() => createStore(), []);
   const shareStore = React.useMemo(() => createStore(), []);
@@ -49,8 +43,6 @@ const TelegramMiniApp: React.FC = () => {
   const dailyPersister = React.useMemo(() => createLocalPersister(dailyStore, 'celon-daily-stats'), [dailyStore]);
   const aprilBalanceStore = React.useMemo(() => createStore(), []);
   const aprilBalancePersister = React.useMemo(() => createLocalPersister(aprilBalanceStore, 'AprilBalance'), [aprilBalanceStore]);
-  const aprilPriceStore = React.useMemo(() => createStore(), []);
-  const aprilPricePersister = React.useMemo(() => createLocalPersister(aprilPriceStore, 'AprilPrice'), [aprilPriceStore]);
 
   useEffect(() => {
     const initWebApp = () => {
@@ -85,9 +77,6 @@ const TelegramMiniApp: React.FC = () => {
     });
     aprilBalanceStore.setTables({
       balance: { april: { value: '0', displayValue: '0' } }
-    });
-    aprilPriceStore.setTables({
-      price: { april: { value: 0, lastUpdated: new Date(0).toISOString() } }
     });
 
     loadPersistedData();
@@ -174,9 +163,8 @@ const TelegramMiniApp: React.FC = () => {
     };
 
     fetchAprilBalance();
-    // Set up an interval to fetch APRIL balance
-    const intervalId = setInterval(fetchAprilBalance, 60000); // Start with 60 seconds
-    setBalanceIntervalId(intervalId);
+    // Set up an interval to fetch APRIL balance periodically (e.g., every 60 seconds)
+    const intervalId = setInterval(fetchAprilBalance, 60000);
 
     const intervalId2 = setInterval(() => {
       const lastReset = new Date(dailyStore.getCell('dailyStats', 'clicks', 'lastReset') as string);
@@ -184,40 +172,6 @@ const TelegramMiniApp: React.FC = () => {
         resetDailyTaps();
       }
     }, 60000);
-
-    const fetchAndUpdateAprilPrice = async () => {
-      try {
-        const response = await fetch('https://us-central1-postback-server.cloudfunctions.net/getCoinMarketCapQuotes');
-        if (!response.ok) {
-          throw new Error('Failed to fetch APRIL price');
-        }
-        const data = await response.json();
-        const price = parseFloat(data.price);
-        aprilPriceStore.setCell('price', 'april', 'value', price);
-        aprilPriceStore.setCell('price', 'april', 'lastUpdated', new Date().toISOString());
-        setPerAprilPrice(price);
-        console.log('Per APRIL Price:', price);
-      } catch (error) {
-        console.error('Error fetching APRIL price:', error);
-      }
-    };
-
-    const loadOrFetchAprilPrice = async () => {
-      await aprilPricePersister.load();
-      const storedPrice = aprilPriceStore.getCell('price', 'april', 'value') as number;
-      const lastUpdated = new Date(aprilPriceStore.getCell('price', 'april', 'lastUpdated') as string);
-      
-      if (storedPrice === 0 || Date.now() - lastUpdated.getTime() > PRICE_UPDATE_INTERVAL) {
-        await fetchAndUpdateAprilPrice();
-      } else {
-        setPerAprilPrice(storedPrice);
-        console.log('Per APRIL Price (from local storage):', storedPrice);
-      }
-    };
-
-    loadOrFetchAprilPrice();
-
-    const priceIntervalId = setInterval(loadOrFetchAprilPrice, PRICE_UPDATE_INTERVAL);
 
     return () => {
       clickStore.delListener(scoreListenerId);
@@ -229,48 +183,8 @@ const TelegramMiniApp: React.FC = () => {
       aprilBalancePersister.destroy();
       clearInterval(intervalId);
       clearInterval(intervalId2);
-      clearInterval(priceIntervalId);
-      aprilPricePersister.destroy();
     };
   }, [localWalletAddress, address]);
-
-  useEffect(() => {
-    if (balanceIntervalId) {
-      clearInterval(balanceIntervalId);
-    }
-
-    const fetchAprilBalance = async () => {
-      const walletAddress = localWalletAddress || address;
-      if (walletAddress) {
-        try {
-          const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/getAprilBalance?address=${walletAddress}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch APRIL balance');
-          }
-
-          const data = await response.json();
-          setAprilBalance({ value: data.result.value, displayValue: data.result.displayValue });
-          aprilBalanceStore.setCell('balance', 'april', 'value', data.result.value);
-          aprilBalanceStore.setCell('balance', 'april', 'displayValue', data.result.displayValue);
-        } catch (error) {
-          console.error('Error fetching APRIL balance:', error);
-        }
-      }
-    };
-
-    const newIntervalId = setInterval(fetchAprilBalance, isTapping ? 10000 : 60000);
-    setBalanceIntervalId(newIntervalId);
-
-    return () => {
-      if (newIntervalId) clearInterval(newIntervalId);
-    };
-  }, [isTapping, localWalletAddress, address]);
 
   const loadPersistedData = async () => {
     try {
@@ -363,67 +277,56 @@ const TelegramMiniApp: React.FC = () => {
   };
 
   const handleTransfer = async () => {
-    if (isDailyLimitReached) {
-      setError("Tap limit reached. Please try again in a few minutes.");
-      return;
+  if (isDailyLimitReached) {
+    setError("Tap limit reached. Please try again in a few minutes.");
+    return;
+  }
+
+  try {
+    const walletAddress = localWalletAddress || address;
+    if (!walletAddress) {
+      throw new Error("No wallet connected");
     }
 
-    setIsTapping(true);
-    
-    try {
-      const walletAddress = localWalletAddress || address;
-      if (!walletAddress) {
-        throw new Error("No wallet connected");
-      }
+    const response = await fetch('https://nodejsapiproxy-production.up.railway.app/handleTap1', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ address: walletAddress }),
+    });
 
-      const response = await fetch('https://nodejsapiproxy-production.up.railway.app/handleTap1', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ address: walletAddress }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to process the tap');
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
-        const currentScore = clickStore.getCell('stats', 'clicks', 'count') as number;
-        const newScore = currentScore + 1;
-        clickStore.setCell('stats', 'clicks', 'count', newScore);
-        
-        const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
-        const newDailyTaps = currentDailyTaps + 1;
-        dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
-
-        // Increment tap count and check if it's time to fetch APRIL balance
-        const newTapCount = tapCount + 1;
-        setTapCount(newTapCount);
-        if (newTapCount % 20 === 0) {
-          fetchAprilBalance();
-        }
-
-        setError(null);
-        console.log('Tap processed successfully');
-
-        // Randomly show a survey question (1% chance)
-        if (Math.random() < 0.01) {
-          setShowSurvey(true);
-        }
-      } else {
-        throw new Error(result.message || 'Unknown error occurred');
-      }
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      console.error('Error processing tap:', err);
-    } finally {
-      setIsTapping(false);
+    if (!response.ok) {
+      throw new Error('Failed to process the tap');
     }
-  };
+
+    const result = await response.json();
+
+    if (result.success) {
+      const currentScore = clickStore.getCell('stats', 'clicks', 'count') as number;
+      const newScore = currentScore + 1;
+      clickStore.setCell('stats', 'clicks', 'count', newScore);
+      
+      const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
+      const newDailyTaps = currentDailyTaps + 1;
+      dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
+
+      setError(null);
+      console.log('Tap processed successfully');
+
+      // Randomly show a survey question (1% chance)
+      if (Math.random() < 0.01) {
+        setShowSurvey(true);
+      }
+    } else {
+      throw new Error(result.message || 'Unknown error occurred');
+    }
+
+  } catch (err) {
+    setError(err instanceof Error ? err.message : String(err));
+    console.error('Error processing tap:', err);
+  }
+};
 
   const handleShare = async () => {
     try {
@@ -460,8 +363,10 @@ const TelegramMiniApp: React.FC = () => {
       <>
         <BalanceCard
           totalBalance={0}
-          availableApril={aprilBalance}
-          isLoading={isAprilBalanceLoading}
+          availableApril={{
+            value: aprilBalance.value,
+            display: aprilBalance.displayValue
+          }}
         />
 
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
@@ -720,6 +625,9 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
+
+
 
 
 
