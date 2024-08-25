@@ -245,7 +245,10 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
       console.log('Stored merchant descriptions:', storedDescriptions);
       
       const merchantsNeedingFetch = Object.entries(storedDescriptions)
-        .filter(([_, merchant]) => !merchant.productDescription && !fetchedMerchants.has(merchant.name))
+        .filter(([merchantName, merchant]) => 
+          !merchant.productDescription && 
+          !fetchedMerchants.has(merchantName)
+        )
         .map(([merchantName]) => merchantName);
       
       if (merchantsNeedingFetch.length > 0) {
@@ -415,6 +418,9 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
+
+
+
 
 
 
