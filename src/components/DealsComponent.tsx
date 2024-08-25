@@ -48,6 +48,10 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   const activatedDealsStore = React.useMemo(() => createStore(), []);
   const activatedDealsPersister = React.useMemo(() => createLocalPersister(activatedDealsStore, 'activated-deals'), [activatedDealsStore]);
 
+  // New store for MerchantDescription
+  const merchantDescriptionStore = React.useMemo(() => createStore(), []);
+  const merchantDescriptionPersister = React.useMemo(() => createLocalPersister(merchantDescriptionStore, 'merchant-descriptions'), [merchantDescriptionStore]);
+
   const searchDeals = useCallback((term: string) => {
     const lowercasedTerm = term.toLowerCase();
     const filtered = deals.filter(deal => 
@@ -79,6 +83,8 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         const data: Deal[] = await response.json();
         
         const dealsTable: Record<string, Record<string, string | number | boolean>> = {};
+        const merchantDescriptions: Record<string, string> = {};
+
         data.forEach(deal => {
           dealsTable[deal.id] = {
             dealId: deal.dealId,
@@ -94,10 +100,19 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
             startDate: deal.startDate,
             endDate: deal.endDate
           };
-        });
-        dealsStore.setTable('deals', dealsTable);
 
+          // Add merchant name to the merchantDescriptions
+          merchantDescriptions[deal.merchantName] = deal.merchantName;
+        });
+
+        dealsStore.setTable('deals', dealsTable);
         dealsStore.setValue('lastFetchTime', Date.now());
+
+        // Only set and save merchant descriptions if they haven't been saved before
+        if (Object.keys(merchantDescriptionStore.getTable('merchants')).length === 0) {
+          merchantDescriptionStore.setTable('merchants', merchantDescriptions);
+          await merchantDescriptionPersister.save();
+        }
 
         await dealsPersister.save();
 
@@ -113,6 +128,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 
     const loadDealsFromStore = async () => {
       await dealsPersister.load();
+
       const lastFetchTime = dealsStore.getValue('lastFetchTime') as number | undefined;
       const storedDeals = dealsStore.getTable('deals');
 
@@ -141,7 +157,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
     };
 
     loadDealsFromStore();
-  }, [geolocationData, dealsStore, dealsPersister]);
+  }, [geolocationData, dealsStore, dealsPersister, merchantDescriptionStore, merchantDescriptionPersister]);
 
   useEffect(() => {
     const loadActivatedDeals = async () => {
@@ -311,4 +327,6 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
+
+
 
