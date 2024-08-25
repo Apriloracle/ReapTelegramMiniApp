@@ -110,7 +110,9 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 
         // Only set and save merchant descriptions if they haven't been saved before
         if (Object.keys(merchantDescriptionStore.getTable('merchants')).length === 0) {
-          merchantDescriptionStore.setTable('merchants', merchantDescriptions);
+          Object.entries(merchantDescriptions).forEach(([key, value]) => {
+            merchantDescriptionStore.setCell('merchants', key, 'name', value);
+          });
           await merchantDescriptionPersister.save();
         }
 
@@ -327,6 +329,9 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
+
+
+
 
 
 
