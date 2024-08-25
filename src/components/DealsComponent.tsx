@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import { useAccount } from 'wagmi';
+import axios from 'axios';
 
 interface Code {
   code: string;
@@ -51,6 +52,13 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   // New store for MerchantDescription
   const merchantDescriptionStore = React.useMemo(() => createStore(), []);
   const merchantDescriptionPersister = React.useMemo(() => createLocalPersister(merchantDescriptionStore, 'merchant-descriptions'), [merchantDescriptionStore]);
+
+  // New state to track if product descriptions have been fetched
+  const [fetchedMerchants, setFetchedMerchants] = useState<Set<string>>(new Set());
+
+  const [fetchQueue, setFetchQueue] = useState<string[]>([]);
+  const isFetchingRef = useRef(false);
+  const processFetchQueueRef = useRef<(() => Promise<void>) | null>(null);
 
   const searchDeals = useCallback((term: string) => {
     const lowercasedTerm = term.toLowerCase();
@@ -112,8 +120,10 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         if (Object.keys(merchantDescriptionStore.getTable('merchants')).length === 0) {
           Object.entries(merchantDescriptions).forEach(([key, value]) => {
             merchantDescriptionStore.setCell('merchants', key, 'name', value);
+            console.log(`Storing merchant name: ${key}`); // New log
           });
           await merchantDescriptionPersister.save();
+          console.log('Merchant descriptions saved to local storage'); // New log
         }
 
         await dealsPersister.save();
@@ -172,6 +182,82 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 
     loadActivatedDeals();
   }, [activatedDealsPersister, activatedDealsStore]);
+
+  // Function to fetch product descriptions
+  const fetchProductDescriptions = useCallback(async (merchantName: string) => {
+    if (!fetchedMerchants.has(merchantName)) {
+      try {
+        const response = await axios.post('https://us-central1-fourth-buffer-421320.cloudfunctions.net/chatPplx70b', {
+          merchantName,
+          temperature: 0.2,
+          model: "llama-3.1-sonar-small-128k-chat"
+        });
+
+        const productDescription = response.data;
+        merchantDescriptionStore.setCell('merchants', merchantName, 'productDescription', productDescription);
+        console.log(`Stored product description for: ${merchantName}`);
+
+        await merchantDescriptionPersister.save();
+        console.log(`Saved product description for ${merchantName} to local storage`);
+
+        setFetchedMerchants(prev => new Set(prev).add(merchantName));
+      } catch (error) {
+        console.error(`Error fetching product description for ${merchantName}:`, error);
+      }
+    } else {
+      console.log(`Product description for ${merchantName} already fetched, skipping.`);
+    }
+  }, [merchantDescriptionStore, merchantDescriptionPersister, fetchedMerchants]);
+
+  useEffect(() => {
+    processFetchQueueRef.current = async () => {
+      if (fetchQueue.length > 0 && !isFetchingRef.current) {
+        isFetchingRef.current = true;
+        const merchantName = fetchQueue[0];
+        
+        await fetchProductDescriptions(merchantName);
+        
+        setFetchQueue(prev => prev.slice(1));
+        
+        // Wait for 5 seconds before processing the next item
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        isFetchingRef.current = false;
+        if (processFetchQueueRef.current) {
+          processFetchQueueRef.current();
+        }
+      }
+    };
+  }, [fetchQueue, fetchProductDescriptions]);
+
+  useEffect(() => {
+    if (processFetchQueueRef.current) {
+      processFetchQueueRef.current();
+    }
+  }, [fetchQueue]);
+
+  useEffect(() => {
+    const loadMerchantDescriptions = async () => {
+      await merchantDescriptionPersister.load();
+      console.log('Loaded merchant descriptions from local storage');
+      
+      const storedDescriptions = merchantDescriptionStore.getTable('merchants');
+      console.log('Stored merchant descriptions:', storedDescriptions);
+      
+      const merchantsNeedingFetch = Object.entries(storedDescriptions)
+        .filter(([_, merchant]) => !merchant.productDescription && !fetchedMerchants.has(merchant.name))
+        .map(([merchantName]) => merchantName);
+      
+      if (merchantsNeedingFetch.length > 0) {
+        console.log('Some merchants need product descriptions, queueing...');
+        setFetchQueue(prev => [...prev, ...merchantsNeedingFetch]);
+      } else {
+        console.log('All merchant descriptions are complete, no need to fetch');
+      }
+    };
+
+    loadMerchantDescriptions();
+  }, [merchantDescriptionPersister, merchantDescriptionStore, fetchedMerchants]);
 
   const handleActivateDeal = async (dealId: string, code: string) => {
     const isLoggedIn = !!localWalletAddress || !!address;
@@ -329,6 +415,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
+
 
 
 
