@@ -60,6 +60,9 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   const isFetchingRef = useRef(false);
   const processFetchQueueRef = useRef<(() => Promise<void>) | null>(null);
 
+  const merchantProductRangeStore = React.useMemo(() => createStore(), []);
+  const merchantProductRangePersister = React.useMemo(() => createLocalPersister(merchantProductRangeStore, 'merchant-product-range'), [merchantProductRangeStore]);
+
   const searchDeals = useCallback((term: string) => {
     const lowercasedTerm = term.toLowerCase();
     const filtered = deals.filter(deal => 
@@ -185,7 +188,15 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 
   // Function to fetch product descriptions
   const fetchProductDescriptions = useCallback(async (merchantName: string) => {
-    if (!fetchedMerchants.has(merchantName)) {
+    // Check if the product range is already stored
+    const storedProductRange = merchantProductRangeStore.getCell('merchants', merchantName, 'productRange');
+    
+    if (storedProductRange) {
+      console.log(`Product range for ${merchantName} already stored, skipping fetch.`);
+      return;
+    }
+
+    if (!fetchedMerchants.has(merchantName) && merchantProductRangePersister) {
       try {
         const response = await axios.post('https://us-central1-fourth-buffer-421320.cloudfunctions.net/chatPplx70b', {
           merchantName,
@@ -193,21 +204,34 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
           model: "llama-3.1-sonar-small-128k-chat"
         });
 
-        const productDescription = response.data;
-        merchantDescriptionStore.setCell('merchants', merchantName, 'productDescription', productDescription);
-        console.log(`Stored product description for: ${merchantName}`);
+        // Extract the productRange from the response
+        const productRange = response.data.productRange;
 
-        await merchantDescriptionPersister.save();
-        console.log(`Saved product description for ${merchantName} to local storage`);
+        if (!productRange) {
+          throw new Error('Product range not found in response');
+        }
+
+        // Ensure the 'merchants' table exists
+        if (!merchantProductRangeStore.hasTable('merchants')) {
+          merchantProductRangeStore.setTable('merchants', {});
+        }
+
+        // Set the product range for the merchant
+        merchantProductRangeStore.setCell('merchants', merchantName, 'productRange', productRange);
+        console.log(`Stored product range for: ${merchantName}`);
+
+        // Save the changes to local storage
+        await merchantProductRangePersister.save();
+        console.log(`Saved product range for ${merchantName} to local storage`);
 
         setFetchedMerchants(prev => new Set(prev).add(merchantName));
       } catch (error) {
-        console.error(`Error fetching product description for ${merchantName}:`, error);
+        console.error(`Error fetching product range for ${merchantName}:`, error);
       }
     } else {
-      console.log(`Product description for ${merchantName} already fetched, skipping.`);
+      console.log(`Product range for ${merchantName} already fetched or persister not available, skipping.`);
     }
-  }, [merchantDescriptionStore, merchantDescriptionPersister, fetchedMerchants]);
+  }, [merchantProductRangeStore, merchantProductRangePersister, fetchedMerchants]);
 
   useEffect(() => {
     processFetchQueueRef.current = async () => {
@@ -238,29 +262,39 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 
   useEffect(() => {
     const loadMerchantDescriptions = async () => {
-      await merchantDescriptionPersister.load();
-      console.log('Loaded merchant descriptions from local storage');
-      
-      const storedDescriptions = merchantDescriptionStore.getTable('merchants');
-      console.log('Stored merchant descriptions:', storedDescriptions);
-      
-      const merchantsNeedingFetch = Object.entries(storedDescriptions)
-        .filter(([merchantName, merchant]) => 
-          !merchant.productDescription && 
-          !fetchedMerchants.has(merchantName)
-        )
-        .map(([merchantName]) => merchantName);
-      
-      if (merchantsNeedingFetch.length > 0) {
-        console.log('Some merchants need product descriptions, queueing...');
-        setFetchQueue(prev => [...prev, ...merchantsNeedingFetch]);
-      } else {
-        console.log('All merchant descriptions are complete, no need to fetch');
+      if (merchantDescriptionPersister && merchantProductRangePersister) {
+        await merchantDescriptionPersister.load();
+        await merchantProductRangePersister.load();
+        console.log('Loaded merchant descriptions from local storage');
+        
+        const storedMerchantNames = merchantDescriptionStore.getTable('merchants');
+        const storedProductDescriptions = merchantProductRangeStore.getTable('merchants');
+        
+        console.log('Stored merchant names:', storedMerchantNames);
+        console.log('Stored product descriptions:', storedProductDescriptions);
+        
+        console.log('Number of stored merchant names:', Object.keys(storedMerchantNames).length);
+        console.log('Number of stored product descriptions:', Object.keys(storedProductDescriptions).length);
+        
+        const merchantsNeedingFetch = Object.keys(storedMerchantNames)
+          .filter(merchantName => 
+            !storedProductDescriptions[merchantName]?.productDescription && 
+            !fetchedMerchants.has(merchantName)
+          );
+        
+        console.log('Merchants needing fetch:', merchantsNeedingFetch);
+        
+        if (merchantsNeedingFetch.length > 0) {
+          console.log('Some merchants need product descriptions, queueing...');
+          setFetchQueue(prev => [...prev, ...merchantsNeedingFetch]);
+        } else {
+          console.log('All merchant descriptions are complete, no need to fetch');
+        }
       }
     };
 
     loadMerchantDescriptions();
-  }, [merchantDescriptionPersister, merchantDescriptionStore, fetchedMerchants]);
+  }, [merchantDescriptionPersister, merchantProductRangePersister, merchantDescriptionStore, merchantProductRangeStore, fetchedMerchants]);
 
   const handleActivateDeal = async (dealId: string, code: string) => {
     const isLoggedIn = !!localWalletAddress || !!address;
@@ -418,7 +452,6 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
-
 
 
 
