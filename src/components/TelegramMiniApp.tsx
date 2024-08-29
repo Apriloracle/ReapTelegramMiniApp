@@ -710,7 +710,6 @@ const TelegramMiniApp: React.FC = () => {
           title={isConnected ? 'Connected to sync server' : 'Disconnected from sync server'}
         />
 
-        <InitialDataFetcher />
         <PeerSync 
           onConnectionStatus={handleConnectionStatus}
         />
