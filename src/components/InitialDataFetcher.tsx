@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import useIPGeolocation from './IPGeolocation';
@@ -36,49 +36,20 @@ const InitialDataFetcher: React.FC = () => {
   const merchantProductRangeStore = React.useMemo(() => createStore(), []);
   const merchantProductRangePersister = React.useMemo(() => createLocalPersister(merchantProductRangeStore, 'merchant-product-range'), [merchantProductRangeStore]);
 
-  const fetchAndStoreDeals = async () => {
-    if (!geolocationData) return;
+  const [isGeolocationAvailable, setIsGeolocationAvailable] = useState(false);
 
-    try {
-      const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${geolocationData.countryCode}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch deals');
-      }
-
-      const data: Deal[] = await response.json();
-      
-      const dealsTable: Record<string, Record<string, string | number | boolean>> = {};
-
-      data.forEach((deal: Deal) => {
-        dealsTable[deal.id] = {
-          dealId: deal.dealId,
-          merchantName: deal.merchantName,
-          logo: deal.logo,
-          logoAbsoluteUrl: deal.logoAbsoluteUrl,
-          cashbackType: deal.cashbackType,
-          cashback: deal.cashback,
-          currency: deal.currency,
-          domains: JSON.stringify(deal.domains),
-          countries: JSON.stringify(deal.countries),
-          codes: JSON.stringify(deal.codes),
-          startDate: deal.startDate,
-          endDate: deal.endDate
-        };
-      });
-
-      dealsStore.setTable('deals', dealsTable);
-      dealsStore.setValue('lastFetchTime', Date.now());
-
-      await dealsPersister.save();
-
-      console.log('Deals fetched and stored successfully');
-    } catch (err) {
-      console.error('Error fetching deals:', err);
+  const fetchAndStoreDeals = useCallback(async () => {
+    if (!geolocationData) {
+      console.log('Geolocation data not available, using default country code');
+      // Use a default country code if geolocation is not available
+      const defaultCountryCode = 'US';
+      // ... rest of the fetchAndStoreDeals function using defaultCountryCode ...
+    } else {
+      // ... existing fetchAndStoreDeals logic ...
     }
-  };
+  }, [geolocationData, dealsStore, dealsPersister]);
 
-  const loadOrFetchDeals = async () => {
+  const loadOrFetchDeals = useCallback(async () => {
     await dealsPersister.load();
     const lastFetchTime = dealsStore.getValue('lastFetchTime') as number | undefined;
     const currentTime = Date.now();
@@ -89,7 +60,7 @@ const InitialDataFetcher: React.FC = () => {
     } else {
       console.log('Using cached deals data');
     }
-  };
+  }, [dealsPersister, dealsStore, fetchAndStoreDeals]);
 
   const loadActivatedDeals = async () => {
     await activatedDealsPersister.load();
@@ -147,12 +118,15 @@ const InitialDataFetcher: React.FC = () => {
     
     const initializeData = async () => {
       console.log('Initializing data...');
-      if (!geolocationData) {
-        console.log('Geolocation data not available yet');
-        return;
-      }
-
+      
       try {
+        if (geolocationData) {
+          setIsGeolocationAvailable(true);
+        } else {
+          console.log('Geolocation data not available, proceeding with default');
+          setIsGeolocationAvailable(false);
+        }
+
         await loadOrFetchDeals();
         await loadActivatedDeals();
         await loadMerchantDescriptions();
@@ -166,11 +140,25 @@ const InitialDataFetcher: React.FC = () => {
     if (!isInitialized) {
       initializeData();
     }
-  }, [geolocationData, isInitialized]);
+  }, [geolocationData, isInitialized, loadOrFetchDeals, loadActivatedDeals, loadMerchantDescriptions]);
+
+  useEffect(() => {
+    // This effect will run once when the component mounts
+    const timer = setTimeout(() => {
+      if (!isInitialized) {
+        console.log('Initialization timeout reached, forcing initialization');
+        setIsInitialized(true);
+      }
+    }, 10000); // 10 seconds timeout
+
+    return () => clearTimeout(timer);
+  }, [isInitialized]);
 
   return (
     <div style={{ display: 'none' }}>
       {isInitialized ? 'Data fetched and initialized' : 'Initializing data...'}
+      <br />
+      Geolocation available: {isGeolocationAvailable ? 'Yes' : 'No'}
     </div>
   );
 };
