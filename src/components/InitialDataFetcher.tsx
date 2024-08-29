@@ -6,6 +6,22 @@ import axios from 'axios';
 
 const CACHE_DURATION = 100 * 60 * 60 * 1000; // 100 hours in milliseconds
 
+interface Deal {
+  id: string;
+  dealId: string;
+  merchantName: string;
+  logo: string;
+  logoAbsoluteUrl: string;
+  cashbackType: string;
+  cashback: number;
+  currency: string;
+  domains: string[];
+  countries: string[];
+  codes: any[]; // You might want to define a more specific type for codes
+  startDate: string;
+  endDate: string;
+}
+
 const InitialDataFetcher: React.FC = () => {
   const geolocationData = useIPGeolocation();
   const dealsStore = React.useMemo(() => createStore(), []);
@@ -30,11 +46,11 @@ const InitialDataFetcher: React.FC = () => {
           throw new Error('Failed to fetch deals');
         }
 
-        const data = await response.json();
+        const data: Deal[] = await response.json();
         
         const dealsTable: Record<string, Record<string, string | number | boolean>> = {};
 
-        data.forEach(deal => {
+        data.forEach((deal: Deal) => {
           dealsTable[deal.id] = {
             dealId: deal.dealId,
             merchantName: deal.merchantName,
