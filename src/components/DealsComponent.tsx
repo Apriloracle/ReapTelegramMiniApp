@@ -105,12 +105,76 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   }, [searchTerm, searchDeals]);
 
   useEffect(() => {
+    const fetchAndStoreDeals = async () => {
+      if (!geolocationData) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${geolocationData.countryCode}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch deals');
+        }
+
+        const data: Deal[] = await response.json();
+        
+        const dealsTable: Record<string, Record<string, string | number | boolean>> = {};
+        const merchantDescriptions: Record<string, string> = {};
+
+        data.forEach(deal => {
+          dealsTable[deal.id] = {
+            dealId: deal.dealId,
+            merchantName: deal.merchantName,
+            logo: deal.logo,
+            logoAbsoluteUrl: deal.logoAbsoluteUrl,
+            cashbackType: deal.cashbackType,
+            cashback: deal.cashback,
+            currency: deal.currency,
+            domains: JSON.stringify(deal.domains),
+            countries: JSON.stringify(deal.countries),
+            codes: JSON.stringify(deal.codes),
+            startDate: deal.startDate,
+            endDate: deal.endDate
+          };
+
+          // Add merchant name to the merchantDescriptions
+          merchantDescriptions[deal.merchantName] = deal.merchantName;
+        });
+
+        dealsStore.setTable('deals', dealsTable);
+        dealsStore.setValue('lastFetchTime', Date.now());
+
+        // Only set and save merchant descriptions if they haven't been saved before
+        if (Object.keys(merchantDescriptionStore.getTable('merchants')).length === 0) {
+          Object.entries(merchantDescriptions).forEach(([key, value]) => {
+            merchantDescriptionStore.setCell('merchants', key, 'name', value);
+            console.log(`Storing merchant name: ${key}`); // New log
+          });
+          await merchantDescriptionPersister.save();
+          console.log('Merchant descriptions saved to local storage'); // New log
+        }
+
+        await dealsPersister.save();
+
+        setDeals(data);
+        setFilteredDeals(data);
+      } catch (err) {
+        setError('Failed to load deals. Please try again later.');
+        console.error('Error fetching deals:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     const loadDealsFromStore = async () => {
       await dealsPersister.load();
 
+      const lastFetchTime = dealsStore.getValue('lastFetchTime') as number | undefined;
       const storedDeals = dealsStore.getTable('deals');
 
-      if (Object.keys(storedDeals).length > 0) {
+      if (lastFetchTime && Date.now() - lastFetchTime < 24 * 60 * 60 * 1000 && Object.keys(storedDeals).length > 0) {
         const dealsArray: Deal[] = Object.entries(storedDeals).map(([id, deal]) => ({
           id,
           dealId: deal.dealId as string,
@@ -130,13 +194,12 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         setFilteredDeals(dealsArray);
         setLoading(false);
       } else {
-        setError('No deals available. Please try again later.');
-        setLoading(false);
+        fetchAndStoreDeals();
       }
     };
 
     loadDealsFromStore();
-  }, [dealsStore, dealsPersister]);
+  }, [geolocationData, dealsStore, dealsPersister, merchantDescriptionStore, merchantDescriptionPersister]);
 
   useEffect(() => {
     const loadActivatedDeals = async () => {
@@ -355,6 +418,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
+
 
 
 
