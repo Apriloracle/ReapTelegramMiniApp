@@ -12,6 +12,7 @@ import DealsComponent from './DealsComponent';
 import SurveyQuestion from './SurveyQuestion';
 import ProfilePage from './ProfilePage';
 import BalanceCard from './BalanceCard';
+import InitialDataFetcher from './InitialDataFetcher';
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
@@ -709,6 +710,7 @@ const TelegramMiniApp: React.FC = () => {
           title={isConnected ? 'Connected to sync server' : 'Disconnected from sync server'}
         />
 
+        <InitialDataFetcher />
         <PeerSync 
           onConnectionStatus={handleConnectionStatus}
         />
