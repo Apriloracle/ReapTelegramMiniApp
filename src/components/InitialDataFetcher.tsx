@@ -256,5 +256,3 @@ const InitialDataFetcher: React.FC = () => {
 };
 
 export default InitialDataFetcher;
-
-
