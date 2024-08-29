@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import useIPGeolocation from './IPGeolocation';
@@ -23,6 +23,7 @@ interface Deal {
 }
 
 const InitialDataFetcher: React.FC = () => {
+  const [isInitialized, setIsInitialized] = useState(false);
   const geolocationData = useIPGeolocation();
   const dealsStore = React.useMemo(() => createStore(), []);
   const dealsPersister = React.useMemo(() => createLocalPersister(dealsStore, 'kindred-deals'), [dealsStore]);
@@ -34,6 +35,32 @@ const InitialDataFetcher: React.FC = () => {
   const merchantDescriptionPersister = React.useMemo(() => createLocalPersister(merchantDescriptionStore, 'merchant-descriptions'), [merchantDescriptionStore]);
   const merchantProductRangeStore = React.useMemo(() => createStore(), []);
   const merchantProductRangePersister = React.useMemo(() => createLocalPersister(merchantProductRangeStore, 'merchant-product-range'), [merchantProductRangeStore]);
+
+  useEffect(() => {
+    console.log('InitialDataFetcher useEffect triggered');
+    
+    const initializeData = async () => {
+      console.log('Initializing data...');
+      if (!geolocationData) {
+        console.log('Geolocation data not available yet');
+        return;
+      }
+
+      try {
+        await loadOrFetchDeals();
+        await loadActivatedDeals();
+        await loadMerchantDescriptions();
+        setIsInitialized(true);
+        console.log('Data initialization complete');
+      } catch (error) {
+        console.error('Error during data initialization:', error);
+      }
+    };
+
+    if (!isInitialized) {
+      initializeData();
+    }
+  }, [geolocationData, isInitialized]);
 
   useEffect(() => {
     const fetchAndStoreDeals = async () => {
@@ -147,7 +174,11 @@ const InitialDataFetcher: React.FC = () => {
     loadMerchantDescriptions();
   }, [geolocationData, dealsStore, dealsPersister, activatedDealsStore, activatedDealsPersister, merchantDescriptionStore, merchantDescriptionPersister, merchantProductRangeStore, merchantProductRangePersister]);
 
-  return null;
+  return (
+    <div style={{ display: 'none' }}>
+      {isInitialized ? 'Data fetched and initialized' : 'Initializing data...'}
+    </div>
+  );
 };
 
 export default InitialDataFetcher;
