@@ -63,6 +63,33 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   const merchantProductRangeStore = React.useMemo(() => createStore(), []);
   const merchantProductRangePersister = React.useMemo(() => createLocalPersister(merchantProductRangeStore, 'merchant-product-range'), [merchantProductRangeStore]);
 
+  const [filteredMerchants, setFilteredMerchants] = useState<string[]>([]);
+  const surveyStore = React.useMemo(() => createStore(), []);
+  const surveyPersister = React.useMemo(() => createLocalPersister(surveyStore, 'survey-responses'), []);
+
+  useEffect(() => {
+    const loadSurveyResponses = async () => {
+      await surveyPersister.load();
+      const surveyResponses = surveyStore.getTable('answeredQuestions');
+      
+      if (surveyResponses) {
+        const matchingMerchants = deals.filter(deal => {
+          const productRange = merchantProductRangeStore.getCell('merchants', deal.merchantName, 'productRange') as string;
+          if (!productRange) return false;
+
+          return Object.entries(surveyResponses).some(([question, response]) => {
+            const answer = (response as any).answer;
+            return productRange.toLowerCase().includes(answer.toLowerCase());
+          });
+        });
+
+        setFilteredMerchants(matchingMerchants.map(deal => deal.merchantName));
+      }
+    };
+
+    loadSurveyResponses();
+  }, [deals, surveyPersister, surveyStore, merchantProductRangeStore]);
+
   const searchDeals = useCallback((term: string) => {
     const lowercasedTerm = term.toLowerCase();
     const filtered = deals.filter(deal => 
@@ -78,76 +105,12 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   }, [searchTerm, searchDeals]);
 
   useEffect(() => {
-    const fetchAndStoreDeals = async () => {
-      if (!geolocationData) return;
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${geolocationData.countryCode}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch deals');
-        }
-
-        const data: Deal[] = await response.json();
-        
-        const dealsTable: Record<string, Record<string, string | number | boolean>> = {};
-        const merchantDescriptions: Record<string, string> = {};
-
-        data.forEach(deal => {
-          dealsTable[deal.id] = {
-            dealId: deal.dealId,
-            merchantName: deal.merchantName,
-            logo: deal.logo,
-            logoAbsoluteUrl: deal.logoAbsoluteUrl,
-            cashbackType: deal.cashbackType,
-            cashback: deal.cashback,
-            currency: deal.currency,
-            domains: JSON.stringify(deal.domains),
-            countries: JSON.stringify(deal.countries),
-            codes: JSON.stringify(deal.codes),
-            startDate: deal.startDate,
-            endDate: deal.endDate
-          };
-
-          // Add merchant name to the merchantDescriptions
-          merchantDescriptions[deal.merchantName] = deal.merchantName;
-        });
-
-        dealsStore.setTable('deals', dealsTable);
-        dealsStore.setValue('lastFetchTime', Date.now());
-
-        // Only set and save merchant descriptions if they haven't been saved before
-        if (Object.keys(merchantDescriptionStore.getTable('merchants')).length === 0) {
-          Object.entries(merchantDescriptions).forEach(([key, value]) => {
-            merchantDescriptionStore.setCell('merchants', key, 'name', value);
-            console.log(`Storing merchant name: ${key}`); // New log
-          });
-          await merchantDescriptionPersister.save();
-          console.log('Merchant descriptions saved to local storage'); // New log
-        }
-
-        await dealsPersister.save();
-
-        setDeals(data);
-        setFilteredDeals(data);
-      } catch (err) {
-        setError('Failed to load deals. Please try again later.');
-        console.error('Error fetching deals:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     const loadDealsFromStore = async () => {
       await dealsPersister.load();
 
-      const lastFetchTime = dealsStore.getValue('lastFetchTime') as number | undefined;
       const storedDeals = dealsStore.getTable('deals');
 
-      if (lastFetchTime && Date.now() - lastFetchTime < 24 * 60 * 60 * 1000 && Object.keys(storedDeals).length > 0) {
+      if (Object.keys(storedDeals).length > 0) {
         const dealsArray: Deal[] = Object.entries(storedDeals).map(([id, deal]) => ({
           id,
           dealId: deal.dealId as string,
@@ -167,12 +130,13 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         setFilteredDeals(dealsArray);
         setLoading(false);
       } else {
-        fetchAndStoreDeals();
+        setError('No deals available. Please try again later.');
+        setLoading(false);
       }
     };
 
     loadDealsFromStore();
-  }, [geolocationData, dealsStore, dealsPersister, merchantDescriptionStore, merchantDescriptionPersister]);
+  }, [dealsStore, dealsPersister]);
 
   useEffect(() => {
     const loadActivatedDeals = async () => {
@@ -355,92 +319,31 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
             <path d="M12 19L5 12L12 5" stroke="#f05e23" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Shop and earn in {geolocationData?.countryCode}</h2>
+        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Recommended Deals</h2>
       </div>
       
-      <input
-        type="text"
-        placeholder="Search deals..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        style={{
-          width: '100%',
-          padding: '0.5rem',
-          marginBottom: '1rem',
-          backgroundColor: '#333',
-          color: '#fff',
-          border: '1px solid #555',
-          borderRadius: '4px'
-        }}
-      />
-
-      {filteredDeals.length === 0 ? (
-        <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No deals available for your search.</p>
+      {filteredMerchants.length === 0 ? (
+        <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No matching deals available based on your preferences.</p>
       ) : (
-        <ul style={{ listStyleType: 'none', padding: 0 }}>
-          {filteredDeals.map((deal) => (
-            <li key={deal.id} style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#111111', borderRadius: '0.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-                <img 
-                  src={deal.logoAbsoluteUrl} 
-                  alt={deal.merchantName} 
-                  style={{ 
-                    width: '60px', 
-                    height: '60px', 
-                    marginRight: '1rem', 
-                    borderRadius: '8px',
-                    objectFit: 'contain',
-                    backgroundColor: 'white',
-                    padding: '4px'
-                  }} 
-                />
-                <h3 style={{ color: '#f05e23', margin: 0, fontSize: '1.2rem' }}>{deal.merchantName}</h3>
-              </div>
-              {deal.cashback > 0 && (
-                <p style={{ color: '#22c55e', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                  Cashback: {deal.cashback} {deal.currency}
-                </p>
-              )}
-              <p style={{ color: '#A0AEC0', marginBottom: '0.5rem' }}>Available codes:</p>
-              <ul style={{ listStyleType: 'none', padding: 0 }}>
-                {deal.codes.map((code, index) => {
-                  const dealKey = `${deal.dealId}-${code.code}`;
-                  const isActivated = activatedDeals.has(dealKey);
-                  return (
-                    <li key={index} style={{ marginBottom: '1rem', backgroundColor: '#1c1c1c', padding: '0.5rem', borderRadius: '4px' }}>
-                      <p style={{ color: '#f05e23', fontWeight: 'bold', marginBottom: '0.25rem' }}>{code.code}</p>
-                      <p style={{ color: '#A0AEC0', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                        {code.summary.includes("Please note the codes can not be used for orders to") 
-                          ? "Restrictions apply in some regions" 
-                          : code.summary}
-                      </p>
-                      <button 
-                        onClick={() => handleActivateDeal(deal.dealId, code.code)}
-                        disabled={activatingDeal === dealKey || isActivated}
-                        style={{
-                          backgroundColor: isActivated ? '#22c55e' : '#f05e23',
-                          color: '#FFFFFF',
-                          padding: '0.5rem 1rem',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: activatingDeal === dealKey || isActivated || !isLoggedIn ? 'not-allowed' : 'pointer',
-                          opacity: activatingDeal === dealKey || !isLoggedIn ? 0.6 : 1,
-                          width: '100%'
-                        }}
-                      >
-                        {activatingDeal === dealKey 
-                          ? 'Activating...' 
-                          : isActivated 
-                            ? 'Deal Activated' 
-                            : 'Activate Deal'}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </li>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+          {deals.filter(deal => filteredMerchants.includes(deal.merchantName)).map((deal) => (
+            <div key={deal.id} style={{ margin: '0.5rem', textAlign: 'center' }}>
+              <img 
+                src={deal.logoAbsoluteUrl} 
+                alt={deal.merchantName} 
+                style={{ 
+                  width: '60px', 
+                  height: '60px', 
+                  borderRadius: '8px',
+                  objectFit: 'contain',
+                  backgroundColor: 'white',
+                  padding: '4px'
+                }} 
+              />
+              <p style={{ color: '#f05e23', fontSize: '0.8rem', marginTop: '0.25rem' }}>{deal.merchantName}</p>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
       {error && (
         <div style={{ color: '#EF4444', textAlign: 'center', marginTop: '1rem' }}>
@@ -452,7 +355,6 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
-
 
 
 
