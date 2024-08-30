@@ -19,6 +19,7 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
     { question: "Which do you prefer?", options: ["Fashion", "Electronics"] },
     { question: "What type of products do you shop for most?", options: ["Home Goods", "Tech Gadgets", "Clothing", "Food"] },
     { question: "How often do you shop online?", options: ["Daily", "Weekly", "Monthly", "Rarely"] },
+    { question: "Are you interested in deals from Amazon?", options: ["Yes", "No"] },
     { question: "Are you interested in tech?", options: ["Yes", "No"] },
     { question: "Are you interested in cars?", options: ["Yes", "No"] },
     { question: "Are you interested in cooking?", options: ["Yes", "No"] },
