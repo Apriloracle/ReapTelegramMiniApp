@@ -37,6 +37,16 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
     { question: "Do you shop for phones and tablets?", options: ["Yes", "No"] },
     { question: "Do you shop for appliances?", options: ["Yes", "No"] },
     { question: "Do you shop for fashion items?", options: ["Yes", "No"] },
+    { question: "What's your primary motivation for online shopping?", options: ["Convenience", "Better prices", "Wider selection", "Exclusive online deals", "Avoid crowds"] },
+    { question: "Which social media platform influences your purchases the most?", options: ["Instagram", "Facebook", "Pinterest", "TikTok", "Twitter", "None"] },
+    { question: "How do you prefer to receive updates about new products or sales?", options: ["Email newsletters", "SMS", "Push notifications", "Social media", "Don't want updates"] },
+    { question: "What's your preferred device for online shopping?", options: ["Smartphone", "Tablet", "Laptop", "Desktop computer"] },
+    { question: "How important is eco-friendly packaging in your purchasing decisions?", options: ["Very important", "Somewhat important", "Neutral", "Not very important", "Not at all important"] },
+    { question: "What's your typical budget for online purchases per month?", options: ["Under $25", "$25-$100", "$101-$250", "$251-$500", "Over $500"] },
+    { question: "Which factor influences your online purchase decision the most?", options: ["Price", "Brand reputation", "Customer reviews", "Free shipping", "Return policy"] },
+    { question: "How often do you return items purchased online?", options: ["Never", "Rarely", "Sometimes", "Often", "Very often"] },
+    { question: "What's your preferred method for customer support when shopping online?", options: ["Live chat", "Email", "Phone", "Social media", "FAQ/Help center"] },
+    { question: "How do you usually discover new online stores or products?", options: ["Search engines", "Social media ads", "Friend recommendations", "Influencer promotions", "Email newsletters"] },
     { question: "What's your preferred payment method?", options: ["Credit Card", "PayPal", "Crypto", "Bank Transfer"] }
   ];
 
