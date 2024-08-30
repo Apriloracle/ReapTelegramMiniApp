@@ -17,9 +17,25 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
 
   const surveyQuestions = [
     { question: "Which do you prefer?", options: ["Fashion", "Electronics"] },
-    { question: "Are you interested in deals from Amazon?", options: ["Yes", "No"] },
     { question: "What type of products do you shop for most?", options: ["Home Goods", "Tech Gadgets", "Clothing", "Food"] },
     { question: "How often do you shop online?", options: ["Daily", "Weekly", "Monthly", "Rarely"] },
+    { question: "Are you interested in tech?", options: ["Yes", "No"] },
+    { question: "Are you interested in cars?", options: ["Yes", "No"] },
+    { question: "Are you interested in cooking?", options: ["Yes", "No"] },
+    { question: "Are you interested in fashion?", options: ["Yes", "No"] },
+    { question: "Are you interested in games?", options: ["Yes", "No"] },
+    { question: "Are you interested in art?", options: ["Yes", "No"] },
+    { question: "Are you interested in movies?", options: ["Yes", "No"] },
+    { question: "Are you interested in sports?", options: ["Yes", "No"] },
+    { question: "Are you interested in photography?", options: ["Yes", "No"] },
+    { question: "Are you interested in food?", options: ["Yes", "No"] },
+    { question: "Do you shop for electronics?", options: ["Yes", "No"] },
+    { question: "Do you shop for gaming products?", options: ["Yes", "No"] },
+    { question: "Do you shop for computing products?", options: ["Yes", "No"] },
+    { question: "Do you shop for sporting gear?", options: ["Yes", "No"] },
+    { question: "Do you shop for phones and tablets?", options: ["Yes", "No"] },
+    { question: "Do you shop for appliances?", options: ["Yes", "No"] },
+    { question: "Do you shop for fashion items?", options: ["Yes", "No"] },
     { question: "What's your preferred payment method?", options: ["Credit Card", "PayPal", "Crypto", "Bank Transfer"] }
   ];
 
