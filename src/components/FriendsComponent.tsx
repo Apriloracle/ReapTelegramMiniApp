@@ -36,7 +36,7 @@ const FriendsComponent: React.FC = () => {
 
       if (storedUserId) {
         await generateReferrerId(storedUserId);
-        getUserReferralLink(); // Call this without parameters
+        getUserReferralLink(); // This is now correct
       } else {
         console.error('User ID not found in store or Telegram');
       }
@@ -72,7 +72,7 @@ const FriendsComponent: React.FC = () => {
     }
   };
 
-  const getUserReferralLink = async (telegramUserId: string) => {
+  const getUserReferralLink = async () => { // Remove the parameter
     try {
       const functionUrl = 'https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/telegramReferral/getUserReferralLink';
       
@@ -82,7 +82,7 @@ const FriendsComponent: React.FC = () => {
       }
 
       const response = await axios.post(functionUrl, { 
-        referrerId: referrerId // Send referrerId instead of telegramUserId
+        referrerId: referrerId
       });
       setReferralLink(response.data.referralLink);
       setReferralCode(response.data.referralCode);
