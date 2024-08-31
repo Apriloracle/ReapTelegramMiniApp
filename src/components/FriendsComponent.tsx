@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import WebApp from '@twa-dev/sdk';
+import WebApp from '@twa-dev/sdk'
+import { LocalWallet } from "@thirdweb-dev/wallets";
 
 const FriendsComponent: React.FC = () => {
   const navigate = useNavigate();
   const [referralLink, setReferralLink] = useState<string>('');
   const [referralCode, setReferralCode] = useState<string>('');
   const [userId, setUserId] = useState<string | null>(null);
+  const [referrerId, setReferrerId] = useState<string | null>(null);
 
   useEffect(() => {
     const userStore = createStore();
@@ -20,11 +22,9 @@ const FriendsComponent: React.FC = () => {
       let storedUserId = userStore.getCell('user', 'data', 'id') as string | null;
 
       if (!storedUserId) {
-        // If userId is not in store, get it from Telegram
         const telegramUserId = WebApp.initDataUnsafe?.user?.id?.toString();
         if (telegramUserId) {
           storedUserId = telegramUserId;
-          // Store the userId in TinyBase
           userStore.setCell('user', 'data', 'id', telegramUserId);
           await userPersister.save();
         } else {
@@ -35,7 +35,8 @@ const FriendsComponent: React.FC = () => {
       setUserId(storedUserId);
 
       if (storedUserId) {
-        getUserReferralLink(storedUserId);
+        await generateReferrerId(storedUserId);
+        getUserReferralLink(); // Call this without parameters
       } else {
         console.error('User ID not found in store or Telegram');
       }
@@ -44,16 +45,49 @@ const FriendsComponent: React.FC = () => {
     initializeUserData().catch(console.error);
   }, []);
 
+  const generateReferrerId = async (telegramUserId: string) => {
+    try {
+      let wallet = new LocalWallet();
+      
+      try {
+        await wallet.load({
+          strategy: "encryptedJson",
+          password: telegramUserId,
+        });
+        console.log('Existing wallet loaded for referrer ID');
+      } catch (loadError) {
+        console.log('No existing wallet found for referrer ID, creating new one');
+        await wallet.generate();
+        await wallet.save({
+          strategy: "encryptedJson",
+          password: telegramUserId,
+        });
+      }
+
+      const walletAddress = await wallet.getAddress();
+      setReferrerId(walletAddress);
+      console.log('Referrer ID (wallet address) set:', walletAddress);
+    } catch (error) {
+      console.error("Error generating referrer ID:", error);
+    }
+  };
+
   const getUserReferralLink = async (telegramUserId: string) => {
     try {
       const functionUrl = 'https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/telegramReferral/getUserReferralLink';
       
-      const response = await axios.post(functionUrl, { telegramUserId });
+      if (!referrerId) {
+        console.error('Referrer ID not available');
+        return;
+      }
+
+      const response = await axios.post(functionUrl, { 
+        referrerId: referrerId // Send referrerId instead of telegramUserId
+      });
       setReferralLink(response.data.referralLink);
       setReferralCode(response.data.referralCode);
     } catch (error) {
       console.error('Error fetching referral link:', error);
-      // Handle error (e.g., show error message to user)
     }
   };
 
