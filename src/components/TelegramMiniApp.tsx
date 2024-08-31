@@ -10,9 +10,9 @@ import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from
 import PeerSync from './PeerSync';
 import DealsComponent from './DealsComponent';
 import SurveyQuestion from './SurveyQuestion';
-import ProfilePage from './ProfilePage';
 import BalanceCard from './BalanceCard';
 import InitialDataFetcher from './InitialDataFetcher';
+import FriendsComponent from './FriendsComponent';
 
 const DAILY_TAP_LIMIT = 1000;
 const RESET_MINUTES = 60;
@@ -479,6 +479,8 @@ const TelegramMiniApp: React.FC = () => {
   }, [aprilBalance.displayValue, aprilUsdPrice]);
 
   const MainPage: React.FC = () => {
+    const navigate = useNavigate();
+
     return (
       <>
         <BalanceCard
@@ -609,26 +611,6 @@ const TelegramMiniApp: React.FC = () => {
           )}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
-          <button
-            onClick={handleShare}
-            style={{
-              background: 'black',
-              color: '#f05e23',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '9999px',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              border: '2px solid #f05e23',
-              cursor: 'pointer',
-              transition: 'all 300ms ease-in-out',
-              boxShadow: '0 4px 6px rgba(240,94,35,0.3)',
-            }}
-          >
-            Share and Earn More!
-          </button>
-        </div>
-
         <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
            {shares}
         </p>
@@ -688,6 +670,20 @@ const TelegramMiniApp: React.FC = () => {
             <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
           </svg>
         </button>
+        <button
+          onClick={() => navigate('/friends')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: location.pathname === '/friends' ? '#f05e23' : '#fff',
+            fontSize: '24px',
+            cursor: 'pointer',
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+            <path d="M12 5.5a3.5 3.5 0 11-7 0 3.5 3.5 0 017 0zM5 8a5 5 0 1110 0A5 5 0 015 8zm14.5 3a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zm-2.5 4a4 4 0 00-3.957 3.228A3.99 3.99 0 0114 18h1a4 4 0 014 4v1h2v-1a6 6 0 00-6-6h-1a5.978 5.978 0 00-3.228.957A3.99 3.99 0 018 18H7a4 4 0 00-4 4v1H1v-1a6 6 0 016-6h1z"/>
+          </svg>
+        </button>
       </div>
     );
   };
@@ -709,8 +705,8 @@ const TelegramMiniApp: React.FC = () => {
           }}
           title={isConnected ? 'Connected to sync server' : 'Disconnected from sync server'}
         />
-        
-       <InitialDataFetcher />
+
+        <InitialDataFetcher />
         <PeerSync 
           onConnectionStatus={handleConnectionStatus}
         />
@@ -734,9 +730,9 @@ const TelegramMiniApp: React.FC = () => {
         )}
 
         <Routes>
-  <Route path="/profile" element={<ProfilePage />} />
           <Route path="/" element={<MainPage />} />
           <Route path="/deals" element={<DealsComponent localWalletAddress={localWalletAddress} />} />
+          <Route path="/friends" element={<FriendsComponent />} />
         </Routes>
         
         <BottomNavBar />
