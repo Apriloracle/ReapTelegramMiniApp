@@ -35,8 +35,10 @@ const FriendsComponent: React.FC = () => {
       setUserId(storedUserId);
 
       if (storedUserId) {
-        await generateReferrerId(storedUserId);
-        getUserReferralLink(); // This is now correct
+        const generatedReferrerId = await generateReferrerId(storedUserId);
+        if (generatedReferrerId) {
+          getUserReferralLink(generatedReferrerId);
+        }
       } else {
         console.error('User ID not found in store or Telegram');
       }
@@ -45,7 +47,7 @@ const FriendsComponent: React.FC = () => {
     initializeUserData().catch(console.error);
   }, []);
 
-  const generateReferrerId = async (telegramUserId: string) => {
+  const generateReferrerId = async (telegramUserId: string): Promise<string | null> => {
     try {
       let wallet = new LocalWallet();
       
@@ -67,20 +69,17 @@ const FriendsComponent: React.FC = () => {
       const walletAddress = await wallet.getAddress();
       setReferrerId(walletAddress);
       console.log('Referrer ID (wallet address) set:', walletAddress);
+      return walletAddress;
     } catch (error) {
       console.error("Error generating referrer ID:", error);
+      return null;
     }
   };
 
-  const getUserReferralLink = async () => { // Remove the parameter
+  const getUserReferralLink = async (referrerId: string) => {
     try {
       const functionUrl = 'https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/telegramReferral/getUserReferralLink';
       
-      if (!referrerId) {
-        console.error('Referrer ID not available');
-        return;
-      }
-
       const response = await axios.post(functionUrl, { 
         referrerId: referrerId
       });
