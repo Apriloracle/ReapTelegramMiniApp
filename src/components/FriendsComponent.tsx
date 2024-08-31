@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { createStore } from 'tinybase';
@@ -12,6 +12,33 @@ const FriendsComponent: React.FC = () => {
   const [referralCode, setReferralCode] = useState<string>('');
   const [userId, setUserId] = useState<string | null>(null);
   const [referrerId, setReferrerId] = useState<string | null>(null);
+
+  const referralHandler = useCallback(async (referralCode: string) => {
+    if (!userId) {
+      console.error('User ID not available');
+      return;
+    }
+
+    try {
+      const functionUrl = 'https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/handleReferral';
+      
+      const response = await axios.post(functionUrl, { 
+        userId: userId,
+        referralCode: referralCode
+      });
+
+      if (response.data.success) {
+        console.log('Referral processed successfully');
+        alert('Referral processed successfully!');
+      } else {
+        console.error('Referral processing failed:', response.data.message);
+        alert('Referral processing failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error processing referral:', error);
+      alert('An error occurred while processing the referral. Please try again later.');
+    }
+  }, [userId]);
 
   useEffect(() => {
     const userStore = createStore();
@@ -45,7 +72,14 @@ const FriendsComponent: React.FC = () => {
     };
 
     initializeUserData().catch(console.error);
-  }, []);
+
+    // Add this block to handle referral when the component mounts
+    const urlParams = new URLSearchParams(window.location.search);
+    const referralCode = urlParams.get('ref');
+    if (referralCode) {
+      referralHandler(referralCode);
+    }
+  }, [referralHandler]);
 
   const generateReferrerId = async (telegramUserId: string): Promise<string | null> => {
     try {
