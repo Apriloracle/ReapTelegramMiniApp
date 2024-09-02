@@ -60,7 +60,7 @@ const SurveyQuestion: React.FC<SurveyQuestionProps> = ({ onResponse, onClose }) 
 
     const timer = setTimeout(() => {
       setIsInteractionEnabled(true);
-    }, 3000);
+    }, 4000);
 
     return () => {
       clearTimeout(timer);
