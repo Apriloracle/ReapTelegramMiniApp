@@ -14,7 +14,7 @@ import BalanceCard from './BalanceCard';
 import InitialDataFetcher from './InitialDataFetcher';
 import FriendsComponent from './FriendsComponent';
 
-const DAILY_TAP_LIMIT = 1000;
+const DAILY_TAP_LIMIT = 3000;
 const RESET_MINUTES = 60;
 const TELEGRAM_BOT_URL = 'https://t.me/Reapmini_bot';
 const SHARE_URL = 'https://t.me/share/url?url=https://t.me/Reapmini_bot&text=%F0%9F%92%B0Reap%20Mini%3A%20Tap%2C%20Earn%2C%20Grow%20-%20Where%20Every%20Tap%20Leads%20to%20Crypto%20Rewards!%0A%F0%9F%8E%81Let%27s%20start%20earning%20now!';
@@ -610,10 +610,6 @@ const TelegramMiniApp: React.FC = () => {
             <p style={{ marginTop: '0.5rem', color: '#EF4444', fontSize: '0.875rem' }}>{error}</p>
           )}
         </div>
-
-        <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
-           {shares}
-        </p>
 
         {showSurvey && (
           <SurveyQuestion
