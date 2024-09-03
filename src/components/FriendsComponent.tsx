@@ -20,7 +20,7 @@ const FriendsComponent: React.FC = () => {
     }
 
     try {
-      const functionUrl = 'https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/handleReferral';
+      const functionUrl = 'https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleReferral1';
       
       const response = await axios.post(functionUrl, { 
         userId: userId,
