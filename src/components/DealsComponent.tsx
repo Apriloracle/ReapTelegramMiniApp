@@ -112,7 +112,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
       setError(null);
 
       try {
-        const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${geolocationData.countryCode}`);
+        const response = await fetch(`https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${geolocationData.countryCode}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch deals');
