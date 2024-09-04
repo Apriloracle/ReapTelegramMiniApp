@@ -47,7 +47,7 @@ const InitialDataFetcher: React.FC = () => {
       // Use a default country code if geolocation is not available
       const defaultCountryCode = '';
       try {
-        const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${defaultCountryCode}`);
+        const response = await fetch(`https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${defaultCountryCode}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch deals');
