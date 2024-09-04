@@ -21,7 +21,7 @@ const FriendsComponent: React.FC = () => {
 
     try {
       console.log('Processing referral for user:', userId, 'with code:', referralCode);
-      const functionUrl = 'https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleReferral1';
+      const functionUrl = 'https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/handleReferral';
       
       const response = await axios.post(functionUrl, { 
         userId: userId,
@@ -93,8 +93,8 @@ const FriendsComponent: React.FC = () => {
 
     handleReferral();
 
-    // Call handleInitialReferral after a short delay to ensure userId is set
-    const timeoutId = setTimeout(handleInitialReferral, 1000);
+    // Call handleReferral after a short delay to ensure userId is set
+    const timeoutId = setTimeout(handleReferral, 1000);
 
     // Cleanup function
     return () => clearTimeout(timeoutId);
