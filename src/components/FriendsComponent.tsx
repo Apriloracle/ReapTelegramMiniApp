@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import WebApp from '@twa-dev/sdk';
+import WebApp from '@twa-dev/sdk'
 import { LocalWallet } from "@thirdweb-dev/wallets";
 
 const FriendsComponent: React.FC = () => {
@@ -20,7 +20,9 @@ const FriendsComponent: React.FC = () => {
     }
 
     try {
+      console.log('Processing referral for user:', userId, 'with code:', referralCode);
       const functionUrl = 'https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleReferral1';
+      
       const response = await axios.post(functionUrl, { 
         userId: userId,
         referralCode: referralCode
@@ -72,12 +74,30 @@ const FriendsComponent: React.FC = () => {
 
     initializeUserData().catch(console.error);
 
-    // Add this block to handle referral when the component mounts
-    const urlParams = new URLSearchParams(window.location.search);
-    const referralCode = urlParams.get('ref');
-    if (referralCode && userId) {
-      referralHandler(referralCode);
-    }
+    // Update this block to handle referral when the component mounts
+    const handleReferral = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const referralCode = urlParams.get('ref');
+      if (referralCode) {
+        console.log('Referral code found:', referralCode);
+        if (userId) {
+          referralHandler(referralCode);
+        } else {
+          console.log('User ID not yet available. Storing referral code for later.');
+          localStorage.setItem('pendingReferralCode', referralCode);
+        }
+      } else {
+        console.log('No referral code found in URL');
+      }
+    };
+
+    handleReferral();
+
+    // Call handleInitialReferral after a short delay to ensure userId is set
+    const timeoutId = setTimeout(handleInitialReferral, 1000);
+
+    // Cleanup function
+    return () => clearTimeout(timeoutId);
   }, [referralHandler, userId]);
 
   const generateReferrerId = async (telegramUserId: string): Promise<string | null> => {
@@ -127,6 +147,17 @@ const FriendsComponent: React.FC = () => {
     navigator.clipboard.writeText(referralLink);
     alert('Referral link copied to clipboard!');
   };
+
+  useEffect(() => {
+    if (userId) {
+      const storedReferralCode = localStorage.getItem('pendingReferralCode');
+      if (storedReferralCode) {
+        console.log('Processing stored referral code:', storedReferralCode);
+        referralHandler(storedReferralCode);
+        localStorage.removeItem('pendingReferralCode');
+      }
+    }
+  }, [userId, referralHandler]);
 
   return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
