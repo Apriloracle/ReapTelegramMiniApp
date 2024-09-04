@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
-import WebApp from '@twa-dev/sdk'
+import WebApp from '@twa-dev/sdk';
 import { LocalWallet } from "@thirdweb-dev/wallets";
 
 const FriendsComponent: React.FC = () => {
@@ -21,7 +21,6 @@ const FriendsComponent: React.FC = () => {
 
     try {
       const functionUrl = 'https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleReferral1';
-      
       const response = await axios.post(functionUrl, { 
         userId: userId,
         referralCode: referralCode
@@ -76,10 +75,10 @@ const FriendsComponent: React.FC = () => {
     // Add this block to handle referral when the component mounts
     const urlParams = new URLSearchParams(window.location.search);
     const referralCode = urlParams.get('ref');
-    if (referralCode) {
+    if (referralCode && userId) {
       referralHandler(referralCode);
     }
-  }, [referralHandler]);
+  }, [referralHandler, userId]);
 
   const generateReferrerId = async (telegramUserId: string): Promise<string | null> => {
     try {
