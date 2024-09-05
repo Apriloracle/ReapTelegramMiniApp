@@ -21,7 +21,7 @@ const FriendsComponent: React.FC = () => {
 
     try {
       console.log('Processing referral for user:', userId, 'with code:', referralCode);
-      const functionUrl = 'https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/handleReferral';
+      const functionUrl = 'https://us-central1-fourth-buffer-421320.cloudfunctions.net/handleReferral2';
       
       const response = await axios.post(functionUrl, { 
         userId: userId,
