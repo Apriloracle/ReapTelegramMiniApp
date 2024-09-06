@@ -64,7 +64,7 @@ const TelegramMiniApp: React.FC = () => {
           setUserId(userData.id.toString());
           console.log('User ID:', userData.id);
           // Automatically log in the user
-          handleLogin(userData.id.toString());
+          handleLogin();
         } else {
           console.error('User data not found in initData');
         }
@@ -344,7 +344,7 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
-  const handleLogin = async (userId: string) => {
+  const handleLogin = async () => {
     if (!userId) {
       setError("User ID not available. Please try reloading the app.");
       return;
@@ -757,17 +757,4 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
-
-
-
-
-
-
-
-
-
-
-
-
-
 
