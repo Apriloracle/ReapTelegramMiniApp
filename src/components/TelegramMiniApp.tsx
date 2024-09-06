@@ -51,6 +51,114 @@ const TelegramMiniApp: React.FC = () => {
   const aprilPriceStore = React.useMemo(() => createStore(), []);
   const aprilPricePersister = React.useMemo(() => createLocalPersister(aprilPriceStore, 'AprilUsdPrice'), [aprilPriceStore]);
 
+  // Add this new useEffect hook for handling daily tap data
+  useEffect(() => {
+    const loadDailyTapData = async () => {
+      try {
+        await dailyPersister.load();
+        const loadedDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
+        const lastReset = new Date(dailyStore.getCell('dailyStats', 'clicks', 'lastReset') as string || new Date().toISOString());
+        
+        if (shouldResetDailyTaps(lastReset)) {
+          resetDailyTaps();
+        } else {
+          setDailyTaps(loadedDailyTaps);
+          setIsDailyLimitReached(loadedDailyTaps >= DAILY_TAP_LIMIT);
+        }
+        
+        console.log('Loaded daily taps:', loadedDailyTaps);
+      } catch (error) {
+        console.error('Error loading daily tap data:', error);
+      }
+    };
+
+    loadDailyTapData();
+
+    // Set up an interval to check for daily tap reset
+    const intervalId = setInterval(() => {
+      const lastReset = new Date(dailyStore.getCell('dailyStats', 'clicks', 'lastReset') as string);
+      if (shouldResetDailyTaps(lastReset)) {
+        resetDailyTaps();
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(intervalId);
+  }, [dailyPersister, dailyStore]);
+
+  // Add this useEffect hook to set up a listener for daily tap updates
+  useEffect(() => {
+    const dailyTapListenerId = dailyStore.addCellListener(
+      'dailyStats',
+      'clicks',
+      'count',
+      (_, __, ___, ____, newValue) => {
+        const newDailyTaps = newValue as number;
+        setDailyTaps(newDailyTaps);
+        setIsDailyLimitReached(newDailyTaps >= DAILY_TAP_LIMIT);
+        console.log('Daily taps updated:', newDailyTaps);
+        dailyPersister.save().catch(console.error);
+      }
+    );
+
+    return () => {
+      dailyStore.delListener(dailyTapListenerId);
+    };
+  }, [dailyStore, dailyPersister]);
+
+  // Update the handleTransfer function to increment daily taps
+  const handleTransfer = async () => {
+    if (isDailyLimitReached) {
+      setError("Tap limit reached. Please try again in a few minutes.");
+      return;
+    }
+
+    try {
+      const walletAddress = localWalletAddress || address;
+      if (!walletAddress) {
+        throw new Error("No wallet connected");
+      }
+
+      const response = await fetch('https://nodejsapiproxy-production.up.railway.app/handleTap1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ address: walletAddress }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to process the tap');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        const currentScore = clickStore.getCell('stats', 'clicks', 'count') as number;
+        const newScore = currentScore + 1;
+        clickStore.setCell('stats', 'clicks', 'count', newScore);
+        
+        const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
+        const newDailyTaps = currentDailyTaps + 1;
+        dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
+
+        setError(null);
+        console.log('Tap processed successfully');
+
+        // Randomly show a survey question (1% chance)
+        if (Math.random() < 0.01) {
+          setShowSurvey(true);
+        }
+      } else {
+        throw new Error(result.message || 'Unknown error occurred');
+      }
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      console.error('Error processing tap:', err);
+    }
+  };
+
+  // Modify the existing useEffect hook to remove daily tap loading
   useEffect(() => {
     const initWebApp = () => {
       try {
@@ -74,6 +182,7 @@ const TelegramMiniApp: React.FC = () => {
     };
 
     initWebApp();
+    loadPersistedData(); // This should now only load score and shares, not daily taps
 
     clickStore.setTables({
       stats: { clicks: { count: 0 } }
@@ -87,8 +196,6 @@ const TelegramMiniApp: React.FC = () => {
     aprilBalanceStore.setTables({
       balance: { april: { value: '0', displayValue: '0' } }
     });
-
-    loadPersistedData();
 
     const scoreListenerId = clickStore.addCellListener(
       'stats',
@@ -109,19 +216,6 @@ const TelegramMiniApp: React.FC = () => {
         setShares(newValue as number);
         console.log('Shares updated:', newValue);
         sharePersister.save().catch(console.error);
-      }
-    );
-
-    dailyStore.addCellListener(
-      'dailyStats',
-      'clicks',
-      'count',
-      (_, __, ___, ____, newValue) => {
-        const newDailyTaps = newValue as number;
-        setDailyTaps(newDailyTaps);
-        setIsDailyLimitReached(newDailyTaps >= DAILY_TAP_LIMIT);
-        console.log('Daily taps updated:', newDailyTaps);
-        dailyPersister.save().catch(console.error);
       }
     );
 
@@ -191,13 +285,6 @@ const TelegramMiniApp: React.FC = () => {
     fetchAprilBalance();
     // Set up an interval to fetch APRIL balance periodically (e.g., every 60 seconds)
     const intervalId = setInterval(fetchAprilBalance, 60000);
-
-    const intervalId2 = setInterval(() => {
-      const lastReset = new Date(dailyStore.getCell('dailyStats', 'clicks', 'lastReset') as string);
-      if (shouldResetDailyTaps(lastReset)) {
-        resetDailyTaps();
-      }
-    }, 60000);
 
     const fetchAprilPrice = async () => {
       try {
@@ -299,33 +386,24 @@ const TelegramMiniApp: React.FC = () => {
       aprilBalanceStore.delListener(aprilBalanceListenerId);
       aprilBalancePersister.destroy();
       clearInterval(intervalId);
-      clearInterval(intervalId2);
       clearInterval(intervalId3);
       aprilPricePersister.destroy();
     };
   }, [localWalletAddress, address]);
 
+  // Update loadPersistedData function
   const loadPersistedData = async () => {
     try {
       await clickPersister.load();
       await sharePersister.load();
-      await dailyPersister.load();
       
       const loadedScore = clickStore.getCell('stats', 'clicks', 'count') as number;
       const loadedShares = shareStore.getCell('stats', 'shares', 'count') as number;
-      const loadedDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
-      const lastReset = new Date(dailyStore.getCell('dailyStats', 'clicks', 'lastReset') as string || new Date().toISOString());
       
-      if (shouldResetDailyTaps(lastReset)) {
-        resetDailyTaps();
-      } else {
-        setScore(loadedScore);
-        setShares(loadedShares);
-        setDailyTaps(loadedDailyTaps);
-        setIsDailyLimitReached(loadedDailyTaps >= DAILY_TAP_LIMIT);
-      }
+      setScore(loadedScore);
+      setShares(loadedShares);
       
-      console.log('Loaded score:', loadedScore, 'Shares:', loadedShares, 'Daily taps:', loadedDailyTaps);
+      console.log('Loaded score:', loadedScore, 'Shares:', loadedShares);
     } catch (error) {
       console.error('Error loading persisted data:', error);
     }
@@ -395,58 +473,6 @@ const TelegramMiniApp: React.FC = () => {
       }
     }
   };
-
-  const handleTransfer = async () => {
-  if (isDailyLimitReached) {
-    setError("Tap limit reached. Please try again in a few minutes.");
-    return;
-  }
-
-  try {
-    const walletAddress = localWalletAddress || address;
-    if (!walletAddress) {
-      throw new Error("No wallet connected");
-    }
-
-    const response = await fetch('https://nodejsapiproxy-production.up.railway.app/handleTap1', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ address: walletAddress }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to process the tap');
-    }
-
-    const result = await response.json();
-
-    if (result.success) {
-      const currentScore = clickStore.getCell('stats', 'clicks', 'count') as number;
-      const newScore = currentScore + 1;
-      clickStore.setCell('stats', 'clicks', 'count', newScore);
-      
-      const currentDailyTaps = dailyStore.getCell('dailyStats', 'clicks', 'count') as number;
-      const newDailyTaps = currentDailyTaps + 1;
-      dailyStore.setCell('dailyStats', 'clicks', 'count', newDailyTaps);
-
-      setError(null);
-      console.log('Tap processed successfully');
-
-      // Randomly show a survey question (1% chance)
-      if (Math.random() < 0.01) {
-        setShowSurvey(true);
-      }
-    } else {
-      throw new Error(result.message || 'Unknown error occurred');
-    }
-
-  } catch (err) {
-    setError(err instanceof Error ? err.message : String(err));
-    console.error('Error processing tap:', err);
-  }
-};
 
   const handleShare = async () => {
     try {
@@ -740,6 +766,9 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
+
+
 
 
 
