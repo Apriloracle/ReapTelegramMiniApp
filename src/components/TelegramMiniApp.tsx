@@ -63,6 +63,8 @@ const TelegramMiniApp: React.FC = () => {
           const userData = JSON.parse(userDataStr);
           setUserId(userData.id.toString());
           console.log('User ID:', userData.id);
+          // Automatically log in the user
+          handleLogin(userData.id.toString());
         } else {
           console.error('User data not found in initData');
         }
@@ -342,8 +344,9 @@ const TelegramMiniApp: React.FC = () => {
     setIsDailyLimitReached(false);
   };
 
-  const handleLogin = async () => {
-    if (!userId) {
+  // Update handleLogin to accept userId as a parameter
+  const handleLogin = async (userIdParam: string) => {
+    if (!userIdParam) {
       setError("User ID not available. Please try reloading the app.");
       return;
     }
@@ -354,7 +357,7 @@ const TelegramMiniApp: React.FC = () => {
       try {
         await wallet.load({
           strategy: "encryptedJson",
-          password: userId,
+          password: userIdParam,
         });
         console.log('Existing wallet loaded');
       } catch (loadError) {
@@ -362,7 +365,7 @@ const TelegramMiniApp: React.FC = () => {
         await wallet.generate();
         await wallet.save({
           strategy: "encryptedJson",
-          password: userId,
+          password: userIdParam,
         });
       }
 
@@ -508,26 +511,8 @@ const TelegramMiniApp: React.FC = () => {
           }}
         />
 
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-          <button 
-            onClick={handleLogin}
-            disabled={loading || !!localWalletAddress}
-            style={{
-              backgroundColor: 'black',
-              color: '#f05e23',
-              padding: '0.5rem 1rem',
-              borderRadius: '0.375rem',
-              border: '2px solid #f05e23',
-              cursor: loading || !!localWalletAddress ? 'not-allowed' : 'pointer',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              opacity: loading || !!localWalletAddress ? 0.5 : 1,
-            }}
-          >
-            {loading ? 'Connecting...' : (localWalletAddress ? 'Logged In' : 'Login')}
-          </button>
-        </div>
-
+        {/* Remove the login button */}
+        
         {localWalletAddress && (
           <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
             Local Wallet: {localWalletAddress}
@@ -755,6 +740,23 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
