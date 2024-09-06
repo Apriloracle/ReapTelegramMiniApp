@@ -148,7 +148,7 @@ const TelegramMiniApp: React.FC = () => {
       const walletAddress = localWalletAddress || address;
       if (walletAddress) {
         try {
-          const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/getAprilBalance?address=${walletAddress}`, {
+          const response = await fetch(`https://us-central1-fourth-buffer-421320.cloudfunctions.net/getAprilBalances?address=${walletAddress}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -160,9 +160,26 @@ const TelegramMiniApp: React.FC = () => {
           }
 
           const data = await response.json();
-          setAprilBalance({ value: data.result.value, displayValue: data.result.displayValue });
-          aprilBalanceStore.setCell('balance', 'april', 'value', data.result.value);
-          aprilBalanceStore.setCell('balance', 'april', 'displayValue', data.result.displayValue);
+          
+          // Extract display values from both chains
+          const chain42220Value = parseFloat(data.chain42220.result.displayValue);
+          const chain137Value = parseFloat(data.chain137.result.displayValue);
+          
+          // Add the values together
+          const totalDisplayValue = chain42220Value + chain137Value;
+          
+          // Log the total balance
+          console.log('Total APRIL balance:', totalDisplayValue.toString());
+
+          // Update the state with the total balance
+          setAprilBalance({ 
+            value: (chain42220Value + chain137Value).toString(),
+            displayValue: totalDisplayValue.toFixed(18) // Keep 18 decimal places for consistency
+          });
+
+          // Update the store with the total balance
+          aprilBalanceStore.setCell('balance', 'april', 'value', (chain42220Value + chain137Value).toString());
+          aprilBalanceStore.setCell('balance', 'april', 'displayValue', totalDisplayValue.toFixed(18));
         } catch (error) {
           console.error('Error fetching APRIL balance:', error);
         }
@@ -738,7 +755,6 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
-
 
 
 
