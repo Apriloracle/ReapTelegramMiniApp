@@ -63,8 +63,6 @@ const TelegramMiniApp: React.FC = () => {
           const userData = JSON.parse(userDataStr);
           setUserId(userData.id.toString());
           console.log('User ID:', userData.id);
-          // Automatically log in the user
-          handleLogin();
         } else {
           console.error('User data not found in initData');
         }
@@ -757,4 +755,17 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
+
+
+
+
+
+
+
+
+
+
+
+
 
