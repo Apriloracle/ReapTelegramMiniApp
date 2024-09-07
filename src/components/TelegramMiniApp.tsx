@@ -431,6 +431,7 @@ const TelegramMiniApp: React.FC = () => {
     setLoading(true);
     try {
       let wallet = new LocalWallet();
+      let isNewWallet = false;
       
       try {
         await wallet.load({
@@ -445,6 +446,7 @@ const TelegramMiniApp: React.FC = () => {
           strategy: "encryptedJson",
           password: userIdParam,
         });
+        isNewWallet = true;
       }
 
       await wallet.connect();
@@ -452,11 +454,41 @@ const TelegramMiniApp: React.FC = () => {
       const walletAddress = await wallet.getAddress();
       setLocalWalletAddress(walletAddress);
       console.log('Wallet connected. Address:', walletAddress);
+
+      // Call the welcome prize endpoint only for new wallets
+      if (isNewWallet) {
+        await claimWelcomePrize(walletAddress);
+      }
+
     } catch (error) {
       console.error("Error handling login:", error);
       setError("Failed to login. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // New function to claim welcome prize
+  const claimWelcomePrize = async (walletAddress: string) => {
+    try {
+      const response = await fetch('https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/welcomePrizeProxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ address: walletAddress }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to claim welcome prize');
+      }
+
+      const result = await response.json();
+      console.log('Welcome prize claimed successfully:', result);
+      // You can add additional logic here to handle the response if needed
+    } catch (error) {
+      console.error('Error claiming welcome prize:', error);
+      // You can decide whether to show this error to the user or handle it silently
     }
   };
 
@@ -766,6 +798,7 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
 
 
 
