@@ -768,14 +768,7 @@ const TelegramMiniApp: React.FC = () => {
         />
         
         {localWalletAddress && (
-          <button
-            onClick={handleDisconnect}
-            style={{
-          
-            }}
-          >
-            ⋮
-          </button>
+
         )}
 
         <Routes>
