@@ -771,14 +771,7 @@ const TelegramMiniApp: React.FC = () => {
           <button
             onClick={handleDisconnect}
             style={{
-              position: 'absolute',
-              top: '1rem',
-              right: '1rem',
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              fontSize: '1.5rem',
-              cursor: 'pointer',
+          
             }}
           >
             ⋮
