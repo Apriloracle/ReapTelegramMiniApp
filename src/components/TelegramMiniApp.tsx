@@ -767,9 +767,6 @@ const TelegramMiniApp: React.FC = () => {
           onConnectionStatus={handleConnectionStatus}
         />
         
-        {localWalletAddress && (
-
-        )}
 
         <Routes>
           <Route path="/" element={<MainPage />} />
