@@ -207,7 +207,7 @@ const FriendsComponent: React.FC = () => {
               <button 
                 onClick={shareReferralLink}
                 style={{ 
-                  backgroundColor: '#4A5568', 
+                  backgroundColor: '#f05e23', 
                   color: '#FFFFFF', 
                   border: 'none', 
                   padding: '0.5rem 1rem', 
@@ -216,7 +216,7 @@ const FriendsComponent: React.FC = () => {
                   flex: 1,
                 }}
               >
-                Share
+                Share Link
               </button>
             </div>
           </div>
