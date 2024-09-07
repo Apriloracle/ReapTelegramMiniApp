@@ -647,7 +647,7 @@ const TelegramMiniApp: React.FC = () => {
                 position: 'relative',
                 zIndex: 2,
               }}>
-                {isDailyLimitReached ? 'Limit Reached' : (!localWalletAddress && !address ? 'Connect Wallet' : 'Tap to earn')}
+                {isDailyLimitReached ? 'Limit Reached' : (!localWalletAddress && !address ? 'Connect Wallet' : '')}
               </span>
               <div style={{
                 content: '""',
