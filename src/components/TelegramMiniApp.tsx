@@ -756,7 +756,7 @@ const TelegramMiniApp: React.FC = () => {
             width: '12px',
             height: '12px',
             borderRadius: '50%',
-            backgroundColor: isConnected ? '#22c55e' : '#ef4444',
+            backgroundColor: isConnected ? '#22c55e' : '#000000',
             transition: 'background-color 0.3s ease',
           }}
           title={isConnected ? 'Connected to sync server' : 'Disconnected from sync server'}
