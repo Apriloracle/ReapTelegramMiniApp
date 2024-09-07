@@ -148,6 +148,17 @@ const FriendsComponent: React.FC = () => {
     alert('Referral link copied to clipboard!');
   };
 
+  const shareReferralLink = () => {
+    if (WebApp && WebApp.openTelegramLink) {
+      const shareText = encodeURIComponent(`Join me on Reap Mini and earn crypto rewards! Use my referral code: ${referralCode}\n\n${referralLink}`);
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${shareText}`;
+      WebApp.openTelegramLink(shareUrl);
+    } else {
+      // Fallback for non-Telegram environments
+      alert('Sharing is only available in the Telegram app.');
+    }
+  };
+
   useEffect(() => {
     if (userId) {
       const storedReferralCode = localStorage.getItem('pendingReferralCode');
@@ -178,20 +189,36 @@ const FriendsComponent: React.FC = () => {
             <p style={{ backgroundColor: '#1A202C', padding: '0.5rem', borderRadius: '4px', wordBreak: 'break-all' }}>
               {referralLink}
             </p>
-            <button 
-              onClick={copyToClipboard}
-              style={{ 
-                backgroundColor: '#f05e23', 
-                color: '#FFFFFF', 
-                border: 'none', 
-                padding: '0.5rem 1rem', 
-                borderRadius: '4px', 
-                cursor: 'pointer',
-                marginTop: '0.5rem'
-              }}
-            >
-              Copy Link
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <button 
+                onClick={copyToClipboard}
+                style={{ 
+                  backgroundColor: '#f05e23', 
+                  color: '#FFFFFF', 
+                  border: 'none', 
+                  padding: '0.5rem 1rem', 
+                  borderRadius: '4px', 
+                  cursor: 'pointer',
+                  flex: 1,
+                }}
+              >
+                Copy Link
+              </button>
+              <button 
+                onClick={shareReferralLink}
+                style={{ 
+                  backgroundColor: '#4A5568', 
+                  color: '#FFFFFF', 
+                  border: 'none', 
+                  padding: '0.5rem 1rem', 
+                  borderRadius: '4px', 
+                  cursor: 'pointer',
+                  flex: 1,
+                }}
+              >
+                Share
+              </button>
+            </div>
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
