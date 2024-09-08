@@ -34,10 +34,10 @@ const Cashout: React.FC<CashoutProps> = ({ localWallet, aprilTokenAddress }) => 
       const signer = await localWallet.getSigner();
 
       // Connect the signer to the SDK
-      await sdk.wallet.connect(signer);
+      const connectedSDK = await sdk.wallet.connect(signer);
 
       // Get the contract instance
-      const contract = await sdk.getContract(aprilTokenAddress);
+      const contract = await connectedSDK.getContract(aprilTokenAddress);
 
       // Perform the transfer
       const result = await contract.erc20.transfer(to, amount);
