@@ -26,18 +26,12 @@ const Cashout: React.FC<CashoutProps> = ({ localWallet, aprilTokenAddress }) => 
     setSuccess(false);
 
     try {
-      // Celo Mainnet RPC URL
-      const celoRpcUrl = "https://celo.drpc.org";
-
       const sdk = new ThirdwebSDK(Celo, {
         clientId: "e9e236080783bd20fe8db9cb9300c70b", // Replace with your actual client ID
       });
 
       // Connect the local wallet to the SDK
-      await sdk.wallet.connect({
-        wallet: localWallet,
-        chainId: Celo.chainId,
-      });
+      await sdk.wallet.connect(localWallet);
 
       // Get the contract instance
       const contract = await sdk.getContract(aprilTokenAddress);
