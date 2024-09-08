@@ -13,7 +13,6 @@ import SurveyQuestion from './SurveyQuestion';
 import BalanceCard from './BalanceCard';
 import InitialDataFetcher from './InitialDataFetcher';
 import FriendsComponent from './FriendsComponent';
-import Cashout from './Cashout';
 
 const DAILY_TAP_LIMIT = 3000;
 const RESET_MINUTES = 60;
@@ -591,14 +590,6 @@ const TelegramMiniApp: React.FC = () => {
           </div>
         )}
 
-         {/* Add the Cashout component here */}
-      {localWallet && (
-        <Cashout 
-          localWallet={localWallet}
-          aprilTokenAddress="0x18719D2e1e57A1A64708e4550fF3DEF9d1074621"
-        />
-      )}
-
         <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
             <svg style={{ width: '2rem', height: '2rem', color: '#F59E0B', marginRight: '0.5rem' }} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -781,12 +772,6 @@ const TelegramMiniApp: React.FC = () => {
           <Route path="/" element={<MainPage />} />
           <Route path="/deals" element={<DealsComponent localWalletAddress={localWalletAddress} />} />
           <Route path="/friends" element={<FriendsComponent />} />
-          <Route path="/cashout" element={
-            <Cashout 
-              localWallet={localWallet}
-              aprilTokenAddress="0x18719D2e1e57A1A64708e4550fF3DEF9d1074621"
-            />
-          } />
         </Routes>
         
         <BottomNavBar />
@@ -796,6 +781,42 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
