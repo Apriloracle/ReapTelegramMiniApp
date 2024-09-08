@@ -38,6 +38,8 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril 
           <div style={{ fontSize: '14px', fontWeight: 'bold' }}>Total Balance</div>
           <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{formatUsdBalance(totalBalance)}</div>
         </div>
+        {/* Commented out Cashout button */}
+        {/*
         <button 
           onClick={handleCashoutClick}
           style={{
@@ -52,6 +54,19 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril 
         >
           Cashout
         </button>
+        */}
+        {/* Placeholder div to maintain layout */}
+        <div style={{
+          backgroundColor: 'white',
+          color: '#f05e23',
+          border: 'none',
+          borderRadius: '20px',
+          padding: '8px 16px',
+          fontWeight: 'bold',
+          opacity: 0.5,
+        }}>
+          Cashout
+        </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <div style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '8px', padding: '8px', flex: 1, marginRight: '8px' }}>
@@ -64,3 +79,4 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril 
 };
 
 export default BalanceCard;
+
