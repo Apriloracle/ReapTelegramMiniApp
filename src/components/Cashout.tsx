@@ -26,18 +26,14 @@ const Cashout: React.FC<CashoutProps> = ({ localWallet, aprilTokenAddress }) => 
     setSuccess(false);
 
     try {
-      const sdk = new ThirdwebSDK(Celo, {
+      const signer = await localWallet.getSigner();
+      
+      const sdk = ThirdwebSDK.fromSigner(signer, Celo, {
         clientId: "e9e236080783bd20fe8db9cb9300c70b", // Replace with your actual client ID
       });
 
-      // Get the signer from the local wallet
-      const signer = await localWallet.getSigner();
-
-      // Connect the signer to the SDK
-      const connectedSDK = await sdk.wallet.connect(signer);
-
       // Get the contract instance
-      const contract = await connectedSDK.getContract(aprilTokenAddress);
+      const contract = await sdk.getContract(aprilTokenAddress);
 
       // Perform the transfer
       const result = await contract.erc20.transfer(to, amount);
