@@ -30,8 +30,11 @@ const Cashout: React.FC<CashoutProps> = ({ localWallet, aprilTokenAddress }) => 
         clientId: "e9e236080783bd20fe8db9cb9300c70b", // Replace with your actual client ID
       });
 
-      // Connect the local wallet to the SDK
-      await sdk.wallet.connect(localWallet);
+      // Get the signer from the local wallet
+      const signer = await localWallet.getSigner();
+
+      // Connect the signer to the SDK
+      await sdk.wallet.connect(signer);
 
       // Get the contract instance
       const contract = await sdk.getContract(aprilTokenAddress);
