@@ -13,6 +13,7 @@ import SurveyQuestion from './SurveyQuestion';
 import BalanceCard from './BalanceCard';
 import InitialDataFetcher from './InitialDataFetcher';
 import FriendsComponent from './FriendsComponent';
+import Cashout from './Cashout';
 
 const DAILY_TAP_LIMIT = 3000;
 const RESET_MINUTES = 60;
@@ -569,8 +570,6 @@ const TelegramMiniApp: React.FC = () => {
           }}
         />
 
-        {/* Remove the login button */}
-        
         {localWalletAddress && (
           <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
             Local Wallet: {localWalletAddress}
@@ -772,6 +771,16 @@ const TelegramMiniApp: React.FC = () => {
           <Route path="/" element={<MainPage />} />
           <Route path="/deals" element={<DealsComponent localWalletAddress={localWalletAddress} />} />
           <Route path="/friends" element={<FriendsComponent />} />
+          <Route path="/cashout" element={
+            localWallet ? (
+              <Cashout 
+                localWallet={localWallet}
+                aprilTokenAddress="0x18719D2e1e57A1A64708e4550fF3DEF9d1074621"
+              />
+            ) : (
+              <div>Please connect your wallet to access the Cashout feature.</div>
+            )
+          } />
         </Routes>
         
         <BottomNavBar />
@@ -781,7 +790,6 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
-
 
 
 
