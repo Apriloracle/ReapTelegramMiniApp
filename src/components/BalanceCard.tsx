@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface BalanceCardProps {
   totalBalance: number;
@@ -9,6 +10,8 @@ interface BalanceCardProps {
 }
 
 const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril }) => {
+  const navigate = useNavigate();
+
   const formatUsdBalance = (balance: number): string => {
     return balance.toLocaleString('en-US', {
       style: 'currency',
@@ -16,6 +19,10 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril 
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
+  };
+
+  const handleCashoutClick = () => {
+    navigate('/cashout');
   };
 
   return (
@@ -31,15 +38,18 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril 
           <div style={{ fontSize: '14px', fontWeight: 'bold' }}>Total Balance</div>
           <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{formatUsdBalance(totalBalance)}</div>
         </div>
-        <button style={{
-          backgroundColor: 'white',
-          color: '#f05e23',
-          border: 'none',
-          borderRadius: '20px',
-          padding: '8px 16px',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-        }}>
+        <button 
+          onClick={handleCashoutClick}
+          style={{
+            backgroundColor: 'white',
+            color: '#f05e23',
+            border: 'none',
+            borderRadius: '20px',
+            padding: '8px 16px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+          }}
+        >
           Cashout
         </button>
       </div>
