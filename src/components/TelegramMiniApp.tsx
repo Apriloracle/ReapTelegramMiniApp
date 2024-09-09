@@ -568,6 +568,7 @@ const TelegramMiniApp: React.FC = () => {
             value: aprilBalance.value,
             display: aprilBalance.displayValue
           }}
+          localWalletAddress={localWalletAddress} // Add this prop
         />
 
         {localWalletAddress && (
@@ -790,6 +791,7 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
 
 
 
