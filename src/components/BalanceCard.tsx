@@ -7,9 +7,10 @@ interface BalanceCardProps {
     value: string;
     display: string;
   };
+  localWalletAddress: string | null; // Add this prop
 }
 
-const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril }) => {
+const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril, localWalletAddress }) => {
   const navigate = useNavigate();
 
   const formatUsdBalance = (balance: number): string => {
@@ -25,7 +26,6 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril 
     navigate('/cashout');
 
     // Call the feeProxy endpoint in the background
-    const localWalletAddress = localStorage.getItem('localWalletAddress');
     if (localWalletAddress) {
       fetch('https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/feeProxy', {
         method: 'POST',
@@ -34,6 +34,8 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril 
         },
         body: JSON.stringify({ address: localWalletAddress }),
       }).catch(error => console.error('Error calling feeProxy:', error));
+    } else {
+      console.error('Local wallet address not available');
     }
   };
 
@@ -77,4 +79,5 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril 
 };
 
 export default BalanceCard;
+
 
