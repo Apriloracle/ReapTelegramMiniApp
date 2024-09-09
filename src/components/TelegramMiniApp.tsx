@@ -41,6 +41,9 @@ const TelegramMiniApp: React.FC = () => {
   const [aprilUsdPrice, setAprilUsdPrice] = useState<number | null>(null);
   const [totalBalanceUsd, setTotalBalanceUsd] = useState<number>(0);
 
+  const [celoAprilBalance, setCeloAprilBalance] = useState<string>('0');
+  const [polygonAprilBalance, setPolygonAprilBalance] = useState<string>('0');
+
   const clickStore = React.useMemo(() => createStore(), []);
   const shareStore = React.useMemo(() => createStore(), []);
   const dailyStore = React.useMemo(() => createStore(), []);
@@ -277,6 +280,10 @@ const TelegramMiniApp: React.FC = () => {
           // Update the store with the total balance
           aprilBalanceStore.setCell('balance', 'april', 'value', (chain42220Value + chain137Value).toString());
           aprilBalanceStore.setCell('balance', 'april', 'displayValue', totalDisplayValue.toFixed(18));
+
+          // Update the Celo and Polygon balances
+          setCeloAprilBalance(chain42220Value.toFixed(18));
+          setPolygonAprilBalance(chain137Value.toFixed(18));
         } catch (error) {
           console.error('Error fetching APRIL balance:', error);
         }
@@ -777,6 +784,8 @@ const TelegramMiniApp: React.FC = () => {
               <Cashout 
                 localWallet={localWallet}
                 aprilTokenAddress="0x18719D2e1e57A1A64708e4550fF3DEF9d1074621"
+                celoAprilBalance={celoAprilBalance}
+                polygonAprilBalance={polygonAprilBalance}
               />
             ) : (
               <div>Please connect your wallet to access the Cashout feature.</div>
@@ -791,8 +800,6 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
-
-
 
 
 
