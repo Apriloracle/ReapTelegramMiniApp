@@ -53,19 +53,24 @@ const Cashout: React.FC<CashoutProps> = ({ localWallet, aprilTokenAddress, celoA
     }
   };
 
+  // Helper function to round and format balance
+  const formatBalance = (balance: string): string => {
+    return parseFloat(balance).toFixed(2);
+  };
+
   return (
     <div style={{ padding: '1rem', backgroundColor: '#1a1a1a', borderRadius: '0.5rem', marginBottom: '1rem' }}>
       <h2 style={{ color: '#f05e23', marginBottom: '1rem' }}>Cashout APRIL Tokens</h2>
       
       {/* Display APRIL balances */}
-      <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-        <div>
-          <p style={{ color: '#fff', marginBottom: '0.5rem' }}>Celo APRIL Balance:</p>
-          <p style={{ color: '#f05e23', fontWeight: 'bold' }}>{celoAprilBalance}</p>
+      <div style={{ marginBottom: '1rem' }}>
+        <div style={{ marginBottom: '0.5rem' }}>
+          <p style={{ color: '#fff', marginBottom: '0.25rem' }}>Celo APRIL Balance:</p>
+          <p style={{ color: '#f05e23', fontWeight: 'bold' }}>{formatBalance(celoAprilBalance)}</p>
         </div>
         <div>
-          <p style={{ color: '#fff', marginBottom: '0.5rem' }}>Polygon APRIL Balance:</p>
-          <p style={{ color: '#f05e23', fontWeight: 'bold' }}>{polygonAprilBalance}</p>
+          <p style={{ color: '#fff', marginBottom: '0.25rem' }}>Polygon APRIL Balance:</p>
+          <p style={{ color: '#f05e23', fontWeight: 'bold' }}>{formatBalance(polygonAprilBalance)}</p>
         </div>
       </div>
 
