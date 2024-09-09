@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
 import { LocalWallet } from "@thirdweb-dev/wallets";
-import { Celo } from "@thirdweb-dev/chains";
+import { Celo, Polygon } from "@thirdweb-dev/chains";
 
 interface CashoutProps {
   localWallet: LocalWallet | null;
@@ -14,6 +14,7 @@ const Cashout: React.FC<CashoutProps> = ({ localWallet, aprilTokenAddress }) => 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [selectedChain, setSelectedChain] = useState<'Celo' | 'Polygon'>('Celo');
 
   const handleCashout = async () => {
     if (!localWallet) {
@@ -28,7 +29,9 @@ const Cashout: React.FC<CashoutProps> = ({ localWallet, aprilTokenAddress }) => 
     try {
       const signer = await localWallet.getSigner();
       
-      const sdk = ThirdwebSDK.fromSigner(signer, Celo, {
+      const chain = selectedChain === 'Celo' ? Celo : Polygon;
+
+      const sdk = ThirdwebSDK.fromSigner(signer, chain, {
         clientId: "e9e236080783bd20fe8db9cb9300c70b", // Replace with your actual client ID
       });
 
@@ -51,6 +54,18 @@ const Cashout: React.FC<CashoutProps> = ({ localWallet, aprilTokenAddress }) => 
   return (
     <div style={{ padding: '1rem', backgroundColor: '#1a1a1a', borderRadius: '0.5rem', marginBottom: '1rem' }}>
       <h2 style={{ color: '#f05e23', marginBottom: '1rem' }}>Cashout APRIL Tokens</h2>
+      <div style={{ marginBottom: '1rem' }}>
+        <label htmlFor="chain" style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>Select Chain:</label>
+        <select
+          id="chain"
+          value={selectedChain}
+          onChange={(e) => setSelectedChain(e.target.value as 'Celo' | 'Polygon')}
+          style={{ width: '100%', padding: '0.5rem', backgroundColor: '#333', color: '#fff', border: '1px solid #555', borderRadius: '0.25rem' }}
+        >
+          <option value="Celo">Celo</option>
+          <option value="Polygon">Polygon</option>
+        </select>
+      </div>
       <div style={{ marginBottom: '1rem' }}>
         <label htmlFor="to" style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>Recipient Address:</label>
         <input
@@ -84,10 +99,10 @@ const Cashout: React.FC<CashoutProps> = ({ localWallet, aprilTokenAddress }) => 
           opacity: isLoading || !localWallet ? 0.5 : 1,
         }}
       >
-        {isLoading ? 'Processing...' : 'Cashout'}
+        {isLoading ? 'Processing...' : `Cashout on ${selectedChain}`}
       </button>
       {error && <p style={{ color: '#ff4444', marginTop: '1rem' }}>{error}</p>}
-      {success && <p style={{ color: '#44ff44', marginTop: '1rem' }}>Transfer successful!</p>}
+      {success && <p style={{ color: '#44ff44', marginTop: '1rem' }}>Transfer successful on {selectedChain}!</p>}
     </div>
   );
 };
