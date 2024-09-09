@@ -179,7 +179,7 @@ const FriendsComponent: React.FC = () => {
             <path d="M12 19L5 12L12 5" stroke="#f05e23" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Friends & Referrals</h2>
+        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Friends</h2>
       </div>
       
       {userId ? (
