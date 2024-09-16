@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useIPGeolocation from './IPGeolocation';
@@ -90,10 +88,10 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         const personalizedDealsList = Object.values(storedRecommendations)
           .map((rec: any) => {
             const deal = deals.find(d => d.id === rec.dealId);
-            return deal && deal.logoAbsoluteUrl ? { ...deal, confidence: rec.confidence } : null;
+            return deal ? { ...deal, confidence: rec.confidence } : null;
           })
-          .filter((deal): deal is Deal & { confidence: number } => deal !== null)
-          .sort((a, b) => b.confidence - a.confidence);
+          .filter((deal): deal is Deal => deal !== null)
+          .sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
 
         setPersonalizedDeals(personalizedDealsList);
       }
@@ -140,11 +138,9 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   const searchDeals = useCallback((term: string) => {
     const lowercasedTerm = term.toLowerCase();
     const filtered = deals.filter(deal => 
-      deal.logoAbsoluteUrl && (
-        deal.merchantName.toLowerCase().includes(lowercasedTerm) ||
-        deal.codes.some(code => code.code.toLowerCase().includes(lowercasedTerm)) ||
-        deal.cashbackType.toLowerCase().includes(lowercasedTerm)
-      )
+      deal.merchantName.toLowerCase().includes(lowercasedTerm) ||
+      deal.codes.some(code => code.code.toLowerCase().includes(lowercasedTerm)) ||
+      deal.cashbackType.toLowerCase().includes(lowercasedTerm)
     );
     setFilteredDeals(filtered);
   }, [deals]);
