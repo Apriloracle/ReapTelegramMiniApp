@@ -5,7 +5,7 @@
 /* Disable text selection for the entire page */
 body {
   user-select: none;
-  -webkit-user-select: none;
+  -webkit-user-select: text;
   -moz-user-select: none;
   -ms-user-select: none;
 }
