@@ -180,6 +180,14 @@ const InitialDataFetcher: React.FC = () => {
 
   const fetchProductDescriptions = async (merchantNames: string[]) => {
     for (const merchantName of merchantNames) {
+      // Check if the product range is already stored
+      const storedProductRange = merchantProductRangeStore.getCell('merchants', merchantName, 'productRange');
+      
+      if (storedProductRange) {
+        console.log(`Product range for ${merchantName} already stored, skipping fetch.`);
+        continue; // Skip to the next merchant
+      }
+
       try {
         const response = await axios.post('https://us-central1-fourth-buffer-421320.cloudfunctions.net/chatPplx70b', {
           merchantName,
@@ -196,9 +204,6 @@ const InitialDataFetcher: React.FC = () => {
         merchantProductRangeStore.setCell('merchants', merchantName, 'productRange', productRange);
         await merchantProductRangePersister.save();
         console.log(`Stored and saved product range for: ${merchantName}`);
-
-        // Wait for 5 seconds before processing the next item
-        await new Promise(resolve => setTimeout(resolve, 5000));
       } catch (error) {
         console.error(`Error fetching product range for ${merchantName}:`, error);
       }

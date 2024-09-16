@@ -43,8 +43,8 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="bg-black text-white p-4 min-h-screen max-w-md mx-auto">
-      <h1 className="text-2xl font-bold mb-1">Survey</h1>
-      <p className="mb-4 text-sm text-gray-400">Complete the Survey and earn 100+ Points for completing survey</p>
+      <h1 className="text-2xl font-bold mb-1">Profile</h1>
+      <p className="mb-4 text-sm text-gray-400">Complete your profile and earn rewards</p>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>

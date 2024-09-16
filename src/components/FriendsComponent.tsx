@@ -179,14 +179,14 @@ const FriendsComponent: React.FC = () => {
             <path d="M12 19L5 12L12 5" stroke="#f05e23" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Friends</h2>
+        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Friends & Referrals</h2>
       </div>
       
       {userId ? (
         <>
           <div style={{ marginBottom: '1rem' }}>
             <h3 style={{ color: '#f05e23' }}>Your Referral Link</h3>
-            <p style={{ backgroundColor: '#130B03 ', padding: '0.5rem', borderRadius: '4px', wordBreak: 'break-all' }}>
+            <p style={{ backgroundColor: '#1A202C', padding: '0.5rem', borderRadius: '4px', wordBreak: 'break-all' }}>
               {referralLink}
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
@@ -223,12 +223,12 @@ const FriendsComponent: React.FC = () => {
 
           <div style={{ marginBottom: '1rem' }}>
             <h3 style={{ color: '#f05e23' }}>Your Referral Code</h3>
-            <p style={{ backgroundColor: '#130B03 ', padding: '0.5rem', borderRadius: '4px', wordBreak: 'break-all' }}>
+            <p style={{ backgroundColor: '#1A202C', padding: '0.5rem', borderRadius: '4px', wordBreak: 'break-all' }}>
               {referralCode}
             </p>
           </div>
 
-          <div style={{ backgroundColor: '#130B03 ', padding: '1rem', borderRadius: '4px' }}>
+          <div style={{ backgroundColor: '#1A202C', padding: '1rem', borderRadius: '4px' }}>
             <h3 style={{ color: '#f05e23', marginTop: 0 }}>How it works</h3>
             <p>1. Share your unique referral link or code with friends</p>
             <p>2. When a friend starts our Telegram bot using your link or code, you'll earn a reward</p>

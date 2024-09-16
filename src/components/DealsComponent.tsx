@@ -5,6 +5,7 @@ import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import { useAccount } from 'wagmi';
 import axios from 'axios';
+import VectorData from './VectorData';
 
 interface Code {
   code: string;
@@ -25,6 +26,7 @@ interface Deal {
   codes: Code[];
   startDate: string;
   endDate: string;
+  confidence?: number;
 }
 
 interface DealsComponentProps {
@@ -71,6 +73,33 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   const recommendedMerchantsStore = React.useMemo(() => createStore(), []);
   const recommendedMerchantsPersister = React.useMemo(() => createLocalPersister(recommendedMerchantsStore, 'recommended-merchants'), [recommendedMerchantsStore]);
 
+  const recommendationsStore = React.useMemo(() => createStore(), []);
+  const recommendationsPersister = React.useMemo(() => createLocalPersister(recommendationsStore, 'personalized-recommendations'), [recommendationsStore]);
+
+  const [personalizedDeals, setPersonalizedDeals] = useState<Deal[]>([]);
+
+  // Add this useEffect to load personalized recommendations
+  useEffect(() => {
+    const loadPersonalizedRecommendations = async () => {
+      await recommendationsPersister.load();
+      const storedRecommendations = recommendationsStore.getTable('recommendations');
+      
+      if (storedRecommendations) {
+        const personalizedDealsList = Object.values(storedRecommendations)
+          .map((rec: any) => {
+            const deal = deals.find(d => d.id === rec.dealId);
+            return deal && deal.logoAbsoluteUrl ? { ...deal, confidence: rec.confidence } : null;
+          })
+          .filter((deal): deal is Deal => deal !== null)
+          .sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+
+        setPersonalizedDeals(personalizedDealsList);
+      }
+    };
+
+    loadPersonalizedRecommendations();
+  }, [deals, recommendationsPersister, recommendationsStore]);
+
   useEffect(() => {
     const loadSurveyResponses = async () => {
       await surveyPersister.load();
@@ -109,9 +138,11 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   const searchDeals = useCallback((term: string) => {
     const lowercasedTerm = term.toLowerCase();
     const filtered = deals.filter(deal => 
-      deal.merchantName.toLowerCase().includes(lowercasedTerm) ||
-      deal.codes.some(code => code.code.toLowerCase().includes(lowercasedTerm)) ||
-      deal.cashbackType.toLowerCase().includes(lowercasedTerm)
+      deal.logoAbsoluteUrl && (
+        deal.merchantName.toLowerCase().includes(lowercasedTerm) ||
+        deal.codes.some(code => code.code.toLowerCase().includes(lowercasedTerm)) ||
+        deal.cashbackType.toLowerCase().includes(lowercasedTerm)
+      )
     );
     setFilteredDeals(filtered);
   }, [deals]);
@@ -391,41 +422,131 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 
   return (
     <div style={{ backgroundColor: '#000000', color: '#FFFFFF', padding: '1rem', maxWidth: '28rem', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem' }}>
         <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: '1rem' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M19 12H5" stroke="#f05e23" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M12 19L5 12L12 5" stroke="#f05e23" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <h2 style={{ textAlign: 'center', color: '#f05e23' }}>Deals For You</h2>
+        <h2 style={{ textAlign: 'center', color: '#f05e23', flex: 1 }}>Deals For You</h2>
       </div>
-      
-      {filteredMerchants.length === 0 ? (
-        <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No matching deals available based on your preferences.</p>
-      ) : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
-          {deals.filter(deal => filteredMerchants.includes(deal.merchantName)).map((deal) => (
-            <div key={deal.id} style={{ margin: '0.5rem', textAlign: 'center' }}>
-              <img 
-                src={deal.logoAbsoluteUrl} 
-                alt={deal.merchantName} 
-                style={{ 
-                  width: '60px', 
-                  height: '60px', 
-                  borderRadius: '8px',
-                  objectFit: 'contain',
-                  backgroundColor: 'white',
-                  padding: '4px'
-                }} 
-              />
-              <p style={{ color: '#f05e23', fontSize: '0.8rem', marginTop: '0.25rem' }}>{deal.merchantName}</p>
-            </div>
-          ))}
-        </div>
-      )}
+
+      <VectorData />
+
+      {/* Personalized Deals */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h3 style={{ color: '#f05e23', marginBottom: '1rem' }}></h3>
+        {personalizedDeals.length === 0 ? (
+          <p style={{ textAlign: 'center', color: '#A0AEC0' }}>No personalized deals available yet. Please check back later.</p>
+        ) : (
+          <div>
+            {personalizedDeals.map((deal) => (
+              <div key={deal.id} style={{ marginBottom: '1rem', backgroundColor: '#130B03', borderRadius: '0.5rem', padding: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <img 
+                    src={deal.logoAbsoluteUrl} 
+                    alt={deal.merchantName} 
+                    style={{ 
+                      width: '50px', 
+                      height: '50px', 
+                      borderRadius: '8px',
+                      objectFit: 'contain',
+                      backgroundColor: 'white',
+                      padding: '4px',
+                      marginRight: '1rem'
+                    }} 
+                  />
+                  <div>
+                    <p style={{ color: '#f05e23', fontSize: '1rem', fontWeight: 'bold' }}>{deal.merchantName}</p>
+                    <p style={{ color: '#A0AEC0', fontSize: '0.8rem' }}>{deal.cashbackType}: {deal.cashback}{deal.currency}</p>
+                  </div>
+                </div>
+                {deal.codes.map((code) => (
+                  <div key={code.code} style={{ marginTop: '0.5rem' }}>
+                    <p style={{ color: '#FFFFFF', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{code.summary}</p>
+                    <button
+                      onClick={() => handleActivateDeal(deal.id, code.code)}
+                      disabled={!isLoggedIn || activatedDeals.has(`${deal.id}-${code.code}`) || activatingDeal === `${deal.id}-${code.code}`}
+                      style={{
+                        backgroundColor: '#f05e23',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '0.25rem',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.9rem',
+                        cursor: isLoggedIn ? 'pointer' : 'not-allowed',
+                        opacity: activatedDeals.has(`${deal.id}-${code.code}`) ? 0.5 : 1,
+                      }}
+                    >
+                      {activatedDeals.has(`${deal.id}-${code.code}`) ? 'Activated' : 'Activate Deal'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* All Deals */}
+      <div>
+        <h3 style={{ color: '#f05e23', marginBottom: '1rem' }}>All Deals</h3>
+        {loading ? (
+          <p style={{ textAlign: 'center', color: '#130B03' }}>Loading deals...</p>
+        ) : (
+          <div>
+            {filteredDeals.map((deal) => (
+              <div key={deal.id} style={{ marginBottom: '1rem', backgroundColor: '#130B03', borderRadius: '0.5rem', padding: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <img 
+                    src={deal.logoAbsoluteUrl} 
+                    alt={deal.merchantName} 
+                    style={{ 
+                      width: '50px', 
+                      height: '50px', 
+                      borderRadius: '8px',
+                      objectFit: 'contain',
+                      backgroundColor: 'white',
+                      padding: '4px',
+                      marginRight: '1rem'
+                    }} 
+                  />
+                  <div>
+                    <p style={{ color: '#f05e23', fontSize: '1rem', fontWeight: 'bold' }}>{deal.merchantName}</p>
+                    <p style={{ color: '#A0AEC0', fontSize: '0.8rem' }}>{deal.cashbackType}: {deal.cashback}{deal.currency}</p>
+                  </div>
+                </div>
+                {deal.codes.map((code) => (
+                  <div key={code.code} style={{ marginTop: '0.5rem' }}>
+                    <p style={{ color: '#FFFFFF', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{code.summary}</p>
+                    <button
+                      onClick={() => handleActivateDeal(deal.id, code.code)}
+                      disabled={!isLoggedIn || activatedDeals.has(`${deal.id}-${code.code}`) || activatingDeal === `${deal.id}-${code.code}`}
+                      style={{
+                        backgroundColor: '#f05e23',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '0.25rem',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.9rem',
+                        cursor: isLoggedIn ? 'pointer' : 'not-allowed',
+                        opacity: activatedDeals.has(`${deal.id}-${code.code}`) ? 0.5 : 1,
+                      }}
+                    >
+                      {activatedDeals.has(`${deal.id}-${code.code}`) ? 'Activated' : 'Activate Deal'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {error && (
-        <div style={{ color: '#EF4444', textAlign: 'center', marginTop: '1rem' }}>
+        <div style={{ color: '#EF4444', textAlign: 'center', marginTop: '1rem', padding: '0.75rem', backgroundColor: '#FEE2E2', borderRadius: '0.375rem' }}>
           {error}
         </div>
       )}
@@ -434,7 +555,6 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
-
 
 
 
