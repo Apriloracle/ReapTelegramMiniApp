@@ -565,10 +565,3 @@ export default DealsComponent;
 
 
 
-
-
-
-
-
-
-
