@@ -90,8 +90,8 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
             const deal = deals.find(d => d.id === rec.dealId);
             return deal && deal.logoAbsoluteUrl ? { ...deal, confidence: rec.confidence } : null;
           })
-          .filter((deal): deal is Deal => deal !== null)
-          .sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+          .filter((deal): deal is Deal & { confidence: number } => deal !== null)
+          .sort((a, b) => b.confidence - a.confidence);
 
         setPersonalizedDeals(personalizedDealsList);
       }
@@ -555,6 +555,10 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
+
+
+
+
 
 
 
