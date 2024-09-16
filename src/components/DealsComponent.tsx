@@ -26,7 +26,6 @@ interface Deal {
   codes: Code[];
   startDate: string;
   endDate: string;
-  confidence?: number;
 }
 
 interface DealsComponentProps {
@@ -88,10 +87,9 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
         const personalizedDealsList = Object.values(storedRecommendations)
           .map((rec: any) => {
             const deal = deals.find(d => d.id === rec.dealId);
-            return deal ? { ...deal, confidence: rec.confidence } : null;
+            return deal ? { ...deal } : null;
           })
-          .filter((deal): deal is Deal => deal !== null)
-          .sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+          .filter((deal): deal is Deal => deal !== null);
 
         setPersonalizedDeals(personalizedDealsList);
       }
@@ -553,6 +551,8 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
+
+
 
 
 
