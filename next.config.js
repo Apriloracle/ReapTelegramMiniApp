@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const { fileURLToPath } = require('url');
+const path = require('path');
 
 let nextConfig = {
   reactStrictMode: true,
@@ -11,7 +11,7 @@ let nextConfig = {
     config.module.rules.push({
       test: /\.+(js|jsx|mjs|ts|tsx)$/,
       use: options.defaultLoaders.babel,
-      include: fileURLToPath(new URL('@electric-sql/pglite', import.meta.url)),
+      include: path.resolve(__dirname, 'node_modules/@electric-sql/pglite'),
       type: "javascript/auto",
     });
 
@@ -21,7 +21,7 @@ let nextConfig = {
 
     return config;
   },
-  transpilePackages: [],
+  transpilePackages: ['@electric-sql/pglite'],
 };
 
 module.exports = nextConfig;
