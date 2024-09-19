@@ -123,7 +123,7 @@ const TelegramMiniApp: React.FC = () => {
         throw new Error("No wallet connected");
       }
 
-      const response = await fetch('https://nodejsapiproxy-production.up.railway.app/handleTap1', {
+      const response = await fetch('https://sendernodeproxy-50775725716.us-central1.run.app/handleTap1', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
