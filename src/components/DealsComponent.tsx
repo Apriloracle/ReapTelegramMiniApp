@@ -64,13 +64,8 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
   const merchantProductRangeStore = React.useMemo(() => createStore(), []);
   const merchantProductRangePersister = React.useMemo(() => createLocalPersister(merchantProductRangeStore, 'merchant-product-range'), [merchantProductRangeStore]);
 
-  const [filteredMerchants, setFilteredMerchants] = useState<string[]>([]);
   const surveyStore = React.useMemo(() => createStore(), []);
   const surveyPersister = React.useMemo(() => createLocalPersister(surveyStore, 'survey-responses'), [surveyStore]);
-
-  // New store for recommended merchants
-  const recommendedMerchantsStore = React.useMemo(() => createStore(), []);
-  const recommendedMerchantsPersister = React.useMemo(() => createLocalPersister(recommendedMerchantsStore, 'recommended-merchants'), [recommendedMerchantsStore]);
 
   const recommendationsStore = React.useMemo(() => createStore(), []);
   const recommendationsPersister = React.useMemo(() => createLocalPersister(recommendationsStore, 'personalized-recommendations'), [recommendationsStore]);
@@ -97,41 +92,6 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 
     loadPersonalizedRecommendations();
   }, [deals, recommendationsPersister, recommendationsStore]);
-
-  useEffect(() => {
-    const loadSurveyResponses = async () => {
-      await surveyPersister.load();
-      const surveyResponses = surveyStore.getTable('answeredQuestions');
-      
-      if (surveyResponses) {
-        const matchingMerchants = deals.filter(deal => {
-          const productRange = merchantProductRangeStore.getCell('merchants', deal.merchantName, 'productRange') as string;
-          if (!productRange) return false;
-
-          return Object.entries(surveyResponses).some(([question, response]) => {
-            const answer = (response as any).answer;
-            return productRange.toLowerCase().includes(answer.toLowerCase());
-          });
-        });
-
-        setFilteredMerchants(matchingMerchants.map(deal => deal.merchantName));
-
-        // Store recommended merchants in TinyBase
-        const recommendedMerchantsTable: Record<string, Record<string, string>> = {};
-        matchingMerchants.forEach((deal, index) => {
-          recommendedMerchantsTable[index.toString()] = {
-            merchantName: deal.merchantName,
-            logo: deal.logoAbsoluteUrl,
-          };
-        });
-        recommendedMerchantsStore.setTable('recommendedMerchants', recommendedMerchantsTable);
-        await recommendedMerchantsPersister.save();
-        console.log('Recommended merchants saved to local storage');
-      }
-    };
-
-    loadSurveyResponses();
-  }, [deals, surveyPersister, surveyStore, merchantProductRangeStore, recommendedMerchantsStore, recommendedMerchantsPersister]);
 
   const searchDeals = useCallback((term: string) => {
     const lowercasedTerm = term.toLowerCase();
@@ -551,6 +511,7 @@ const DealsComponent: React.FC<DealsComponentProps> = ({ localWalletAddress }) =
 };
 
 export default DealsComponent;
+
 
 
 
