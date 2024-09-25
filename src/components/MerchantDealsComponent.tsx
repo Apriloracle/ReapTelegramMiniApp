@@ -76,35 +76,37 @@ const MerchantDealsComponent: React.FC = () => {
   const renderCodes = (deal: Deal) => {
     const codesArray = Array.isArray(deal.codes) ? deal.codes : [deal.codes].filter(Boolean);
     
-    return codesArray.map((code: Code) => (
-      <div key={code.code} style={{ 
-        marginTop: '1rem', // Increased spacing between cards
-        backgroundColor: '#6e3a07', // Light orange background
-        borderRadius: '0.5rem', // Rounded corners
-        padding: '1rem', // Padding inside the card
-      }}>
-        <p style={{ color: '#FFFFFF', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{code.summary}</p>
-        <button
-          onClick={() => handleActivateDeal(deal.id, code.code)}
-          disabled={!isLoggedIn || activatedDeals.has(`${deal.id}-${code.code}`) || activatingDeal === `${deal.id}-${code.code}`}
-          style={{
-            backgroundColor: '#f05e23',
-            color: '#FFFFFF',
-            border: 'none',
-            borderRadius: '0.25rem',
-            padding: '0.5rem 1rem',
-            fontSize: '0.9rem',
-            cursor: isLoggedIn ? 'pointer' : 'not-allowed',
-            opacity: activatedDeals.has(`${deal.id}-${code.code}`) ? 0.5 : 1,
-          }}
-        >
-          {activatedDeals.has(`${deal.id}-${code.code}`) ? 'Activated' : 'Activate Deal'}
-        </button>
-      </div>
-    ));
+    return codesArray.map((code: Code) => {
+      if (!code) return null; // Skip undefined or null codes
+      return (
+        <div key={code.code} style={{ 
+          marginTop: '1rem', // Increased spacing between cards
+          backgroundColor: '#6e3a07', // Light orange background
+          borderRadius: '0.5rem', // Rounded corners
+          padding: '1rem', // Padding inside the card
+        }}>
+          <p style={{ color: '#FFFFFF', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{code.summary}</p>
+          <button
+            onClick={() => handleActivateDeal(deal.id, code.code)}
+            disabled={!isLoggedIn || activatedDeals.has(`${deal.id}-${code.code}`) || activatingDeal === `${deal.id}-${code.code}`}
+            style={{
+              backgroundColor: '#f05e23',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '0.25rem',
+              padding: '0.5rem 1rem',
+              fontSize: '0.9rem',
+              cursor: isLoggedIn ? 'pointer' : 'not-allowed',
+              opacity: activatedDeals.has(`${deal.id}-${code.code}`) ? 0.5 : 1,
+            }}
+          >
+            {activatedDeals.has(`${deal.id}-${code.code}`) ? 'Activated' : 'Activate Deal'}
+          </button>
+        </div>
+      );
+    });
   };
 
-  
   return (
     <div style={{ padding: '1rem', backgroundColor: '#000000', minHeight: '100vh' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
