@@ -42,7 +42,17 @@ const DealsComponent: React.FC = () => {
 
       const dealsTable = dealsStore.getTable('deals');
       if (dealsTable) {
-        setDeals(dealsTable as Record<string, Deal>);
+        const mappedDeals: Record<string, Deal> = {};
+        Object.entries(dealsTable).forEach(([key, value]) => {
+          mappedDeals[key] = {
+            id: value.id as string,
+            dealId: value.dealId as string,
+            merchantName: value.merchantName as string,
+            logo: value.logo as string,
+            logoAbsoluteUrl: value.logoAbsoluteUrl as string
+          };
+        });
+        setDeals(mappedDeals);
       }
     };
 
