@@ -33,7 +33,10 @@ const DealsComponent: React.FC = () => {
 
       const recommendationsTable = recommendationsStore.getTable('recommendations');
       if (recommendationsTable) {
-        const recommendationsArray = Object.values(recommendationsTable) as Recommendation[];
+        const recommendationsArray = Object.values(recommendationsTable).map(row => ({
+          dealId: row.dealId as string,
+          confidence: row.confidence as number
+        }));
         setRecommendations(recommendationsArray);
       }
 
