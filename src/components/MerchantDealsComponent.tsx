@@ -76,10 +76,10 @@ const MerchantDealsComponent: React.FC = () => {
   const renderCodes = (deal: Deal) => {
     const codesArray = Array.isArray(deal.codes) ? deal.codes : [deal.codes].filter(Boolean);
     
-    return codesArray.map((code: Code) => {
+    return codesArray.map((code: Code | undefined, index: number) => {
       if (!code) return null; // Skip undefined or null codes
       return (
-        <div key={code.code} style={{ 
+        <div key={code.code || index} style={{ 
           marginTop: '1rem', // Increased spacing between cards
           backgroundColor: '#6e3a07', // Light orange background
           borderRadius: '0.5rem', // Rounded corners
