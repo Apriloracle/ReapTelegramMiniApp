@@ -24,6 +24,7 @@ interface Deal {
 
 const InitialDataFetcher: React.FC = () => {
   const [isInitialized, setIsInitialized] = useState(false);
+  const [countryCode, setCountryCode] = useState<string | null>(null);
   const geolocationData = useIPGeolocation();
   const dealsStore = React.useMemo(() => createStore(), []);
   const dealsPersister = React.useMemo(() => createLocalPersister(dealsStore, 'kindred-deals'), [dealsStore]);
@@ -41,114 +42,65 @@ const InitialDataFetcher: React.FC = () => {
   const [isGeolocationAvailable, setIsGeolocationAvailable] = useState(false);
   const [fetchedMerchants, setFetchedMerchants] = useState<Set<string>>(new Set());
 
-  const fetchAndStoreDeals = useCallback(async () => {
-    if (!geolocationData) {
-      console.log('Geolocation data not available, using default country code');
-      // Use a default country code if geolocation is not available
-      const defaultCountryCode = '';
-      try {
-        const response = await fetch(`https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${defaultCountryCode}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch deals');
-        }
-
-        const data: Deal[] = await response.json();
-        
-        const dealsTable: Record<string, Record<string, string | number | boolean>> = {};
-        const merchantDescriptions: Record<string, string> = {};
-
-        data.forEach(deal => {
-          dealsTable[deal.id] = {
-            dealId: deal.dealId,
-            merchantName: deal.merchantName,
-            logo: deal.logo,
-            logoAbsoluteUrl: deal.logoAbsoluteUrl,
-            cashbackType: deal.cashbackType,
-            cashback: deal.cashback,
-            currency: deal.currency,
-            domains: JSON.stringify(deal.domains),
-            countries: JSON.stringify(deal.countries),
-            codes: JSON.stringify(deal.codes),
-            startDate: deal.startDate,
-            endDate: deal.endDate
-          };
-
-          merchantDescriptions[deal.merchantName] = deal.merchantName;
-        });
-
-        dealsStore.setTable('deals', dealsTable);
-        dealsStore.setValue('lastFetchTime', Date.now());
-
-        if (Object.keys(merchantDescriptionStore.getTable('merchants')).length === 0) {
-          Object.entries(merchantDescriptions).forEach(([key, value]) => {
-            merchantDescriptionStore.setCell('merchants', key, 'name', value);
-          });
-          await merchantDescriptionPersister.save();
-        }
-
-        await dealsPersister.save();
-      } catch (err) {
-        console.error('Error fetching deals:', err);
+  const fetchAndStoreDeals = useCallback(async (countryCode: string) => {
+    console.log('Fetching deals with country code:', countryCode);
+    try {
+      const response = await fetch(`https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${countryCode}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch deals: ${response.status} ${response.statusText}. ${errorText}`);
       }
-    } else {
-      // Existing fetchAndStoreDeals logic
-      try {
-        const response = await fetch(`https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/kindredMerchant?countryCode=${geolocationData.countryCode}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch deals');
-        }
 
-        const data: Deal[] = await response.json();
-        
-        const dealsTable: Record<string, Record<string, string | number | boolean>> = {};
-        const merchantDescriptions: Record<string, string> = {};
+      const data: Deal[] = await response.json();
+      
+      const dealsTable: Record<string, Record<string, string | number | boolean>> = {};
+      const merchantDescriptions: Record<string, string> = {};
 
-        data.forEach(deal => {
-          dealsTable[deal.id] = {
-            dealId: deal.dealId,
-            merchantName: deal.merchantName,
-            logo: deal.logo,
-            logoAbsoluteUrl: deal.logoAbsoluteUrl,
-            cashbackType: deal.cashbackType,
-            cashback: deal.cashback,
-            currency: deal.currency,
-            domains: JSON.stringify(deal.domains),
-            countries: JSON.stringify(deal.countries),
-            codes: JSON.stringify(deal.codes),
-            startDate: deal.startDate,
-            endDate: deal.endDate
-          };
+      data.forEach(deal => {
+        dealsTable[deal.id] = {
+          dealId: deal.dealId,
+          merchantName: deal.merchantName,
+          logo: deal.logo,
+          logoAbsoluteUrl: deal.logoAbsoluteUrl,
+          cashbackType: deal.cashbackType,
+          cashback: deal.cashback,
+          currency: deal.currency,
+          domains: JSON.stringify(deal.domains),
+          countries: JSON.stringify(deal.countries),
+          codes: JSON.stringify(deal.codes),
+          startDate: deal.startDate,
+          endDate: deal.endDate
+        };
 
-          merchantDescriptions[deal.merchantName] = deal.merchantName;
+        merchantDescriptions[deal.merchantName] = deal.merchantName;
+      });
+
+      dealsStore.setTable('deals', dealsTable);
+      dealsStore.setValue('lastFetchTime', Date.now());
+
+      if (Object.keys(merchantDescriptionStore.getTable('merchants')).length === 0) {
+        Object.entries(merchantDescriptions).forEach(([key, value]) => {
+          merchantDescriptionStore.setCell('merchants', key, 'name', value);
         });
-
-        dealsStore.setTable('deals', dealsTable);
-        dealsStore.setValue('lastFetchTime', Date.now());
-
-        if (Object.keys(merchantDescriptionStore.getTable('merchants')).length === 0) {
-          Object.entries(merchantDescriptions).forEach(([key, value]) => {
-            merchantDescriptionStore.setCell('merchants', key, 'name', value);
-          });
-          await merchantDescriptionPersister.save();
-        }
-
-        await dealsPersister.save();
-      } catch (err) {
-        console.error('Error fetching deals:', err);
+        await merchantDescriptionPersister.save();
       }
+
+      await dealsPersister.save();
+    } catch (err) {
+      console.error('Error fetching deals:', err);
+      // You might want to set an error state here to display to the user
     }
-  }, [geolocationData, dealsStore, dealsPersister, merchantDescriptionStore, merchantDescriptionPersister]);
+  }, [dealsStore, dealsPersister, merchantDescriptionStore, merchantDescriptionPersister]);
 
-  const loadOrFetchDeals = useCallback(async () => {
+  const loadOrFetchDeals = useCallback(async (countryCode: string) => {
     await dealsPersister.load();
     const lastFetchTime = dealsStore.getValue('lastFetchTime') as number | undefined;
     const currentTime = Date.now();
 
     if (!lastFetchTime || currentTime - lastFetchTime > CACHE_DURATION) {
       console.log('Fetching new deals data');
-      await fetchAndStoreDeals();
+      await fetchAndStoreDeals(countryCode);
     } else {
       console.log('Using cached deals data');
     }
@@ -217,14 +169,30 @@ const InitialDataFetcher: React.FC = () => {
       console.log('Initializing data...');
       
       try {
-        if (geolocationData) {
-          setIsGeolocationAvailable(true);
+        // Load geolocation data from the existing store
+        const geolocationStore = createStore();
+        const geolocationPersister = createLocalPersister(geolocationStore, 'user-geolocation');
+        await geolocationPersister.load();
+        
+        const storedGeolocationData = geolocationStore.getRow('geolocation', 'userGeo');
+        
+        let currentCountryCode: string;
+        if (storedGeolocationData && 'countryCode' in storedGeolocationData) {
+          currentCountryCode = storedGeolocationData.countryCode as string;
+          console.log('Country code loaded from store:', currentCountryCode);
+        } else if (geolocationData && geolocationData.countryCode) {
+          currentCountryCode = geolocationData.countryCode;
+          console.log('Country code from IPGeolocation:', currentCountryCode);
         } else {
-          console.log('Geolocation data not available, proceeding with default');
-          setIsGeolocationAvailable(false);
+          console.log('Country code not available, using default');
+          currentCountryCode = 'US'; // Set a default country code
         }
 
-        await loadOrFetchDeals();
+        setCountryCode(currentCountryCode);
+        setIsGeolocationAvailable(!!geolocationData);
+
+        // Now that we have the country code, we can load or fetch deals
+        await loadOrFetchDeals(currentCountryCode);
         await loadActivatedDeals();
         await loadMerchantDescriptions();
         setIsInitialized(true);
@@ -251,11 +219,23 @@ const InitialDataFetcher: React.FC = () => {
     return () => clearTimeout(timer);
   }, [isInitialized]);
 
+  // Use countryCode in your component logic
+  useEffect(() => {
+    if (countryCode) {
+      console.log('Using country code:', countryCode);
+      // You can now use the countryCode in your data fetching logic
+      // For example, you might want to pass it to the fetchAndStoreDeals function
+      // fetchAndStoreDeals(countryCode);
+    }
+  }, [countryCode]);
+
   return (
     <div style={{ display: 'none' }}>
       {isInitialized ? 'Data fetched and initialized' : 'Initializing data...'}
       <br />
       Geolocation available: {isGeolocationAvailable ? 'Yes' : 'No'}
+      <br />
+      Country Code: {countryCode || 'Not available'}
     </div>
   );
 };

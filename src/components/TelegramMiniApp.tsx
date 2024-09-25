@@ -8,13 +8,13 @@ import { LocalWallet } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import PeerSync from './PeerSync';
-import DealsComponent from './DealsComponent';
 import SurveyQuestion from './SurveyQuestion';
 import BalanceCard from './BalanceCard';
 import InitialDataFetcher from './InitialDataFetcher';
 import FriendsComponent from './FriendsComponent';
 import Cashout from './Cashout';
 import VectorData from './VectorData';
+import DealsComponent from './DealsComponent';
 
 const DAILY_TAP_LIMIT = 3000;
 const RESET_MINUTES = 60;
@@ -778,7 +778,6 @@ const TelegramMiniApp: React.FC = () => {
 
         <Routes>
           <Route path="/" element={<MainPage />} />
-          <Route path="/deals" element={<DealsComponent localWalletAddress={localWalletAddress} />} />
           <Route path="/friends" element={<FriendsComponent />} />
           <Route path="/cashout" element={
             localWallet ? (
@@ -792,6 +791,8 @@ const TelegramMiniApp: React.FC = () => {
               <div>Please connect your wallet to access the Cashout feature.</div>
             )
           } />
+          {/* Add the new route for DealsComponent */}
+          <Route path="/deals" element={<DealsComponent />} />
         </Routes>
         
         <BottomNavBar />
