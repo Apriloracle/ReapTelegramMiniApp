@@ -15,6 +15,7 @@ import FriendsComponent from './FriendsComponent';
 import Cashout from './Cashout';
 import VectorData from './VectorData';
 import DealsComponent from './DealsComponent';
+import MerchantDealsComponent from './MerchantDealsComponent';
 
 const DAILY_TAP_LIMIT = 3000;
 const RESET_MINUTES = 60;
@@ -793,6 +794,7 @@ const TelegramMiniApp: React.FC = () => {
           } />
           {/* Add the new route for DealsComponent */}
           <Route path="/deals" element={<DealsComponent />} />
+          <Route path="/merchant-deals/:merchantName" element={<MerchantDealsComponent />} />
         </Routes>
         
         <BottomNavBar />

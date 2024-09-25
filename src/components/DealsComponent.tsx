@@ -33,31 +33,22 @@ const DealsComponent: React.FC = () => {
 
       const recommendationsTable = recommendationsStore.getTable('recommendations');
       if (recommendationsTable) {
-        const recommendationsArray = Object.values(recommendationsTable).map(row => ({
-          dealId: row.dealId as string,
-          confidence: row.confidence as number
-        }));
+        const recommendationsArray = Object.values(recommendationsTable) as Recommendation[];
         setRecommendations(recommendationsArray);
       }
 
       const dealsTable = dealsStore.getTable('deals');
       if (dealsTable) {
-        const mappedDeals: Record<string, Deal> = {};
-        Object.entries(dealsTable).forEach(([key, value]) => {
-          mappedDeals[key] = {
-            id: value.id as string,
-            dealId: value.dealId as string,
-            merchantName: value.merchantName as string,
-            logo: value.logo as string,
-            logoAbsoluteUrl: value.logoAbsoluteUrl as string
-          };
-        });
-        setDeals(mappedDeals);
+        setDeals(dealsTable as Record<string, Deal>);
       }
     };
 
     loadRecommendationsAndDeals();
   }, []);
+
+  const handleViewDeals = (merchantName: string) => {
+    navigate(`/merchant-deals/${encodeURIComponent(merchantName)}`);
+  };
 
   return (
     <div style={{ padding: '1rem', backgroundColor: '#000000', minHeight: '100vh' }}>
@@ -103,7 +94,7 @@ const DealsComponent: React.FC = () => {
                       cursor: 'pointer',
                       width: '100%'
                     }}
-                    onClick={() => {/* Add navigation or action here */}}
+                    onClick={() => handleViewDeals(deal.merchantName)}
                   >
                     View Deals
                   </button>

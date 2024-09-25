@@ -221,7 +221,6 @@ const FriendsComponent: React.FC = () => {
             </div>
           </div>
 
-          
           <div style={{ marginBottom: '1rem' }}>
             <h3 style={{ color: '#f05e23' }}>Your Referral Code</h3>
             <p style={{ backgroundColor: '#1A202C', padding: '0.5rem', borderRadius: '4px', wordBreak: 'break-all' }}>
