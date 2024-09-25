@@ -104,6 +104,7 @@ const MerchantDealsComponent: React.FC = () => {
     ));
   };
 
+  
   return (
     <div style={{ padding: '1rem', backgroundColor: '#000000', minHeight: '100vh' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
