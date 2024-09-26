@@ -566,6 +566,30 @@ const TelegramMiniApp: React.FC = () => {
     setTotalBalanceUsd(calculatedBalance);
   }, [aprilBalance.displayValue, aprilUsdPrice]);
 
+  const sendInlineKeyboardMessage = () => {
+    if (WebApp && WebApp.sendData) {
+      const botUsername = 'Reapmini_bot'; // Replace with your actual bot username
+      const startParameter = 'earn';
+
+      const inlineKeyboard = JSON.stringify({
+        inline_keyboard: [
+          [
+            { text: "Earn", url: `https://t.me/${botUsername}?start=${startParameter}` },
+            { text: "Join Channel", url: "https://t.me/apriloraclenews" }, // Replace with your actual channel URL
+            { text: "Join Group", url: "https://t.me/apriloracle" } // Replace with your actual group URL
+          ]
+        ]
+      });
+
+      WebApp.sendData(JSON.stringify({
+        method: "sendMessage",
+        chat_id: WebApp.initDataUnsafe.user.id,
+        text: "Welcome to Reap Mini! Choose an option to get started:",
+        reply_markup: inlineKeyboard
+      }));
+    }
+  };
+
   const MainPage: React.FC = () => {
     const navigate = useNavigate();
 
@@ -686,6 +710,22 @@ const TelegramMiniApp: React.FC = () => {
             onClose={() => setShowSurvey(false)}
           />
         )}
+
+        {/* Add this button to trigger the inline keyboard */}
+        {/* <button
+          onClick={sendInlineKeyboardMessage}
+          style={{
+            marginTop: '1rem',
+            padding: '0.5rem 1rem',
+            backgroundColor: '#f05e23',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.25rem',
+            cursor: 'pointer'
+          }}
+        >
+          Show Options
+        </button> */}
       </>
     );
   };
@@ -805,6 +845,7 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
 
 
 
