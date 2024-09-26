@@ -186,7 +186,7 @@ const FriendsComponent: React.FC = () => {
         <>
           <div style={{ marginBottom: '1rem' }}>
             <h3 style={{ color: '#f05e23' }}>Your Referral Link</h3>
-            <p style={{ backgroundColor: '#1A202C', padding: '0.5rem', borderRadius: '4px', wordBreak: 'break-all' }}>
+            <p style={{ backgroundColor: '#3D261B', padding: '0.5rem', borderRadius: '4px', wordBreak: 'break-all' }}>
               {referralLink}
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
@@ -223,12 +223,12 @@ const FriendsComponent: React.FC = () => {
 
           <div style={{ marginBottom: '1rem' }}>
             <h3 style={{ color: '#f05e23' }}>Your Referral Code</h3>
-            <p style={{ backgroundColor: '#1A202C', padding: '0.5rem', borderRadius: '4px', wordBreak: 'break-all' }}>
+            <p style={{ backgroundColor: '#3D261B', padding: '0.5rem', borderRadius: '4px', wordBreak: 'break-all' }}>
               {referralCode}
             </p>
           </div>
 
-          <div style={{ backgroundColor: '#1A202C', padding: '1rem', borderRadius: '4px' }}>
+          <div style={{ backgroundColor: '#3D261B', padding: '1rem', borderRadius: '4px' }}>
             <h3 style={{ color: '#f05e23', marginTop: 0 }}>How it works</h3>
             <p>1. Share your unique referral link or code with friends</p>
             <p>2. When a friend starts our Telegram bot using your link or code, you'll earn a reward</p>
