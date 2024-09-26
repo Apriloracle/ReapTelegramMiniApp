@@ -581,12 +581,16 @@ const TelegramMiniApp: React.FC = () => {
         ]
       });
 
-      WebApp.sendData(JSON.stringify({
-        method: "sendMessage",
-        chat_id: WebApp.initDataUnsafe.user.id,
-        text: "Welcome to Reap Mini! Choose an option to get started:",
-        reply_markup: inlineKeyboard
-      }));
+      if (WebApp.initDataUnsafe.user) {
+        WebApp.sendData(JSON.stringify({
+          method: "sendMessage",
+          chat_id: WebApp.initDataUnsafe.user.id,
+          text: "Welcome to Reap Mini! Choose an option to get started:",
+          reply_markup: inlineKeyboard
+        }));
+      } else {
+        console.error('User data is not available.');
+      }
     }
   };
 
@@ -845,6 +849,7 @@ const TelegramMiniApp: React.FC = () => {
 }
 
 export default TelegramMiniApp
+
 
 
 
