@@ -5,6 +5,7 @@ import { createPglitePersister } from 'tinybase/persisters/persister-pglite';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import { Doc } from 'yjs';
 import { PGlite } from '@electric-sql/pglite';
+import Annoy from '../lib/annoy';
 
 declare global {
   interface Window {
@@ -18,48 +19,23 @@ const VectorData: React.FC = () => {
   const [store, setStore] = useState<any>(null);
   const [persister, setPersister] = useState<any>(null);
   const [yjsPersister, setYjsPersister] = useState<any>(null);
-  const [classifier, setClassifier] = useState<any>(null);
-  const [ml5Available, setMl5Available] = useState<boolean>(false);
-  const [isClassifierTrained, setIsClassifierTrained] = useState<boolean>(false);
+  const [annoyIndex, setAnnoyIndex] = useState<Annoy | null>(null);
+  const [isAnnoyIndexBuilt, setIsAnnoyIndexBuilt] = useState<boolean>(false);
 
   const recommendationsStore = React.useMemo(() => createStore(), []);
   const recommendationsPersister = React.useMemo(() => createLocalPersister(recommendationsStore, 'personalized-recommendations'), [recommendationsStore]);
 
+  // Constants for Annoy
+  const FOREST_SIZE = 10;
+  const VECTOR_LEN = 1000; // Match your vector size
+  const MAX_LEAF_SIZE = 50;
+
   useEffect(() => {
-    const initializeStore = async () => {
-      console.log('Initializing stores...');
-      const pglite = await PGlite.create();
-      const newStore = createStore();
-      const yDoc = new Doc();
-      
-      // Initialize PGlite persister for vector data
-      const newPersister = await createPglitePersister(newStore, pglite, {
-        mode: 'tabular',
-        tables: {
-          load: { vectorData: 'vector_data' },
-          save: { vectorData: 'vector_data' },
-        },
-      });
+    const initializeAnnoy = async () => {
+      console.log('Initializing Annoy index...');
+      const annoy = new Annoy(FOREST_SIZE, VECTOR_LEN, MAX_LEAF_SIZE);
+      setAnnoyIndex(annoy);
 
-      // Initialize Yjs persister
-      const newYjsPersister = createYjsPersister(newStore, yDoc, 'vectorData');
-
-      setStore(newStore);
-      setPersister(newPersister);
-      setYjsPersister(newYjsPersister);
-
-      // Create the VectRecomDeals table without vector support
-      await pglite.query(`
-        CREATE TABLE IF NOT EXISTS VectRecomDeals (
-          _id TEXT PRIMARY KEY,
-          vector JSONB,
-          metadata JSONB
-        )
-      `);
-
-      console.log('Stores initialized and tables created');
-
-      // Load data from other stores
       const dealsStore = createStore();
       const dealsPersister = createLocalPersister(dealsStore, 'kindred-deals');
       await dealsPersister.load();
@@ -76,83 +52,60 @@ const VectorData: React.FC = () => {
       const surveyPersister = createLocalPersister(surveyStore, 'survey-responses');
       await surveyPersister.load();
 
-      // Combine and vectorize data
+      const geolocationStore = createStore();
+      const geolocationPersister = createLocalPersister(geolocationStore, 'user-geolocation');
+      await geolocationPersister.load();
+
       const deals = dealsStore.getTable('deals');
       const merchantDescriptions = merchantDescriptionStore.getTable('merchants');
       const productRanges = merchantProductRangeStore.getTable('merchants');
       const surveyResponses = surveyStore.getTable('answeredQuestions');
 
-      // Vectorize survey responses
+      console.log(`Total deals to process: ${Object.keys(deals).length}`);
+      console.log(`Total merchant descriptions: ${Object.keys(merchantDescriptions).length}`);
+      console.log(`Total product ranges: ${Object.keys(productRanges).length}`);
+
       const surveyVector = vectorizeSurveyResponses(surveyResponses);
-
-      // Load geolocation data
-      const geolocationStore = createStore();
-      const geolocationPersister = createLocalPersister(geolocationStore, 'user-geolocation');
-      await geolocationPersister.load();
-
-      // Retrieve geolocation data
       const geolocationData = geolocationStore.getRow('geolocation', 'userGeo');
       const geoVector = vectorizeGeolocation(geolocationData);
 
-      // Check if ml5 is available
-      if (typeof window !== 'undefined' && window.ml5 && window.ml5.KNNClassifier) {
-        setMl5Available(true);
-        const knnClassifier = window.ml5.KNNClassifier();
-        console.log('KNN Classifier initialized');
-        setClassifier(knnClassifier);
+      console.log('Survey Vector length:', surveyVector.length);
+      console.log('Geo Vector length:', geoVector.length);
 
-        let exampleAdded = false;
+      let validDealsCount = 0;
+      let invalidDealsCount = 0;
 
-        for (const [dealId, deal] of Object.entries(deals)) {
-          const merchantName = deal.merchantName as string;
-          const description = merchantDescriptions[merchantName]?.name || '';
-          const productRange = productRanges[merchantName]?.productRange || '';
-          
-          // Combine all relevant data
-          const combinedData = `${deal.merchantName} ${deal.cashbackType} ${deal.cashback} ${description} ${productRange}`;
-          
-          // Vectorize the combined data using simple method
-          const dealVector = simpleVectorize(combinedData);
-          
-          // Combine deal vector with survey vector and geolocation vector
-          const combinedVector = combineVectors([dealVector, surveyVector, geoVector]);
-          
-          // Add the combined vector to the KNN Classifier
-          knnClassifier.addExample(combinedVector, dealId);
-          exampleAdded = true;
-          
-          await pglite.query(`
-            INSERT INTO VectRecomDeals (_id, vector, metadata)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (_id) DO UPDATE
-            SET vector = EXCLUDED.vector, metadata = EXCLUDED.metadata
-          `, [dealId, JSON.stringify(combinedVector), JSON.stringify({ ...deal, surveyResponses, geolocation: geolocationData })]);
-        }
+      for (const [dealId, deal] of Object.entries(deals)) {
+        const merchantName = deal.merchantName as string;
+        const description = merchantDescriptions[merchantName]?.name || '';
+        const productRange = productRanges[merchantName]?.productRange || '';
+        
+        const combinedData = `${deal.merchantName} ${deal.cashbackType} ${deal.cashback} ${description} ${productRange}`;
+        const dealVector = simpleVectorize(combinedData);
+        const combinedVector = combineVectors([dealVector, surveyVector, geoVector]);
 
-        if (exampleAdded) {
-          setIsClassifierTrained(true);
-          console.log('KNN Classifier trained with vectorized deal data');
+        if (combinedVector.length === VECTOR_LEN) {
+          try {
+            annoy.add({ v: combinedVector, d: { id: dealId, ...deal } });
+            validDealsCount++;
+          } catch (error) {
+            console.error(`Error adding deal ${dealId}:`, error);
+            invalidDealsCount++;
+          }
         } else {
-          console.warn('No examples added to the KNN Classifier');
+          console.error(`Invalid vector length for deal ${dealId}: ${combinedVector.length}`);
+          invalidDealsCount++;
         }
-      } else {
-        console.warn('ml5 library not available. KNN Classifier functionality will be limited.');
       }
 
-      console.log('Vectorized data including survey responses and geolocation stored in VectRecomDeals');
+      console.log(`Total valid deals added to Annoy index: ${validDealsCount}`);
+      console.log(`Total invalid deals skipped: ${invalidDealsCount}`);
+
+      setIsAnnoyIndexBuilt(true);
+      console.log('Annoy index built with vectorized deal data');
     };
 
-    initializeStore();
-
-    return () => {
-      if (persister) {
-        persister.destroy();
-      }
-      if (yjsPersister) {
-        yjsPersister.destroy();
-      }
-      console.log('Persisters destroyed');
-    };
+    initializeAnnoy();
   }, []);
 
   // Update the simpleVectorize function to use a larger vector size
@@ -284,17 +237,22 @@ const VectorData: React.FC = () => {
     return vector;
   };
 
-  // Update getPersonalizedRecommendations to include device data
+  const euclideanDistance = (v1: number[], v2: number[]): number => {
+    return Math.sqrt(v1.reduce((sum, x, i) => sum + Math.pow(x - v2[i], 2), 0));
+  };
+
   const getPersonalizedRecommendations = useCallback(async (userProfile: any, topK: number = 5) => {
-    if (!classifier || !ml5Available || !isClassifierTrained) {
-      console.error('Classifier not initialized, ml5 not available, or classifier not trained');
+    if (!annoyIndex || !isAnnoyIndexBuilt) {
+      console.error('Annoy index not initialized or not built');
       return [];
     }
+
+    console.log('Getting personalized recommendations...');
+    console.log('User profile:', userProfile);
 
     const deviceData = getDeviceData();
     const deviceVector = vectorizeDeviceData(deviceData);
 
-    // Vectorize user profile with more data
     const userVector = combineVectors([
       simpleVectorize(`${userProfile.interests.join(' ')} ${userProfile.shoppingFrequency}`),
       vectorizeSurveyResponses(userProfile.surveyResponses || {}),
@@ -302,19 +260,26 @@ const VectorData: React.FC = () => {
       deviceVector
     ]);
 
-    try {
-      // Get recommendations
-      const results = await classifier.classify(userVector, topK);
-      
-      if (!results || !results.confidencesByLabel) {
-        console.error('Unexpected results format from classifier');
-        return [];
-      }
+    console.log('User vector length:', userVector.length);
 
-      const sortedResults = Object.entries(results.confidencesByLabel)
-        .sort(([, a], [, b]) => (b as number) - (a as number))
-        .slice(0, topK)
-        .map(([dealId, confidence]) => ({ dealId, confidence: confidence as number }));
+    if (userVector.length !== VECTOR_LEN) {
+      console.error('Invalid user vector length');
+      return [];
+    }
+
+    try {
+      const recommendations = annoyIndex.get(userVector, topK);
+      console.log('Raw recommendations from Annoy:', recommendations);
+      
+      const sortedResults = recommendations
+        .filter(rec => rec && rec.d && rec.v)
+        .map(rec => ({
+          dealId: rec.d.id,
+          confidence: 1 - euclideanDistance(userVector, rec.v)
+        }))
+        .sort((a, b) => b.confidence - a.confidence);
+
+      console.log('Sorted and filtered recommendations:', sortedResults);
 
       // Store recommendations in TinyBase
       const recommendationsTable: Record<string, Record<string, any>> = {};
@@ -329,7 +294,7 @@ const VectorData: React.FC = () => {
       console.error('Error getting recommendations:', error);
       return [];
     }
-  }, [classifier, ml5Available, isClassifierTrained, getDeviceData, recommendationsStore, recommendationsPersister]);
+  }, [annoyIndex, isAnnoyIndexBuilt, getDeviceData, recommendationsStore, recommendationsPersister]);
 
   // Update the example usage with more user data and device data
   useEffect(() => {
@@ -347,18 +312,19 @@ const VectorData: React.FC = () => {
         }
       };
 
-      if (isClassifierTrained) {
+      if (isAnnoyIndexBuilt) {
+        console.log('Fetching personalized recommendations...');
         const recommendations = await getPersonalizedRecommendations(userProfile);
         console.log('Personalized recommendations:', recommendations);
       } else {
-        console.log('Classifier not yet trained, skipping recommendations');
+        console.log('Annoy index not yet built, skipping recommendations');
       }
     };
 
-    if (classifier && ml5Available) {
+    if (annoyIndex) {
       fetchRecommendations();
     }
-  }, [classifier, ml5Available, isClassifierTrained, getPersonalizedRecommendations]);
+  }, [annoyIndex, isAnnoyIndexBuilt, getPersonalizedRecommendations]);
 
   return null;
 };
