@@ -24,8 +24,16 @@ const MerchantDeals: React.FC<MerchantDealsProps> = ({ localWalletAddress, addre
   const [error, setError] = useState<string | null>(null);
   const [activatedDeals, setActivatedDeals] = useState<Set<string>>(new Set());
 
-  const activatedDealsStore = React.useMemo(() => createStore(), []);
-  const activatedDealsPersister = React.useMemo(() => createLocalPersister(activatedDealsStore, 'activated-deals'), [activatedDealsStore]);
+  const [activatedDealsStore, setActivatedDealsStore] = useState<ReturnType<typeof createStore> | null>(null);
+  const [activatedDealsPersister, setActivatedDealsPersister] = useState<ReturnType<typeof createLocalPersister> | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const store = createStore();
+      setActivatedDealsStore(store);
+      setActivatedDealsPersister(createLocalPersister(store, 'activated-deals'));
+    }
+  }, []);
 
   const handleActivateDeal = async (dealId: string, code: string) => {
     setActivatingDeal(`${dealId}-${code}`);
@@ -51,8 +59,10 @@ const MerchantDeals: React.FC<MerchantDealsProps> = ({ localWalletAddress, addre
       const data = await response.json();
       if (data.success && data.redirectUrl) {
         const dealKey = `${dealId}-${code}`;
-        activatedDealsStore.setCell('activatedDeals', dealKey, 'activated', true);
-        await activatedDealsPersister.save();
+        if (activatedDealsStore && activatedDealsPersister) {
+          activatedDealsStore.setCell('activatedDeals', dealKey, 'activated', true);
+          await activatedDealsPersister.save();
+        }
 
         setActivatedDeals(prevDeals => new Set(prevDeals).add(dealKey));
         
