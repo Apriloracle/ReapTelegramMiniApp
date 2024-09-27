@@ -8,7 +8,6 @@ interface Code {
   summary: string;
 }
 
-
 interface Deal {
   id: string;
   dealId: string;
@@ -21,13 +20,21 @@ interface Deal {
   codes?: Code[] | Code;
 }
 
-const MerchantDealsComponent: React.FC = () => {
+interface MerchantDealsComponentProps {
+  localWalletAddress: string | null;
+  address: string | undefined;
+}
+
+const MerchantDealsComponent: React.FC<MerchantDealsComponentProps> = ({ localWalletAddress, address }) => {
   const { merchantName } = useParams<{ merchantName: string }>();
   const navigate = useNavigate();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [activatedDeals, setActivatedDeals] = useState<Set<string>>(new Set());
   const [activatingDeal, setActivatingDeal] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(true); // Assume logged in for now
+  const [error, setError] = useState<string | null>(null);
+
+  const activatedDealsStore = React.useMemo(() => createStore(), []);
+  const activatedDealsPersister = React.useMemo(() => createLocalPersister(activatedDealsStore, 'activated-deals'), [activatedDealsStore]);
 
   useEffect(() => {
     const loadDeals = async () => {
@@ -47,8 +54,22 @@ const MerchantDealsComponent: React.FC = () => {
       }
     };
 
+    const loadActivatedDeals = async () => {
+      await activatedDealsPersister.load();
+      const activatedDealsTable = activatedDealsStore.getTable('activatedDeals');
+      if (activatedDealsTable) {
+        const activatedDealsSet = new Set(
+          Object.entries(activatedDealsTable)
+            .filter(([_, value]) => value.activated)
+            .map(([key, _]) => key)
+        );
+        setActivatedDeals(activatedDealsSet);
+      }
+    };
+
     loadDeals();
-  }, [merchantName]);
+    loadActivatedDeals();
+  }, [merchantName, activatedDealsPersister, activatedDealsStore]);
 
   const parseCodes = (codes: string | Code[] | Code): Code[] => {
     if (typeof codes === 'string') {
@@ -66,42 +87,80 @@ const MerchantDealsComponent: React.FC = () => {
     return [{ code: 'DEFAULT', summary: 'Default offer' }];
   };
 
-  const handleActivateDeal = (dealId: string, code: string) => {
+  const handleActivateDeal = async (dealId: string, code: string) => {
     setActivatingDeal(`${dealId}-${code}`);
-    setTimeout(() => {
-      setActivatedDeals(prev => new Set(prev).add(`${dealId}-${code}`));
+    try {
+      const userId = localWalletAddress || address;
+
+      if (!userId) {
+        throw new Error('No wallet address available');
+      }
+      
+      const response = await fetch('https://asia-southeast1-fourth-buffer-421320.cloudfunctions.net/kindredDealActivation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          userId: userId,
+          dealId: dealId
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to activate deal');
+      }
+
+      const data = await response.json();
+      if (data.success && data.redirectUrl) {
+        const dealKey = `${dealId}-${code}`;
+        activatedDealsStore.setCell('activatedDeals', dealKey, 'activated', true);
+        await activatedDealsPersister.save();
+
+        setActivatedDeals(prevDeals => new Set(prevDeals).add(dealKey));
+        
+        window.location.href = data.redirectUrl;
+      } else {
+        throw new Error('Invalid response from activation endpoint');
+      }
+    } catch (err) {
+      console.error('Error activating deal:', err);
+      setError('Failed to activate deal. Please try again later.');
+    } finally {
       setActivatingDeal(null);
-    }, 1000);
+    }
   };
 
   const renderCodes = (deal: Deal) => {
     const codesArray = Array.isArray(deal.codes) ? deal.codes : [deal.codes].filter(Boolean);
     
     return codesArray.map((code: Code | undefined, index: number) => {
-      if (!code) return null; // Skip undefined or null codes
+      if (!code) return null;
+      const isDealActivated = activatedDeals.has(`${deal.dealId}-${code.code}`);
       return (
         <div key={code.code || index} style={{ 
-          marginTop: '1rem', // Increased spacing between cards
-          backgroundColor: '#6e3a07', // Light orange background
-          borderRadius: '0.5rem', // Rounded corners
-          padding: '1rem', // Padding inside the card
+          marginTop: '1rem',
+          backgroundColor: '#6e3a07',
+          borderRadius: '0.5rem',
+          padding: '1rem',
         }}>
           <p style={{ color: '#FFFFFF', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{code.summary}</p>
           <button
-            onClick={() => handleActivateDeal(deal.id, code.code)}
-            disabled={!isLoggedIn || activatedDeals.has(`${deal.id}-${code.code}`) || activatingDeal === `${deal.id}-${code.code}`}
+            onClick={() => handleActivateDeal(deal.dealId, code.code)}
+            disabled={activatingDeal === `${deal.dealId}-${code.code}` || isDealActivated}
             style={{
-              backgroundColor: '#f05e23',
+              backgroundColor: isDealActivated ? '#4CAF50' : '#f05e23',
               color: '#FFFFFF',
               border: 'none',
               borderRadius: '0.25rem',
               padding: '0.5rem 1rem',
               fontSize: '0.9rem',
-              cursor: isLoggedIn ? 'pointer' : 'not-allowed',
-              opacity: activatedDeals.has(`${deal.id}-${code.code}`) ? 0.5 : 1,
+              cursor: isDealActivated ? 'default' : 'pointer',
+              opacity: isDealActivated ? 0.8 : 1,
             }}
           >
-            {activatedDeals.has(`${deal.id}-${code.code}`) ? 'Activated' : 'Activate Deal'}
+            {activatingDeal === `${deal.dealId}-${code.code}` ? 'Activating...' : 
+             isDealActivated ? 'Activated' : 'Activate Deal'}
           </button>
         </div>
       );
@@ -150,6 +209,7 @@ const MerchantDealsComponent: React.FC = () => {
       ) : (
         <p style={{ color: '#A0AEC0' }}>No deals available for this merchant at the moment.</p>
       )}
+      {error && <div style={{ color: '#ff4444', marginTop: '1rem' }}>{error}</div>}
     </div>
   );
 };
