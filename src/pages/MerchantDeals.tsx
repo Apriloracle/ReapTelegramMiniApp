@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 
-const MerchantDeals: React.FC = () => {
-  // ... existing state variables ...
+interface MerchantDealsProps {
+  localWalletAddress: string | null;
+  address: string | undefined;
+}
+
+const MerchantDeals: React.FC<MerchantDealsProps> = ({ localWalletAddress, address }) => {
   const [activatingDeal, setActivatingDeal] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activatedDeals, setActivatedDeals] = useState<Set<string>>(new Set());
 
-  
   const activatedDealsStore = React.useMemo(() => createStore(), []);
   const activatedDealsPersister = React.useMemo(() => createLocalPersister(activatedDealsStore, 'activated-deals'), [activatedDealsStore]);
-
-  // ... existing useEffects and functions ...
 
   const handleActivateDeal = async (dealId: string, code: string) => {
     setActivatingDeal(`${dealId}-${code}`);
@@ -73,7 +74,7 @@ const MerchantDeals: React.FC = () => {
 
   return (
     <div className="merchant-deals">
-      <h1>{merchantName} Deals</h1>
+      <h1>{/* merchantName should be defined or passed as a prop */}</h1>
       {error && <div className="error-message">{error}</div>}
       {/* ... existing JSX ... */}
     </div>
