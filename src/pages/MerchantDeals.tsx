@@ -7,6 +7,18 @@ interface MerchantDealsProps {
   address: string | undefined;
 }
 
+interface Deal {
+  id: string;
+  dealId: string;
+  merchantName: string;
+  logo: string;
+  logoAbsoluteUrl: string;
+  cashbackType: string;
+  cashback: number;
+  currency: string;
+  code: string;
+}
+
 const MerchantDeals: React.FC<MerchantDealsProps> = ({ localWalletAddress, address }) => {
   const [activatingDeal, setActivatingDeal] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,10 +70,11 @@ const MerchantDeals: React.FC<MerchantDealsProps> = ({ localWalletAddress, addre
 
   // Update the renderDealCard function to use handleActivateDeal
   const renderDealCard = (deal: Deal) => {
-    // ... existing deal card rendering ...
     return (
       <div key={deal.id} className="deal-card">
-        {/* ... other deal information ... */}
+        <img src={deal.logoAbsoluteUrl || deal.logo} alt={deal.merchantName} />
+        <h3>{deal.merchantName}</h3>
+        <p>{deal.cashbackType}: {deal.cashback}{deal.currency}</p>
         <button
           onClick={() => handleActivateDeal(deal.id, deal.code)}
           disabled={activatingDeal === `${deal.id}-${deal.code}` || activatedDeals.has(`${deal.id}-${deal.code}`)}
@@ -76,7 +89,7 @@ const MerchantDeals: React.FC<MerchantDealsProps> = ({ localWalletAddress, addre
     <div className="merchant-deals">
       <h1>{/* merchantName should be defined or passed as a prop */}</h1>
       {error && <div className="error-message">{error}</div>}
-      {/* ... existing JSX ... */}
+      {/* Render deal cards here */}
     </div>
   );
 };
