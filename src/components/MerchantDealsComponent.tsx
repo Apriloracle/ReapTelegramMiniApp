@@ -8,6 +8,7 @@ interface Code {
   summary: string;
 }
 
+
 interface Deal {
   id: string;
   dealId: string;
