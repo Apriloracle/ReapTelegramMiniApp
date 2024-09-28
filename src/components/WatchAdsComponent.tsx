@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// Declare the adsbygoogle property on the window object
+declare global {
+  interface Window {
+    adsbygoogle: any[];
+  }
+}
+
 const WatchAdsComponent: React.FC = () => {
   const navigate = useNavigate();
   const [adWatched, setAdWatched] = useState(false);
