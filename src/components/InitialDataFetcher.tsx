@@ -185,7 +185,7 @@ const InitialDataFetcher: React.FC = () => {
           console.log('Country code from IPGeolocation:', currentCountryCode);
         } else {
           console.log('Country code not available, using default');
-          currentCountryCode = 'US'; // Set a default country code
+          currentCountryCode = ''; // Set a default country code
         }
 
         setCountryCode(currentCountryCode);
