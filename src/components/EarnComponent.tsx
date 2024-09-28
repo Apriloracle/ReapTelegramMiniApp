@@ -16,25 +16,7 @@ const EarnComponent: React.FC = () => {
         <h2 style={{ color: '#f05e23', margin: 0 }}>Earn Rewards</h2>
       </div>
       
-      <div style={{ marginBottom: '1rem', backgroundColor: '#3D261B', borderRadius: '0.5rem', padding: '1rem' }}>
-        <h3 style={{ color: '#f05e23', marginTop: 0 }}>Earn from viewing ads</h3>
-        <p style={{ color: '#FFFFFF' }}>Watch short ads and earn rewards for your time.</p>
-        <button 
-          onClick={() => navigate('/watch-ads')}
-          style={{
-            backgroundColor: '#f05e23',
-            color: '#FFFFFF',
-            border: 'none',
-            borderRadius: '0.25rem',
-            padding: '0.5rem 1rem',
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-            marginTop: '0.5rem'
-          }}
-        >
-          Watch Ads
-        </button>
-      </div>
+      {/* Removed the "Earn from viewing ads" section */}
 
       <div style={{ marginBottom: '1rem', backgroundColor: '#3D261B', borderRadius: '0.5rem', padding: '1rem' }}>
         <h3 style={{ color: '#f05e23', marginTop: 0 }}>Refer Friends</h3>
