@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createStore, Row } from 'tinybase';
+import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
+import { logInteraction, loadInteractions, getCurrentUserId } from '../utils/interactionLogger';
 
 interface Recommendation {
   dealId: string;
@@ -54,10 +55,21 @@ const DealsComponent: React.FC = () => {
         });
         setDeals(mappedDeals);
       }
+
+      await loadInteractions();
     };
 
     loadRecommendationsAndDeals();
   }, []);
+
+  const handleDealClick = (dealId: string) => {
+    logInteraction(getCurrentUserId(), dealId, 'click');
+    // ... existing click handling logic ...
+  };
+
+  const handleDealView = (dealId: string) => {
+    logInteraction(getCurrentUserId(), dealId, 'view');
+  };
 
   const handleViewDeals = (merchantName: string) => {
     navigate(`/merchant-deals/${encodeURIComponent(merchantName)}`);

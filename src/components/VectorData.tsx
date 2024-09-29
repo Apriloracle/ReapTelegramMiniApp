@@ -6,12 +6,214 @@ import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 import { Doc } from 'yjs';
 import { PGlite } from '@electric-sql/pglite';
 import Annoy from '../lib/annoy';
+import Graph from 'graphology';
+import { Deal } from '../types/Deal';  // Assuming you have a Deal type defined
+import { addDays, isAfter, isBefore } from 'date-fns';
+
+const interactionStore = createStore();
+const interactionPersister = createLocalPersister(interactionStore, 'user-interactions');
+
+export const interactionGraph = new Graph();
+export const dealGraph = new Graph({ multi: true, type: 'mixed' });  // Allow multiple edges between nodes and mixed node types
+
+export type InteractionType = 'view' | 'click' | 'activate';
+
+export const logInteraction = async (userId: string, dealId: string, type: InteractionType) => {
+  await interactionPersister.load();
+  
+  const interactionId = `${userId}-${dealId}-${Date.now()}`;
+  
+  interactionStore.setRow('interactions', interactionId, {
+    userId,
+    dealId,
+    type,
+    timestamp: Date.now(),
+  });
+
+  await interactionPersister.save();
+
+  // Update graph
+  if (!interactionGraph.hasNode(userId)) {
+    interactionGraph.addNode(userId, { type: 'user' });
+  }
+  if (!interactionGraph.hasNode(dealId)) {
+    interactionGraph.addNode(dealId, { type: 'deal' });
+  }
+
+  const edgeId = `${userId}-${dealId}`;
+  if (interactionGraph.hasEdge(edgeId)) {
+    const weight = interactionGraph.getEdgeAttribute(edgeId, 'weight') || 0;
+    interactionGraph.setEdgeAttribute(edgeId, 'weight', weight + 1);
+    interactionGraph.setEdgeAttribute(edgeId, type, (interactionGraph.getEdgeAttribute(edgeId, type) || 0) + 1);
+  } else {
+    interactionGraph.addEdge(userId, dealId, { weight: 1, [type]: 1 });
+  }
+};
+
+export const loadInteractions = async () => {
+  await interactionPersister.load();
+  const interactions = interactionStore.getTable('interactions');
+  if (interactions) {
+    Object.values(interactions).forEach((interaction: any) => {
+      logInteraction(interaction.userId, interaction.dealId, interaction.type as InteractionType);
+    });
+  }
+};
+
+export const getCurrentUserId = (): string => {
+  // This function should return the current user's ID
+  // For now, we'll return a placeholder. In a real app, you'd get this from your auth system
+  return 'current-user-id';
+};
 
 declare global {
   interface Window {
     ml5?: {
       KNNClassifier: () => any;
     };
+  }
+}
+
+export function addDealToGraph(deal: any) {
+  if (!deal.dealId || !deal.merchantName) {
+    console.warn('Invalid deal data:', deal);
+    return;
+  }
+
+  if (!dealGraph.hasNode(deal.dealId)) {
+    dealGraph.addNode(deal.dealId, {
+      type: 'deal',
+      ...deal
+    });
+  }
+
+  // Add edges to merchant
+  if (!dealGraph.hasNode(deal.merchantName)) {
+    dealGraph.addNode(deal.merchantName, { type: 'merchant' });
+  }
+  dealGraph.addEdge(deal.dealId, deal.merchantName, { type: 'offered_by' });
+
+  // Add edges for categories or tags if available
+  if (deal.categories && Array.isArray(deal.categories)) {
+    deal.categories.forEach((category: string) => {
+      if (category) {
+        if (!dealGraph.hasNode(category)) {
+          dealGraph.addNode(category, { type: 'category' });
+        }
+        dealGraph.addEdge(deal.dealId, category, { type: 'belongs_to' });
+      }
+    });
+  }
+
+  // Add expiration date to deal node
+  if (deal.expirationDate) {
+    dealGraph.setNodeAttribute(deal.dealId, 'expirationDate', deal.expirationDate);
+  }
+}
+
+export function addVectorToGraph(dealId: string, vector: number[]) {
+  if (dealGraph.hasNode(dealId)) {
+    dealGraph.setNodeAttribute(dealId, 'vector', vector);
+  } else {
+    console.warn(`Attempted to add vector to non-existent deal: ${dealId}`);
+  }
+}
+
+export function getGraphStats() {
+  return {
+    nodeCount: dealGraph.order,
+    edgeCount: dealGraph.size,
+    dealCount: dealGraph.nodes().filter(node => dealGraph.getNodeAttribute(node, 'type') === 'deal').length,
+    merchantCount: dealGraph.nodes().filter(node => dealGraph.getNodeAttribute(node, 'type') === 'merchant').length,
+    categoryCount: dealGraph.nodes().filter(node => dealGraph.getNodeAttribute(node, 'type') === 'category').length,
+    userCount: dealGraph.nodes().filter(node => dealGraph.getNodeAttribute(node, 'type') === 'user').length,
+    interestCount: dealGraph.nodes().filter(node => dealGraph.getNodeAttribute(node, 'type') === 'interest').length,
+  };
+}
+
+export function getDealVector(dealId: string): number[] | null {
+  if (dealGraph.hasNode(dealId)) {
+    return dealGraph.getNodeAttribute(dealId, 'vector') || null;
+  }
+  return null;
+}
+
+export function getRelatedDeals(dealId: string): string[] {
+  if (!dealGraph.hasNode(dealId)) return [];
+
+  const relatedDeals = new Set<string>();
+
+  // Get deals from the same merchant
+  const merchants = dealGraph.neighbors(dealId, 'out', 'offered_by');
+  merchants.forEach(merchant => {
+    dealGraph.neighbors(merchant, 'in', 'offered_by').forEach(deal => relatedDeals.add(deal));
+  });
+
+  // Get deals from the same categories
+  const categories = dealGraph.neighbors(dealId, 'out', 'belongs_to');
+  categories.forEach(category => {
+    dealGraph.neighbors(category, 'in', 'belongs_to').forEach(deal => relatedDeals.add(deal));
+  });
+
+  // Remove the original deal from the set
+  relatedDeals.delete(dealId);
+
+  return Array.from(relatedDeals);
+}
+
+function connectSimilarDeals(similarityThreshold: number) {
+  const deals = dealGraph.nodes().filter(node => dealGraph.getNodeAttribute(node, 'type') === 'deal');
+  
+  for (let i = 0; i < deals.length; i++) {
+    const dealA = deals[i];
+    const vectorA = dealGraph.getNodeAttribute(dealA, 'vector');
+    
+    for (let j = i + 1; j < deals.length; j++) {
+      const dealB = deals[j];
+      const vectorB = dealGraph.getNodeAttribute(dealB, 'vector');
+      
+      const similarity = cosineSimilarity(vectorA, vectorB);
+      
+      if (similarity > similarityThreshold) {
+        dealGraph.addEdge(dealA, dealB, { type: 'similar', weight: similarity });
+      }
+    }
+  }
+}
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  const dotProduct = a.reduce((sum, _, i) => sum + a[i] * b[i], 0);
+  const magnitudeA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
+  const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
+  return dotProduct / (magnitudeA * magnitudeB);
+}
+
+// Call this after building the initial graph
+connectSimilarDeals(0.8); // Adjust threshold as needed
+
+export function addUserToGraph(userId: string, userProfile: any) {
+  if (!dealGraph.hasNode(userId)) {
+    dealGraph.addNode(userId, {
+      type: 'user',
+      ...userProfile
+    });
+  } else {
+    // Update existing user node with new profile data
+    Object.entries(userProfile).forEach(([key, value]) => {
+      dealGraph.setNodeAttribute(userId, key, value);
+    });
+  }
+
+  // Add edges for user interests
+  if (userProfile.interests && Array.isArray(userProfile.interests)) {
+    userProfile.interests.forEach((interest: string) => {
+      if (interest) {
+        if (!dealGraph.hasNode(interest)) {
+          dealGraph.addNode(interest, { type: 'interest' });
+        }
+        dealGraph.addEdge(userId, interest, { type: 'interested_in' });
+      }
+    });
   }
 }
 
@@ -299,17 +501,22 @@ const VectorData: React.FC = () => {
   // Update the example usage with more user data and device data
   useEffect(() => {
     const fetchRecommendations = async () => {
+      const surveyStore = createStore();
+      const surveyPersister = createLocalPersister(surveyStore, 'survey-responses');
+      await surveyPersister.load();
+
+      const geolocationStore = createStore();
+      const geolocationPersister = createLocalPersister(geolocationStore, 'user-geolocation');
+      await geolocationPersister.load();
+
+      const surveyResponses = surveyStore.getTable('answeredQuestions') || {};
+      const geolocationData = geolocationStore.getRow('geolocation', 'userGeo') || {};
+
       const userProfile = {
-        interests: ['Tech', 'Fashion'],
-        shoppingFrequency: 'Weekly',
-        surveyResponses: {
-          favoriteColors: { answer: 'Blue, Green' },
-          preferredBrands: { answer: 'Apple, Nike' }
-        },
-        geolocation: {
-          countryCode: 'US',
-          ip: '192.168.1.1'
-        }
+        interests: [], // We don't have this stored, so leaving it empty
+        shoppingFrequency: '', // We don't have this stored, so leaving it empty
+        surveyResponses,
+        geolocation: geolocationData
       };
 
       if (isAnnoyIndexBuilt) {
@@ -326,7 +533,192 @@ const VectorData: React.FC = () => {
     }
   }, [annoyIndex, isAnnoyIndexBuilt, getPersonalizedRecommendations]);
 
+  useEffect(() => {
+    const buildGraph = async () => {
+      try {
+        // Add deals to the graph
+        const dealsStore = createStore();
+        const dealsPersister = createLocalPersister(dealsStore, 'kindred-deals');
+        await dealsPersister.load();
+
+        const dealsTable = dealsStore.getTable('deals');
+        if (dealsTable) {
+          Object.values(dealsTable).forEach((deal: any) => {
+            if (deal && deal.dealId && deal.merchantName) {
+              addDealToGraph(deal);
+              const vector = simpleVectorize(`${deal.title || ''} ${deal.description || ''}`);
+              addVectorToGraph(deal.dealId, vector);
+            } else {
+              console.warn('Invalid deal data:', deal);
+            }
+          });
+        }
+
+        // Add users to the graph
+        const userStore = createStore();
+        const userPersister = createLocalPersister(userStore, 'user-profiles');
+        await userPersister.load();
+
+        const userProfiles = userStore.getTable('profiles');
+        if (userProfiles) {
+          for (const [userId, profile] of Object.entries(userProfiles)) {
+            const userProfile = await fetchUserProfile(userId);
+            addUserToGraph(userId, { ...profile, ...userProfile });
+          }
+        }
+
+        console.log('Graph stats:', getGraphStats());
+      } catch (error) {
+        console.error('Error building graph:', error);
+      }
+    };
+
+    buildGraph();
+  }, []);
+
+  function getRecommendations(userId: string, numRecommendations: number) {
+    if (!dealGraph.hasNode(userId)) {
+      console.error('User not found in the graph');
+      return [];
+    }
+
+    const currentDate = new Date();
+    
+    // Filter out expired deals
+    const validDeals = dealGraph.nodes()
+      .filter(nodeId => {
+        const nodeType = dealGraph.getNodeAttribute(nodeId, 'type');
+        const expirationDate = dealGraph.getNodeAttribute(nodeId, 'expirationDate');
+        return nodeType === 'deal' && isAfter(new Date(expirationDate), currentDate);
+      });
+
+    // Get user interests
+    const userInterests = dealGraph.neighbors(userId, 'out', 'interested_in');
+
+    // Calculate scores and sort
+    const scoredResults = validDeals.map(dealId => ({
+      id: dealId,
+      score: calculateRecommendationScore(userId, dealId, userInterests)
+    }));
+
+    // Sort by score (descending) and limit to numRecommendations
+    return scoredResults
+      .sort((a, b) => b.score - a.score)
+      .slice(0, numRecommendations);
+  }
+
+  function calculateRecommendationScore(userId: string, dealId: string, userInterests: string[]): number {
+    let score = 0;
+    const currentDate = new Date();
+    const expirationDate = new Date(dealGraph.getNodeAttribute(dealId, 'expirationDate'));
+
+    // Interest match score (keep this part as is)
+    const dealCategories = dealGraph.neighbors(dealId, 'out', 'belongs_to');
+    const interestMatchScore = userInterests.reduce((sum, interest) => {
+      return sum + (dealCategories.includes(interest) ? 1 : 0);
+    }, 0) / userInterests.length;
+    score += interestMatchScore;
+
+    // Interaction score
+    if (interactionGraph.hasEdge(userId, dealId)) {
+      const edgeAttributes = interactionGraph.getEdgeAttributes(userId, dealId);
+      const interactionScore = (edgeAttributes.view || 0) * 0.1 +
+                               (edgeAttributes.click || 0) * 0.3 +
+                               (edgeAttributes.activate || 0) * 0.6;
+      
+      // Consider recency of interactions
+      const lastInteractionTime = edgeAttributes.timestamp || 0;
+      const daysSinceLastInteraction = (currentDate.getTime() - lastInteractionTime) / (1000 * 3600 * 24);
+      const recencyFactor = Math.exp(-daysSinceLastInteraction / 30); // Decay factor, adjust as needed
+      
+      score += interactionScore * recencyFactor;
+    }
+
+    // Time relevance score (keep this part as is)
+    const daysUntilExpiration = Math.max(0, (expirationDate.getTime() - currentDate.getTime()) / (1000 * 3600 * 24));
+    const timeRelevanceScore = Math.min(1, daysUntilExpiration / 30);
+    score += timeRelevanceScore;
+
+    return score;
+  }
+
+  function getUserVector(userId: string): number[] | null {
+    // Implement this function to retrieve the user vector based on the userId
+    // For now, we'll return null to indicate that the function is not implemented
+    return null;
+  }
+
   return null;
 };
+
+export const buildInteractionGraph = async (): Promise<Graph> => {
+  // Initialize store and persister
+  const interactionStore = createStore();
+  const interactionPersister = createLocalPersister(interactionStore, 'user-interactions');
+  await interactionPersister.load();
+
+  // Create a new graph instance
+  const graph = new Graph();
+
+  // Fetch interactions
+  const interactions = interactionStore.getTable('interactions') || {};
+
+  // Build graph nodes and edges
+  Object.values(interactions).forEach((interaction: any) => {
+    const { userId, dealId } = interaction;
+
+    // Add user node if it doesn't exist
+    if (!graph.hasNode(userId)) {
+      graph.addNode(userId, { type: 'user' });
+    }
+
+    // Add deal node if it doesn't exist
+    if (!graph.hasNode(dealId)) {
+      graph.addNode(dealId, { type: 'deal' });
+    }
+
+    // Add or update edge between user and deal
+    const edgeId = `${userId}-${dealId}`;
+    if (graph.hasEdge(edgeId)) {
+      const existingWeight = graph.getEdgeAttribute(edgeId, 'weight');
+      graph.setEdgeAttribute(edgeId, 'weight', existingWeight + 1);
+    } else {
+      graph.addEdge(userId, dealId, { weight: 1 });
+    }
+  });
+
+  return graph;
+};
+
+async function fetchUserProfile(userId: string) {
+  const surveyStore = createStore();
+  const surveyPersister = createLocalPersister(surveyStore, 'survey-responses');
+  await surveyPersister.load();
+
+  const geolocationStore = createStore();
+  const geolocationPersister = createLocalPersister(geolocationStore, 'user-geolocation');
+  await geolocationPersister.load();
+
+  const surveyResponses = surveyStore.getTable('answeredQuestions') || {};
+  const geolocationData = geolocationStore.getRow('geolocation', 'userGeo') || {};
+
+  // Map survey responses to user profile fields
+  const interests = [];
+  if (surveyResponses['Are you interested in photography?']?.answer === 'Yes') {
+    interests.push('Photography');
+  }
+  if (surveyResponses['Are you interested in sports?']?.answer === 'Yes') {
+    interests.push('Sports');
+  }
+
+  const shoppingFrequency = surveyResponses['How often do you shop online?']?.answer || '';
+
+  return {
+    interests,
+    shoppingFrequency,
+    surveyResponses,
+    geolocation: geolocationData
+  };
+}
 
 export default VectorData;
