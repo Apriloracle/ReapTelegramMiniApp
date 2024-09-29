@@ -17,6 +17,12 @@ interface Deal {
   logoAbsoluteUrl: string;
 }
 
+// Define the Row type
+interface Row {
+  dealId: string;
+  confidence: number;
+}
+
 const DealsComponent: React.FC = () => {
   const navigate = useNavigate();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -136,3 +142,4 @@ const DealsComponent: React.FC = () => {
 };
 
 export default DealsComponent;
+
