@@ -10,6 +10,7 @@ import Graph from 'graphology';
 import { Deal } from '../types/Deal';  // Assuming you have a Deal type defined
 import { addDays, isAfter, isBefore } from 'date-fns';
 
+
 const interactionStore = createStore();
 const interactionPersister = createLocalPersister(interactionStore, 'user-interactions');
 
