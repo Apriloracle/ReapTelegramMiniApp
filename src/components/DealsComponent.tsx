@@ -17,10 +17,9 @@ interface Deal {
   logoAbsoluteUrl: string;
 }
 
-// Define the Row type
+// Update the Row type to match the actual structure
 interface Row {
-  dealId: string;
-  confidence: number;
+  [key: string]: any;  // This allows for any properties
 }
 
 const DealsComponent: React.FC = () => {
@@ -50,7 +49,7 @@ const DealsComponent: React.FC = () => {
       const dealsTable = dealsStore.getTable('deals');
       if (dealsTable) {
         const mappedDeals: Record<string, Deal> = {};
-        Object.entries(dealsTable).forEach(([key, value]) => {
+        Object.entries(dealsTable).forEach(([key, value]: [string, Row]) => {
           mappedDeals[key] = {
             id: value.id as string,
             dealId: value.dealId as string,
@@ -142,4 +141,5 @@ const DealsComponent: React.FC = () => {
 };
 
 export default DealsComponent;
+
 
