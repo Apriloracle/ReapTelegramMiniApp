@@ -7,9 +7,21 @@ import { Doc } from 'yjs';
 import { PGlite } from '@electric-sql/pglite';
 import Annoy from '../lib/annoy';
 import Graph from 'graphology';
-import { Deal } from '../types/Deal';  // Assuming you have a Deal type defined
 import { addDays, isAfter, isBefore } from 'date-fns';
 
+// Define the Deal interface here
+interface Deal {
+  id: string;
+  dealId: string;
+  merchantName: string;
+  title?: string;
+  description?: string;
+  logo?: string;
+  logoAbsoluteUrl?: string;
+  expirationDate?: string;
+  categories?: string[];
+  // Add any other properties that a Deal might have
+}
 
 const interactionStore = createStore();
 const interactionPersister = createLocalPersister(interactionStore, 'user-interactions');
