@@ -157,15 +157,25 @@ export function getRelatedDeals(dealId: string): string[] {
   const relatedDeals = new Set<string>();
 
   // Get deals from the same merchant
-  const merchants = dealGraph.neighbors(dealId, 'out', 'offered_by');
-  merchants.forEach(merchant => {
-    dealGraph.neighbors(merchant, 'in', 'offered_by').forEach(deal => relatedDeals.add(deal));
+  dealGraph.forEachOutNeighbor(dealId, (merchant, attributes) => {
+    if (attributes.type === 'offered_by') {
+      dealGraph.forEachInNeighbor(merchant, (deal, dealAttributes) => {
+        if (dealAttributes.type === 'offered_by') {
+          relatedDeals.add(deal);
+        }
+      });
+    }
   });
 
   // Get deals from the same categories
-  const categories = dealGraph.neighbors(dealId, 'out', 'belongs_to');
-  categories.forEach(category => {
-    dealGraph.neighbors(category, 'in', 'belongs_to').forEach(deal => relatedDeals.add(deal));
+  dealGraph.forEachOutNeighbor(dealId, (category, attributes) => {
+    if (attributes.type === 'belongs_to') {
+      dealGraph.forEachInNeighbor(category, (deal, dealAttributes) => {
+        if (dealAttributes.type === 'belongs_to') {
+          relatedDeals.add(deal);
+        }
+      });
+    }
   });
 
   // Remove the original deal from the set
@@ -625,8 +635,13 @@ const VectorData: React.FC = () => {
     const currentDate = new Date();
     const expirationDate = new Date(dealGraph.getNodeAttribute(dealId, 'expirationDate'));
 
-    // Interest match score (keep this part as is)
-    const dealCategories = dealGraph.neighbors(dealId, 'out', 'belongs_to');
+    // Interest match score
+    const dealCategories: string[] = [];
+    dealGraph.forEachOutNeighbor(dealId, (category, attributes) => {
+      if (attributes.type === 'belongs_to') {
+        dealCategories.push(category);
+      }
+    });
     const interestMatchScore = userInterests.reduce((sum, interest) => {
       return sum + (dealCategories.includes(interest) ? 1 : 0);
     }, 0) / userInterests.length;
@@ -647,7 +662,7 @@ const VectorData: React.FC = () => {
       score += interactionScore * recencyFactor;
     }
 
-    // Time relevance score (keep this part as is)
+    // Time relevance score
     const daysUntilExpiration = Math.max(0, (expirationDate.getTime() - currentDate.getTime()) / (1000 * 3600 * 24));
     const timeRelevanceScore = Math.min(1, daysUntilExpiration / 30);
     score += timeRelevanceScore;
