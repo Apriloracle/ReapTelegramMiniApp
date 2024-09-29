@@ -1,4 +1,4 @@
-import { createStore } from 'tinybase';
+import { createStore, Row } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
 
 const interactionStore = createStore();
@@ -34,14 +34,28 @@ export const logInteraction = async (userId: string, dealId: string, type: 'view
 export const loadInteractions = async (): Promise<Interaction[]> => {
   await interactionPersister.load();
   const interactions = interactionStore.getTable('interactions') || {};
-  return Object.values(interactions).filter((interaction): interaction is Interaction => {
-    return typeof interaction === 'object' &&
-           interaction !== null &&
-           'userId' in interaction &&
-           'dealId' in interaction &&
-           'type' in interaction &&
-           'timestamp' in interaction;
-  });
+  return Object.values(interactions).reduce<Interaction[]>((acc, row: Row) => {
+    if (
+      typeof row === 'object' &&
+      row !== null &&
+      'userId' in row &&
+      'dealId' in row &&
+      'type' in row &&
+      'timestamp' in row &&
+      typeof row.userId === 'string' &&
+      typeof row.dealId === 'string' &&
+      (row.type === 'view' || row.type === 'click') &&
+      typeof row.timestamp === 'number'
+    ) {
+      acc.push({
+        userId: row.userId,
+        dealId: row.dealId,
+        type: row.type,
+        timestamp: row.timestamp
+      });
+    }
+    return acc;
+  }, []);
 };
 
 export const getCurrentUserId = (): string => {
