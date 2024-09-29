@@ -11,12 +11,16 @@ export interface Interaction {
   timestamp: number;
 }
 
+interface InteractionRow extends Interaction {
+  [key: string]: string | number;
+}
+
 export const logInteraction = async (userId: string, dealId: string, type: 'view' | 'click') => {
   await interactionPersister.load();
   
   const interactionId = `${userId}-${dealId}-${Date.now()}`;
   
-  const newInteraction: Interaction = {
+  const newInteraction: InteractionRow = {
     userId,
     dealId,
     type,
