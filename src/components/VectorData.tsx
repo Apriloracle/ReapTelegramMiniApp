@@ -616,7 +616,12 @@ const VectorData: React.FC = () => {
       });
 
     // Get user interests
-    const userInterests = dealGraph.neighbors(userId, 'out', 'interested_in');
+    const userInterests: string[] = [];
+    dealGraph.forEachOutNeighbor(userId, (neighborId, attributes) => {
+      if (attributes.type === 'interested_in') {
+        userInterests.push(neighborId);
+      }
+    });
 
     // Calculate scores and sort
     const scoredResults = validDeals.map(dealId => ({
