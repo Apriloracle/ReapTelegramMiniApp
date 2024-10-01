@@ -10,6 +10,7 @@ interface SurveyListProps {
 function SurveyList({ localWalletAddress, address }: SurveyListProps) {
   const navigate = useNavigate();
 
+  
   useEffect(() => {
     // Add the CPX Research script
     const script = document.createElement('script');
