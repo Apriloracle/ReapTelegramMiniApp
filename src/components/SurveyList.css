@@ -1,0 +1,46 @@
+.reviews-area {
+  margin-top: 1rem;
+}
+
+.reviews-blk {
+  transition: transform 0.3s ease;
+}
+
+.reviews-blk:hover {
+  transform: scale(1.05);
+}
+
+.reviews-heading h5 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.reviews-text h5 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.reviews-text ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.reviews-text li {
+  margin-right: 0.25rem;
+}
+
+.checked {
+  color: #f05e23;
+}
+
+.unchecked {
+  color: #666;
+}
+
+.details {
+  text-decoration: none;
+  color: inherit;
+}

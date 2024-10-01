@@ -94,7 +94,7 @@ const DealsComponent: React.FC = () => {
       
       {recommendations.length > 0 ? (
         <div>
-          {recommendations.map((recommendation, index) => {
+          {recommendations.slice(0, 10).map((recommendation, index) => {
             const deal = deals[recommendation.dealId];
             if (!deal) return null;
 

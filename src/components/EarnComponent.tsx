@@ -16,8 +16,6 @@ const EarnComponent: React.FC = () => {
         <h2 style={{ color: '#f05e23', margin: 0 }}>Earn Rewards</h2>
       </div>
       
-      {/* Removed the "Earn from viewing ads" section */}
-
       <div style={{ marginBottom: '1rem', backgroundColor: '#3D261B', borderRadius: '0.5rem', padding: '1rem' }}>
         <h3 style={{ color: '#f05e23', marginTop: 0 }}>Refer Friends</h3>
         <p style={{ color: '#FFFFFF' }}>Invite friends and earn rewards when they join and complete activities.</p>
@@ -35,6 +33,26 @@ const EarnComponent: React.FC = () => {
           }}
         >
           Go to Referrals
+        </button>
+      </div>
+
+      <div style={{ marginBottom: '1rem', backgroundColor: '#3D261B', borderRadius: '0.5rem', padding: '1rem' }}>
+        <h3 style={{ color: '#f05e23', marginTop: 0 }}>Earn from Surveys</h3>
+        <p style={{ color: '#FFFFFF' }}>Complete surveys and earn rewards for your opinions.</p>
+        <button 
+          onClick={() => navigate('/surveys')}
+          style={{
+            backgroundColor: '#f05e23',
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: '0.25rem',
+            padding: '0.5rem 1rem',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            marginTop: '0.5rem'
+          }}
+        >
+          Take Surveys
         </button>
       </div>
 

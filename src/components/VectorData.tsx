@@ -8,6 +8,9 @@ import { PGlite } from '@electric-sql/pglite';
 import Annoy from '../lib/annoy';
 import Graph from 'graphology';
 import { addDays, isAfter, isBefore } from 'date-fns';
+import { calculateDegreeCentrality, getTopKNodesByDegreeCentrality } from '../utils/graphUtils';
+import { calculateBetweennessCentrality, getTopKNodesByBetweennessCentrality } from '../utils/graphUtils';
+import { logInteraction, loadInteractions, getCurrentUserId, InteractionType } from '../utils/interactionLogger';
 
 // Define the Deal interface here
 interface Deal {
@@ -23,71 +26,21 @@ interface Deal {
   // Add any other properties that a Deal might have
 }
 
-const interactionStore = createStore();
-const interactionPersister = createLocalPersister(interactionStore, 'user-interactions');
-
 export const interactionGraph = new Graph();
 export const dealGraph = new Graph({ multi: true, type: 'mixed' });  // Allow multiple edges between nodes and mixed node types
 
-export type InteractionType = 'view' | 'click' | 'activate';
-
-export const logInteraction = async (userId: string, dealId: string, type: InteractionType) => {
-  await interactionPersister.load();
-  
-  const interactionId = `${userId}-${dealId}-${Date.now()}`;
-  
-  interactionStore.setRow('interactions', interactionId, {
-    userId,
-    dealId,
-    type,
-    timestamp: Date.now(),
-  });
-
-  await interactionPersister.save();
-
-  // Update graph
-  if (!interactionGraph.hasNode(userId)) {
-    interactionGraph.addNode(userId, { type: 'user' });
+// Add this new function to calculate vector similarity
+function calculateVectorSimilarity(vectorA: number[], vectorB: number[]): number {
+  if (vectorA.length !== vectorB.length) {
+    throw new Error('Vectors must have the same length');
   }
-  if (!interactionGraph.hasNode(dealId)) {
-    interactionGraph.addNode(dealId, { type: 'deal' });
-  }
-
-  const edgeId = `${userId}-${dealId}`;
-  if (interactionGraph.hasEdge(edgeId)) {
-    const weight = interactionGraph.getEdgeAttribute(edgeId, 'weight') || 0;
-    interactionGraph.setEdgeAttribute(edgeId, 'weight', weight + 1);
-    interactionGraph.setEdgeAttribute(edgeId, type, (interactionGraph.getEdgeAttribute(edgeId, type) || 0) + 1);
-  } else {
-    interactionGraph.addEdge(userId, dealId, { weight: 1, [type]: 1 });
-  }
-};
-
-export const loadInteractions = async () => {
-  await interactionPersister.load();
-  const interactions = interactionStore.getTable('interactions');
-  if (interactions) {
-    Object.values(interactions).forEach((interaction: any) => {
-      logInteraction(interaction.userId, interaction.dealId, interaction.type as InteractionType);
-    });
-  }
-};
-
-export const getCurrentUserId = (): string => {
-  // This function should return the current user's ID
-  // For now, we'll return a placeholder. In a real app, you'd get this from your auth system
-  return 'current-user-id';
-};
-
-declare global {
-  interface Window {
-    ml5?: {
-      KNNClassifier: () => any;
-    };
-  }
+  const dotProduct = vectorA.reduce((sum, a, i) => sum + a * vectorB[i], 0);
+  const magnitudeA = Math.sqrt(vectorA.reduce((sum, a) => sum + a * a, 0));
+  const magnitudeB = Math.sqrt(vectorB.reduce((sum, b) => sum + b * b, 0));
+  return dotProduct / (magnitudeA * magnitudeB);
 }
 
-export function addDealToGraph(deal: any) {
+export function addDealToGraph(deal: any, vector: number[], merchantDescription: string, productRange: string) {
   if (!deal.dealId || !deal.merchantName) {
     console.warn('Invalid deal data:', deal);
     return;
@@ -96,13 +49,20 @@ export function addDealToGraph(deal: any) {
   if (!dealGraph.hasNode(deal.dealId)) {
     dealGraph.addNode(deal.dealId, {
       type: 'deal',
-      ...deal
+      ...deal,
+      vector: vector,
+      merchantDescription: merchantDescription,
+      productRange: productRange
     });
   }
 
   // Add edges to merchant
   if (!dealGraph.hasNode(deal.merchantName)) {
-    dealGraph.addNode(deal.merchantName, { type: 'merchant' });
+    dealGraph.addNode(deal.merchantName, { 
+      type: 'merchant',
+      description: merchantDescription,
+      productRange: productRange
+    });
   }
   dealGraph.addEdge(deal.dealId, deal.merchantName, { type: 'offered_by' });
 
@@ -114,6 +74,8 @@ export function addDealToGraph(deal: any) {
           dealGraph.addNode(category, { type: 'category' });
         }
         dealGraph.addEdge(deal.dealId, category, { type: 'belongs_to' });
+        // Connect category to merchant
+        dealGraph.addEdge(category, deal.merchantName, { type: 'category_of' });
       }
     });
   }
@@ -122,6 +84,9 @@ export function addDealToGraph(deal: any) {
   if (deal.expirationDate) {
     dealGraph.setNodeAttribute(deal.dealId, 'expirationDate', deal.expirationDate);
   }
+
+  // Add vector to deal node
+  dealGraph.setNodeAttribute(deal.dealId, 'vector', vector);
 }
 
 export function addVectorToGraph(dealId: string, vector: number[]) {
@@ -151,7 +116,7 @@ export function getDealVector(dealId: string): number[] | null {
   return null;
 }
 
-export function getRelatedDeals(dealId: string): string[] {
+export function getRelatedDeals(dealId: string, k: number = 5): string[] {
   if (!dealGraph.hasNode(dealId)) return [];
 
   const relatedDeals = new Set<string>();
@@ -181,11 +146,19 @@ export function getRelatedDeals(dealId: string): string[] {
   // Remove the original deal from the set
   relatedDeals.delete(dealId);
 
-  return Array.from(relatedDeals);
+  // Create a subgraph of related deals
+  const subgraph = dealGraph.subgraph(Array.from(relatedDeals));
+
+  // Use betweenness centrality to refine the recommendations
+  const topDeals = getTopKNodesByBetweennessCentrality(subgraph, k);
+
+  return topDeals;
 }
 
+// New function to connect similar deals
 function connectSimilarDeals(similarityThreshold: number) {
   const deals = dealGraph.nodes().filter(node => dealGraph.getNodeAttribute(node, 'type') === 'deal');
+  let connectionsAdded = 0;
   
   for (let i = 0; i < deals.length; i++) {
     const dealA = deals[i];
@@ -195,24 +168,47 @@ function connectSimilarDeals(similarityThreshold: number) {
       const dealB = deals[j];
       const vectorB = dealGraph.getNodeAttribute(dealB, 'vector');
       
-      const similarity = cosineSimilarity(vectorA, vectorB);
-      
-      if (similarity > similarityThreshold) {
-        dealGraph.addEdge(dealA, dealB, { type: 'similar', weight: similarity });
+      if (vectorA && vectorB) {
+        const similarity = calculateVectorSimilarity(vectorA, vectorB);
+        
+        if (similarity >= similarityThreshold) {
+          dealGraph.addEdge(dealA, dealB, { type: 'similar', weight: similarity });
+          connectionsAdded++;
+        }
       }
     }
   }
+  console.log(`Connected ${connectionsAdded} similar deals based on vector similarity`);
 }
 
-function cosineSimilarity(a: number[], b: number[]): number {
-  const dotProduct = a.reduce((sum, _, i) => sum + a[i] * b[i], 0);
-  const magnitudeA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
-  const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
-  return dotProduct / (magnitudeA * magnitudeB);
+// New function to connect users based on common interactions
+function connectUsersWithCommonInteractions(interactionGraph: Graph) {
+  const users = interactionGraph.nodes().filter(node => interactionGraph.getNodeAttribute(node, 'type') === 'user');
+  let connectionsAdded = 0;
+  
+  for (let i = 0; i < users.length; i++) {
+    const userA = users[i];
+    const dealsA = new Set<string>();
+    interactionGraph.forEachOutNeighbor(userA, (neighbor, attrs) => {
+      if (attrs.type === 'interacted_with') dealsA.add(neighbor);
+    });
+    
+    for (let j = i + 1; j < users.length; j++) {
+      const userB = users[j];
+      const dealsB = new Set<string>();
+      interactionGraph.forEachOutNeighbor(userB, (neighbor, attrs) => {
+        if (attrs.type === 'interacted_with') dealsB.add(neighbor);
+      });
+      
+      const commonDeals = new Set([...dealsA].filter(x => dealsB.has(x)));
+      if (commonDeals.size > 0) {
+        dealGraph.addEdge(userA, userB, { type: 'common_interests', weight: commonDeals.size });
+        connectionsAdded++;
+      }
+    }
+  }
+  console.log(`Connected ${connectionsAdded} users with common interactions`);
 }
-
-// Call this after building the initial graph
-connectSimilarDeals(0.8); // Adjust threshold as needed
 
 export function addUserToGraph(userId: string, userProfile: any) {
   if (!dealGraph.hasNode(userId)) {
@@ -312,6 +308,7 @@ const VectorData: React.FC = () => {
         if (combinedVector.length === VECTOR_LEN) {
           try {
             annoy.add({ v: combinedVector, d: { id: dealId, ...deal } });
+            addDealToGraph(deal, combinedVector, description, productRange);
             validDealsCount++;
           } catch (error) {
             console.error(`Error adding deal ${dealId}:`, error);
@@ -323,11 +320,32 @@ const VectorData: React.FC = () => {
         }
       }
 
-      console.log(`Total valid deals added to Annoy index: ${validDealsCount}`);
+      // Add survey data to graph
+      const userId = getCurrentUserId();
+      addUserToGraph(userId, {
+        type: 'user',
+        surveyResponses: surveyResponses,
+        surveyVector: surveyVector
+      });
+
+      // Add geolocation data to graph
+      addGeolocationToGraph(userId, geolocationData, geoVector);
+
+      console.log(`Total valid deals added to Annoy index and graph: ${validDealsCount}`);
       console.log(`Total invalid deals skipped: ${invalidDealsCount}`);
 
+      // Connect similar deals
+      connectSimilarDeals(0.8); // Adjust threshold as needed
+
+      // Build interaction graph
+      const interactionGraphInstance = await buildInteractionGraph();
+      
+      // Connect users with common interactions
+      connectUsersWithCommonInteractions(interactionGraphInstance);
+
       setIsAnnoyIndexBuilt(true);
-      console.log('Annoy index built with vectorized deal data');
+      console.log('Annoy index and graph built with vectorized deal data');
+      console.log('Final graph stats:', getGraphStats());
     };
 
     initializeAnnoy();
@@ -466,7 +484,7 @@ const VectorData: React.FC = () => {
     return Math.sqrt(v1.reduce((sum, x, i) => sum + Math.pow(x - v2[i], 2), 0));
   };
 
-  const getPersonalizedRecommendations = useCallback(async (userProfile: any, topK: number = 5) => {
+  const getPersonalizedRecommendations = useCallback(async (userProfile: any, topK: number = 10) => {
     if (!annoyIndex || !isAnnoyIndexBuilt) {
       console.error('Annoy index not initialized or not built');
       return [];
@@ -559,38 +577,64 @@ const VectorData: React.FC = () => {
   useEffect(() => {
     const buildGraph = async () => {
       try {
-        // Add deals to the graph
+        console.log("Starting to build graph...");
+
+        // Load deals and their vectors
         const dealsStore = createStore();
         const dealsPersister = createLocalPersister(dealsStore, 'kindred-deals');
         await dealsPersister.load();
-
         const dealsTable = dealsStore.getTable('deals');
-        if (dealsTable) {
+
+        // Load product range vectors
+        const merchantProductRangeStore = createStore();
+        const merchantProductRangePersister = createLocalPersister(merchantProductRangeStore, 'merchant-product-range');
+        await merchantProductRangePersister.load();
+        const productRanges = merchantProductRangeStore.getTable('merchants');
+
+        if (dealsTable && productRanges) {
           Object.values(dealsTable).forEach((deal: any) => {
-            if (deal && deal.dealId && deal.merchantName) {
-              addDealToGraph(deal);
-              const vector = simpleVectorize(`${deal.title || ''} ${deal.description || ''}`);
-              addVectorToGraph(deal.dealId, vector);
+            const merchantVector = productRanges[deal.merchantName]?.vector;
+            if (merchantVector) {
+              addDealToGraph(deal, merchantVector);
             } else {
-              console.warn('Invalid deal data:', deal);
+              console.warn(`No vector found for merchant: ${deal.merchantName}`);
+              addDealToGraph(deal, []); // Add deal without vector
             }
           });
         }
 
-        // Add users to the graph
-        const userStore = createStore();
-        const userPersister = createLocalPersister(userStore, 'user-profiles');
-        await userPersister.load();
+        console.log("Deals and vectors added to graph. Current graph stats:", getGraphStats());
 
-        const userProfiles = userStore.getTable('profiles');
-        if (userProfiles) {
-          for (const [userId, profile] of Object.entries(userProfiles)) {
-            const userProfile = await fetchUserProfile(userId);
-            addUserToGraph(userId, { ...profile, ...userProfile });
-          }
-        }
+        // Load and apply interactions
+        await loadInteractions();
 
-        console.log('Graph stats:', getGraphStats());
+        console.log("Interactions loaded. Current graph stats:", getGraphStats());
+
+        // Connect similar deals using vector similarity
+        connectSimilarDeals(0.8); // Adjust threshold as needed
+
+        console.log("Similar deals connected based on vector similarity. Current graph stats:", getGraphStats());
+
+        // Connect users with common interactions
+        connectUsersWithCommonInteractions();
+
+        console.log("Users with common interactions connected. Final graph stats:", getGraphStats());
+
+        // Log degree and betweenness centrality for each node
+        const degreeCentrality = calculateDegreeCentrality(dealGraph);
+        const betweennessCentrality = calculateBetweennessCentrality(dealGraph);
+
+        dealGraph.forEachNode((nodeId) => {
+          const nodeType = dealGraph.getNodeAttribute(nodeId, 'type');
+          const degree = degreeCentrality.get(nodeId) || 0;
+          const betweenness = betweennessCentrality.get(nodeId) || 0;
+
+          console.log(`Node: ${nodeId} (Type: ${nodeType})`);
+          console.log(`  Degree Centrality: ${degree}`);
+          console.log(`  Betweenness Centrality: ${betweenness.toFixed(4)}`);
+          console.log('---');
+        });
+
       } catch (error) {
         console.error('Error building graph:', error);
       }
@@ -623,16 +667,41 @@ const VectorData: React.FC = () => {
       }
     });
 
+    // Include deals from similar users
+    dealGraph.forEachOutNeighbor(userId, (neighborId, attributes) => {
+      if (attributes.type === 'common_interests') {
+        dealGraph.forEachOutNeighbor(neighborId, (dealId, dealAttributes) => {
+          if (dealAttributes.type === 'interacted_with' && !validDeals.includes(dealId)) {
+            validDeals.push(dealId);
+          }
+        });
+      }
+    });
+
     // Calculate scores and sort
     const scoredResults = validDeals.map(dealId => ({
       id: dealId,
       score: calculateRecommendationScore(userId, dealId, userInterests)
     }));
 
-    // Sort by score (descending) and limit to numRecommendations
-    return scoredResults
+    // Sort by score (descending) and get top recommendations
+    const topRecommendations = scoredResults
       .sort((a, b) => b.score - a.score)
       .slice(0, numRecommendations);
+
+    // Use degree centrality to refine the recommendations
+    const subgraph = dealGraph.subgraph(topRecommendations.map(r => r.id));
+    const centrality = calculateDegreeCentrality(subgraph);
+
+    // Adjust scores based on centrality
+    const adjustedRecommendations = topRecommendations.map(rec => ({
+      ...rec,
+      score: rec.score * (1 + (centrality.get(rec.id) || 0) / 10) // Adjust weight as needed
+    }));
+
+    return adjustedRecommendations
+      .sort((a, b) => b.score - a.score)
+      .map(rec => rec.id);
   }
 
   function calculateRecommendationScore(userId: string, dealId: string, userInterests: string[]): number {
@@ -672,13 +741,54 @@ const VectorData: React.FC = () => {
     const timeRelevanceScore = Math.min(1, daysUntilExpiration / 30);
     score += timeRelevanceScore;
 
+    // Add betweenness centrality score
+    const betweenness = calculateBetweennessCentrality(dealGraph);
+    const betweennessScore = betweenness.get(dealId) || 0;
+    score += betweennessScore * 2; // Adjust the weight as needed
+
+    // Add vector similarity score
+    const dealVector = dealGraph.getNodeAttribute(dealId, 'vector');
+    const userVector = getUserVector(userId);
+    if (dealVector && userVector) {
+      const similarityScore = calculateVectorSimilarity(dealVector, userVector);
+      score += similarityScore * 2; // Adjust weight as needed
+    }
+
+    // Add score based on similar deals
+    dealGraph.forEachOutNeighbor(dealId, (similarDealId, attributes) => {
+      if (attributes.type === 'similar') {
+        if (interactionGraph.hasEdge(userId, similarDealId)) {
+          score += attributes.weight * 0.5; // Adjust weight as needed
+        }
+      }
+    });
+
+    // Add score based on common user interactions
+    dealGraph.forEachOutNeighbor(userId, (similarUserId, attributes) => {
+      if (attributes.type === 'common_interests') {
+        if (dealGraph.hasEdge(similarUserId, dealId)) {
+          score += attributes.weight * 0.3; // Adjust weight as needed
+        }
+      }
+    });
+
     return score;
   }
 
   function getUserVector(userId: string): number[] | null {
-    // Implement this function to retrieve the user vector based on the userId
-    // For now, we'll return null to indicate that the function is not implemented
+    if (dealGraph.hasNode(userId)) {
+      return dealGraph.getNodeAttribute(userId, 'vector') || null;
+    }
     return null;
+  }
+
+  function addGeolocationToGraph(userId: string, geolocationData: any, geoVector: number[]) {
+    if (dealGraph.hasNode(userId)) {
+      dealGraph.setNodeAttribute(userId, 'geolocation', geolocationData);
+      dealGraph.setNodeAttribute(userId, 'geoVector', geoVector);
+    } else {
+      console.warn(`Attempted to add geolocation to non-existent user: ${userId}`);
+    }
   }
 
   return null;
