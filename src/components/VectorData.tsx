@@ -10,7 +10,7 @@ import Graph from 'graphology';
 import { addDays, isAfter, isBefore } from 'date-fns';
 import { calculateDegreeCentrality, getTopKNodesByDegreeCentrality } from '../utils/graphUtils';
 import { calculateBetweennessCentrality, getTopKNodesByBetweennessCentrality } from '../utils/graphUtils';
-import { logInteraction, loadInteractions, getCurrentUserId, InteractionType } from '../utils/interactionLogger';
+import { logInteraction, loadInteractions, getCurrentUserId, Interaction } from '../utils/interactionLogger';
 
 // Define the Deal interface here
 interface Deal {
