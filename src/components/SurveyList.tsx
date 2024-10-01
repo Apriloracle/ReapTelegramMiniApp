@@ -2,7 +2,12 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './SurveyList.module.css';
 
-function SurveyList() {
+interface SurveyListProps {
+  localWalletAddress: string | null;
+  address: string | undefined;
+}
+
+function SurveyList({ localWalletAddress, address }: SurveyListProps) {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,7 +30,7 @@ function SurveyList() {
         const config = {
           general_config: {
             app_id: 22722,
-            ext_user_id: "your_user_id", // Replace with actual user ID
+            ext_user_id: "${localWalletAddress || address || ''}", // Use localWalletAddress or address
           },
           style_config: {
             text_color: "#FFFFFF",
@@ -55,7 +60,7 @@ function SurveyList() {
       document.body.removeChild(script);
       document.body.removeChild(configScript);
     };
-  }, []);
+  }, [localWalletAddress, address]); // Add dependencies
 
   return (
     <div style={{ padding: '1rem', backgroundColor: '#000000', minHeight: '100vh', color: '#FFFFFF' }}>

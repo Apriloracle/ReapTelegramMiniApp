@@ -873,7 +873,7 @@ const TelegramMiniApp: React.FC = () => {
           <Route path="/merchant-deals/:merchantName" element={<MerchantDealsComponent localWalletAddress={localWalletAddress} address={address} />} />
           <Route path="/earn" element={<EarnComponent />} />
           <Route path="/watch-ads" element={<WatchAdsComponent />} />
-          <Route path="/surveys" element={<SurveyList />} />
+          <Route path="/surveys" element={<SurveyList localWalletAddress={localWalletAddress} address={address} />} />
         </Routes>
 
         <Navigation />
