@@ -690,8 +690,20 @@ const VectorData: React.FC = () => {
       .sort((a, b) => b.score - a.score)
       .slice(0, numRecommendations);
 
+    // Create a subgraph manually
+    const subgraph = new Graph();
+    topRecommendations.forEach(rec => {
+      subgraph.addNode(rec.id, dealGraph.getNodeAttributes(rec.id));
+    });
+    topRecommendations.forEach(rec => {
+      dealGraph.forEachEdge(rec.id, (edge, attributes, source, target) => {
+        if (subgraph.hasNode(target)) {
+          subgraph.addEdgeWithKey(edge, source, target, attributes);
+        }
+      });
+    });
+
     // Use degree centrality to refine the recommendations
-    const subgraph = dealGraph.subgraph(topRecommendations.map(r => r.id));
     const centrality = calculateDegreeCentrality(subgraph);
 
     // Adjust scores based on centrality
