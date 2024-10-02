@@ -20,6 +20,7 @@
     "@vlcn.io/crsqlite-wasm": "^0.16.0",
     "connectkit": "^1.5.0",
     "graphology": "^0.25.4",
+    "graphology-operators": "^1.6.0",
     "next": "14.2.4",
     "react": "^18.3.1",
     "react-dom": "^18",
@@ -40,3 +41,4 @@
     "typescript": "^5"
   }
 }
+
