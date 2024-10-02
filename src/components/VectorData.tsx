@@ -190,26 +190,20 @@ function connectUsersWithCommonInteractions(interactionGraph: Graph) {
   
   for (let i = 0; i < users.length; i++) {
     const userA = users[i];
-    const dealsA = new Set<string>();
-    interactionGraph.forEachOutNeighbor(userA, (neighbor, attrs) => {
-      if (attrs.type === 'interacted_with') dealsA.add(neighbor);
-    });
+    const dealsA = new Set(interactionGraph.outNeighbors(userA));
     
     for (let j = i + 1; j < users.length; j++) {
       const userB = users[j];
-      const dealsB = new Set<string>();
-      interactionGraph.forEachOutNeighbor(userB, (neighbor, attrs) => {
-        if (attrs.type === 'interacted_with') dealsB.add(neighbor);
-      });
+      const dealsB = new Set(interactionGraph.outNeighbors(userB));
       
-      const commonDeals = new Set([...dealsA].filter(x => dealsB.has(x)));
+      const commonDeals = new Set(Array.from(dealsA).filter(x => dealsB.has(x)));
       if (commonDeals.size > 0) {
         dealGraph.addEdge(userA, userB, { type: 'common_interests', weight: commonDeals.size });
         connectionsAdded++;
       }
     }
   }
-  console.log(`Connected ${connectionsAdded} users with common interactions`);
+  console.log(`Connected ${connectionsAdded} users based on common interactions`);
 }
 
 export function addUserToGraph(userId: string, userProfile: any) {
