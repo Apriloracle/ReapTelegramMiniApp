@@ -617,7 +617,7 @@ const VectorData: React.FC = () => {
         console.log("Similar deals connected based on vector similarity. Current graph stats:", getGraphStats());
 
         // Connect users with common interactions
-        connectUsersWithCommonInteractions();
+        connectUsersWithCommonInteractions(interactionGraph);
 
         console.log("Users with common interactions connected. Final graph stats:", getGraphStats());
 
