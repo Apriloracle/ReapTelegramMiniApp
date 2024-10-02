@@ -7,6 +7,7 @@ import { Doc } from 'yjs';
 import { PGlite } from '@electric-sql/pglite';
 import Annoy from '../lib/annoy';
 import Graph from 'graphology';
+import { subgraph } from 'graphology-operators';
 import { addDays, isAfter, isBefore } from 'date-fns';
 import { calculateDegreeCentrality, getTopKNodesByDegreeCentrality } from '../utils/graphUtils';
 import { calculateBetweennessCentrality, getTopKNodesByBetweennessCentrality } from '../utils/graphUtils';
@@ -147,10 +148,11 @@ export function getRelatedDeals(dealId: string, k: number = 5): string[] {
   relatedDeals.delete(dealId);
 
   // Create a subgraph of related deals
-  const subgraph = dealGraph.subgraph(Array.from(relatedDeals));
+  const subgraphNodes = Array.from(relatedDeals);
+  const subgraphInstance = subgraph(dealGraph, subgraphNodes);
 
   // Use betweenness centrality to refine the recommendations
-  const topDeals = getTopKNodesByBetweennessCentrality(subgraph, k);
+  const topDeals = getTopKNodesByBetweennessCentrality(subgraphInstance, k);
 
   return topDeals;
 }
