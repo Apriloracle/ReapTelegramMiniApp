@@ -595,11 +595,11 @@ const VectorData: React.FC = () => {
             const merchantVector = productRanges[deal.merchantName]?.vector;
             const merchantDescription = productRanges[deal.merchantName]?.description || '';
             const productRange = productRanges[deal.merchantName]?.productRange || '';
-            if (merchantVector) {
+            if (merchantVector && Array.isArray(merchantVector)) {
               addDealToGraph(deal, merchantVector, merchantDescription, productRange);
             } else {
-              console.warn(`No vector found for merchant: ${deal.merchantName}`);
-              addDealToGraph(deal, [], '', ''); // Add deal without vector, description, or product range
+              console.warn(`No valid vector found for merchant: ${deal.merchantName}`);
+              addDealToGraph(deal, [], merchantDescription, productRange); // Add deal with empty vector
             }
           });
         }
