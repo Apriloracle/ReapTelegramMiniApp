@@ -41,18 +41,20 @@ function calculateVectorSimilarity(vectorA: number[], vectorB: number[]): number
   return dotProduct / (magnitudeA * magnitudeB);
 }
 
-export function addDealToGraph(deal: any, vector: number[], merchantDescription: string, productRange: string) {
+export function addDealToGraph(deal: any, vector: number[], merchantDescription: string | number | boolean, productRange: string) {
   if (!deal.dealId || !deal.merchantName) {
     console.warn('Invalid deal data:', deal);
     return;
   }
+
+  const description = String(merchantDescription); // Convert to string
 
   if (!dealGraph.hasNode(deal.dealId)) {
     dealGraph.addNode(deal.dealId, {
       type: 'deal',
       ...deal,
       vector: vector,
-      merchantDescription: merchantDescription,
+      merchantDescription: description,
       productRange: productRange
     });
   }
@@ -61,7 +63,7 @@ export function addDealToGraph(deal: any, vector: number[], merchantDescription:
   if (!dealGraph.hasNode(deal.merchantName)) {
     dealGraph.addNode(deal.merchantName, { 
       type: 'merchant',
-      description: merchantDescription,
+      description: description,
       productRange: productRange
     });
   }
@@ -304,7 +306,7 @@ const VectorData: React.FC = () => {
         if (combinedVector.length === VECTOR_LEN) {
           try {
             annoy.add({ v: combinedVector, d: { id: dealId, ...deal } });
-            addDealToGraph(deal, combinedVector, description, productRange);
+            addDealToGraph(deal, combinedVector, String(description), productRange);
             validDealsCount++;
           } catch (error) {
             console.error(`Error adding deal ${dealId}:`, error);
