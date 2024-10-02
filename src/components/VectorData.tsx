@@ -593,11 +593,13 @@ const VectorData: React.FC = () => {
         if (dealsTable && productRanges) {
           Object.values(dealsTable).forEach((deal: any) => {
             const merchantVector = productRanges[deal.merchantName]?.vector;
+            const merchantDescription = productRanges[deal.merchantName]?.description || '';
+            const productRange = productRanges[deal.merchantName]?.productRange || '';
             if (merchantVector) {
-              addDealToGraph(deal, merchantVector);
+              addDealToGraph(deal, merchantVector, merchantDescription, productRange);
             } else {
               console.warn(`No vector found for merchant: ${deal.merchantName}`);
-              addDealToGraph(deal, []); // Add deal without vector
+              addDealToGraph(deal, [], '', ''); // Add deal without vector, description, or product range
             }
           });
         }
