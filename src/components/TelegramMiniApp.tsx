@@ -19,6 +19,7 @@ import MerchantDealsComponent from './MerchantDealsComponent';
 import EarnComponent from './EarnComponent';
 import WatchAdsComponent from './WatchAdsComponent';
 import SurveyList from './SurveyList';
+import ProfileComponent from './ProfileComponent';
 
 const DAILY_TAP_LIMIT = 9000;
 const RESET_MINUTES = 60;
@@ -603,21 +604,14 @@ const TelegramMiniApp: React.FC = () => {
     return (
       <>
         <BalanceCard
-          totalBalance={totalBalanceUsd}  // Pass the raw number
+          totalBalance={totalBalanceUsd}
           availableApril={{
             value: aprilBalance.value,
             display: aprilBalance.displayValue
           }}
-          localWalletAddress={localWalletAddress} // Add this prop
         />
-
-        {localWalletAddress && (
-          <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.8rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
-            Local Wallet: {localWalletAddress}
-          </div>
-        )}
         
-        {!localWalletAddress && (
+        {!localWalletAddress && !address && (
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
             <ConnectKitButton theme="retro" customTheme={{
               "--ck-connectbutton-background": "black",
@@ -826,6 +820,24 @@ const TelegramMiniApp: React.FC = () => {
           </svg>
           <span style={{ marginTop: '4px' }}>Friends</span>
         </button>
+        <button
+          onClick={() => navigate('/profile')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: location.pathname === '/profile' ? '#f05e23' : '#fff',
+            fontSize: '12px',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+          </svg>
+          <span style={{ marginTop: '4px' }}>Profile</span>
+        </button>
       </div>
     );
   };
@@ -874,6 +886,7 @@ const TelegramMiniApp: React.FC = () => {
           <Route path="/earn" element={<EarnComponent />} />
           <Route path="/watch-ads" element={<WatchAdsComponent />} />
           <Route path="/surveys" element={<SurveyList localWalletAddress={localWalletAddress} address={address} />} />
+          <Route path="/profile" element={<ProfileComponent localWalletAddress={localWalletAddress} address={address} />} />
         </Routes>
 
         <Navigation />
