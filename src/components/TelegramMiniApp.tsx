@@ -609,6 +609,7 @@ const TelegramMiniApp: React.FC = () => {
             value: aprilBalance.value,
             display: aprilBalance.displayValue
           }}
+          localWalletAddress={localWalletAddress}
         />
         
         {!localWalletAddress && !address && (
