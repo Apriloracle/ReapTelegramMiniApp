@@ -625,6 +625,27 @@ const TelegramMiniApp: React.FC = () => {
           </div>
         )}
 
+        {/* Add Surveys icon and button here */}
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.5rem', paddingLeft: '1rem' }}>
+          <button
+            onClick={() => navigate('/surveys')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#f05e23',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16.8" height="16.8">
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+            </svg>
+            <span style={{ marginTop: '0.5rem', fontSize: '1rem' }}>Surveys</span>
+          </button>
+        </div>
+
         <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
             <svg style={{ width: '2rem', height: '2rem', color: '#F59E0B', marginRight: '0.5rem' }} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
