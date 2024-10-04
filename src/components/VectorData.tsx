@@ -283,7 +283,6 @@ const VectorData: React.FC = () => {
 
       console.log(`Total deals to process: ${Object.keys(deals).length}`);
       console.log(`Total merchant descriptions: ${Object.keys(merchantDescriptions).length}`);
-      console.log(`Total product ranges: ${Object.keys(productRanges).length}`);
 
       const surveyVector = vectorizeSurveyResponses(surveyResponses);
       const geolocationData = geolocationStore.getRow('geolocation', 'userGeo');
@@ -314,7 +313,8 @@ const VectorData: React.FC = () => {
             invalidDealsCount++;
           }
         } else {
-          console.error(`Invalid vector length for deal ${dealId}: ${combinedVector.length}`);
+          // Remove this console.error
+          // console.error(`No valid vector found for merchant: ${merchantName}`);
           invalidDealsCount++;
         }
       }
@@ -621,10 +621,12 @@ const VectorData: React.FC = () => {
 
         console.log("Users with common interactions connected. Final graph stats:", getGraphStats());
 
-        // Log degree and betweenness centrality for each node
+        // Calculate degree and betweenness centrality for each node
         const degreeCentrality = calculateDegreeCentrality(dealGraph);
         const betweennessCentrality = calculateBetweennessCentrality(dealGraph);
 
+        // Remove the following block of code
+        /*
         dealGraph.forEachNode((nodeId) => {
           const nodeType = dealGraph.getNodeAttribute(nodeId, 'type');
           const degree = degreeCentrality.get(nodeId) || 0;
@@ -635,6 +637,7 @@ const VectorData: React.FC = () => {
           console.log(`  Betweenness Centrality: ${betweenness.toFixed(4)}`);
           console.log('---');
         });
+        */
 
       } catch (error) {
         console.error('Error building graph:', error);

@@ -50,6 +50,24 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ localWalletAddress,
     });
   };
 
+  const CopyButton = ({ text }: { text: string }) => (
+    <button 
+      onClick={() => copyToClipboard(text)}
+      style={{
+        backgroundColor: '#f05e23',
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        padding: '4px 8px',
+        fontSize: '0.9rem',
+        cursor: 'pointer',
+        marginLeft: '0.5rem',
+      }}
+    >
+      Copy
+    </button>
+  );
+
   return (
     <div style={{ padding: '1rem', backgroundColor: '#000000', minHeight: '100vh', color: '#FFFFFF' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
@@ -65,29 +83,16 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ localWalletAddress,
       {localWalletAddress && (
         <div style={{ marginBottom: '1rem', fontSize: '1rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
           <strong>Local Wallet:</strong> {localWalletAddress}
+          <CopyButton text={localWalletAddress} />
         </div>
       )}
       {address && (
         <div style={{ marginBottom: '1rem', fontSize: '1rem', color: '#A0AEC0', wordBreak: 'break-all' }}>
           <strong>Connected Wallet:</strong> {address}
-          <button 
-            onClick={() => copyToClipboard(address)}
-            style={{
-              backgroundColor: '#f05e23',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '4px 8px',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              marginLeft: '0.5rem',
-            }}
-          >
-            Copy
-          </button>
-          {copySuccess && <span style={{ color: '#4CAF50', marginLeft: '0.5rem' }}>{copySuccess}</span>}
+          <CopyButton text={address} />
         </div>
       )}
+      {copySuccess && <div style={{ color: '#4CAF50', marginBottom: '1rem' }}>{copySuccess}</div>}
       
       {userProfile ? (
         <div>

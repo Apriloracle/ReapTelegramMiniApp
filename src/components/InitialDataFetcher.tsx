@@ -136,7 +136,8 @@ const InitialDataFetcher: React.FC = () => {
       const storedProductRange = merchantProductRangeStore.getCell('merchants', merchantName, 'productRange');
       
       if (storedProductRange) {
-        console.log(`Product range for ${merchantName} already stored, skipping fetch.`);
+        // Remove this console.log
+        // console.log(`Product range for ${merchantName} already stored, skipping fetch.`);
         continue; // Skip to the next merchant
       }
 
