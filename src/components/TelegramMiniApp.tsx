@@ -806,12 +806,10 @@ const TelegramMiniApp: React.FC = () => {
         right: 0,
         display: 'flex',
         justifyContent: 'space-around',
-        alignItems: 'flex-start', // Changed from 'center' to 'flex-start'
+        alignItems: 'center', // Changed back to 'center'
         backgroundColor: '#1a1a1a',
         height: '70px',
         borderTop: '1px solid #333',
-        paddingTop: '8px', // Added padding to the top
-        paddingBottom: '12px' // Added padding to the bottom
       }}>
         <button
           onClick={() => navigate('/')}
@@ -824,6 +822,7 @@ const TelegramMiniApp: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            paddingTop: '8px', // Added padding to the top of the button
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
