@@ -174,6 +174,7 @@ const TelegramMiniApp: React.FC = () => {
       try {
         setWebApp(WebApp);
         WebApp.ready();
+        WebApp.expand(); // Add this line to expand the mini app
 
         const searchParams = new URLSearchParams(WebApp.initData);
         const userDataStr = searchParams.get('user');
@@ -192,7 +193,7 @@ const TelegramMiniApp: React.FC = () => {
     };
 
     initWebApp();
-    loadPersistedData(); // This should now only load score and shares, not daily taps
+    loadPersistedData();
 
     clickStore.setTables({
       stats: { clicks: { count: 0 } }
