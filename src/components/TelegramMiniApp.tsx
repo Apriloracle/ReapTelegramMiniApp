@@ -806,10 +806,12 @@ const TelegramMiniApp: React.FC = () => {
         right: 0,
         display: 'flex',
         justifyContent: 'space-around',
-        alignItems: 'center',
+        alignItems: 'flex-start', // Changed from 'center' to 'flex-start'
         backgroundColor: '#1a1a1a',
         height: '70px',
-        borderTop: '1px solid #333'
+        borderTop: '1px solid #333',
+        paddingTop: '8px', // Added padding to the top
+        paddingBottom: '12px' // Added padding to the bottom
       }}>
         <button
           onClick={() => navigate('/')}
