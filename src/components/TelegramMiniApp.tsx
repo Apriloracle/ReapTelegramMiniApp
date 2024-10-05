@@ -601,6 +601,14 @@ const TelegramMiniApp: React.FC = () => {
   const MainPage: React.FC = () => {
     const navigate = useNavigate();
 
+    const openTelegramChat = () => {
+      if (WebApp && WebApp.openTelegramLink) {
+        WebApp.openTelegramLink('https://t.me/apriloracle');
+      } else {
+        window.open('https://t.me/apriloracle', '_blank');
+      }
+    };
+
     return (
       <>
         <BalanceCard
@@ -625,25 +633,57 @@ const TelegramMiniApp: React.FC = () => {
           </div>
         )}
 
-        {/* Add Surveys icon and button here */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.5rem', paddingLeft: '1rem' }}>
-          <button
-            onClick={() => navigate('/surveys')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#f05e23',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16.8" height="16.8">
-              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
-            </svg>
-            <span style={{ marginTop: '0.5rem', fontSize: '1rem' }}>Surveys</span>
-          </button>
+        {/* Add this new div for the icons */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', padding: '0 1rem' }}>
+          <div style={{ 
+            border: '2px solid #f05e23', 
+            borderRadius: '0.5rem', 
+            padding: '0.5rem',
+            display: 'inline-block'
+          }}>
+            <button
+              onClick={() => navigate('/surveys')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#f05e23',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16.8" height="16.8">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+              </svg>
+              <span style={{ marginTop: '0.5rem', fontSize: '1rem' }}>Surveys</span>
+            </button>
+          </div>
+
+          <div style={{ 
+            border: '2px solid #f05e23', 
+            borderRadius: '0.5rem', 
+            padding: '0.5rem',
+            display: 'inline-block'
+          }}>
+            <button
+              onClick={openTelegramChat}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#f05e23',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16.8" height="16.8">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-4.41 3.59-8 8-8s8 3.59 8 8c0 4.41-3.59 8-8 8zm-1-4h2v2h-2zm1-10c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
+              </svg>
+              <span style={{ marginTop: '0.5rem', fontSize: '1rem' }}>Chat</span>
+            </button>
+          </div>
         </div>
 
         <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
