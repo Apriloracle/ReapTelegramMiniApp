@@ -656,7 +656,7 @@ const TelegramMiniApp: React.FC = () => {
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16.8" height="16.8">
                 <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
               </svg>
-              <span style={{ marginTop: '0.5rem', fontSize: '1rem' }}>Surveys</span>
+              <span style={{ marginTop: '0.5rem', fontSize: '1rem' }}>Earn</span>
             </button>
           </div>
 
@@ -686,8 +686,8 @@ const TelegramMiniApp: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <div style={{ padding: '0.5rem', marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
             <svg style={{ width: '2rem', height: '2rem', color: '#F59E0B', marginRight: '0.5rem' }} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h1V7a1 1 0 012 0v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H8a1 1 0 01-1-1z" clipRule="evenodd" fillRule="evenodd"></path>
             </svg>
