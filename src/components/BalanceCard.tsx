@@ -72,20 +72,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril,
           >
             Cashout
           </button>
-          <button 
-            onClick={handleEarnClick}
-            style={{
-              backgroundColor: '#000000', // Black background
-              color: '#f05e23', // Orange text color
-              border: 'none',
-              borderRadius: '20px',
-              padding: '8px 16px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-            }}
-          >
-            Earn
-          </button>
+       
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
