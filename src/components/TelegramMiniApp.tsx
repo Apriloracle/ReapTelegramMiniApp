@@ -730,7 +730,7 @@ const TelegramMiniApp: React.FC = () => {
   </defs>
 </svg>
     
-              <span style={{ marginTop: '0.1rem', fontSize: '1rem' }}>Chat</span>
+              <span style={{ marginTop: '0.1rem', fontSize: '1rem' }}></span>
             </button>
           </div>
         </div>
