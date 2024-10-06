@@ -637,7 +637,6 @@ const TelegramMiniApp: React.FC = () => {
         {/* Add this new div for the icons */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', padding: '0 1rem' }}>
           <div style={{ 
-            border: '2px solid #f05e23', 
             borderRadius: '0.5rem', 
             padding: '0.5rem',
             display: 'inline-block'
@@ -654,15 +653,42 @@ const TelegramMiniApp: React.FC = () => {
                 alignItems: 'center',
               }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16.8" height="16.8">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
-              </svg>
-              <span style={{ marginTop: '0.5rem', fontSize: '1rem' }}>Earn</span>
+              <svg width="67" height="68" viewBox="0 0 67 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="2.5" y="4.5" width="56" height="56" rx="11.5" stroke="#E6602C"/>
+<g filter="url(#filter0_d_2295_27907)">
+<rect x="2" y="4" width="57" height="57" rx="12" fill="url(#paint0_linear_2295_27907)"/>
+<rect x="1.5" y="3.5" width="58" height="58" rx="12.5" stroke="white"/>
+</g>
+<rect x="7" y="50" width="46" height="18" rx="9" fill="#E6602C"/>
+<path d="M14.576 63.144C13.96 63.144 13.424 63.032 12.968 62.808C12.512 62.584 12.16 62.272 11.912 61.872C11.664 61.472 11.54 61.008 11.54 60.48H12.596C12.596 60.808 12.672 61.112 12.824 61.392C12.976 61.664 13.196 61.884 13.484 62.052C13.78 62.212 14.144 62.292 14.576 62.292C14.952 62.292 15.272 62.232 15.536 62.112C15.808 61.984 16.012 61.812 16.148 61.596C16.292 61.38 16.364 61.136 16.364 60.864C16.364 60.536 16.292 60.272 16.148 60.072C16.012 59.864 15.824 59.696 15.584 59.568C15.344 59.44 15.064 59.328 14.744 59.232C14.432 59.128 14.104 59.016 13.76 58.896C13.096 58.672 12.608 58.396 12.296 58.068C11.984 57.732 11.828 57.296 11.828 56.76C11.828 56.304 11.932 55.904 12.14 55.56C12.356 55.216 12.66 54.948 13.052 54.756C13.452 54.556 13.924 54.456 14.468 54.456C15.004 54.456 15.468 54.556 15.86 54.756C16.26 54.956 16.572 55.232 16.796 55.584C17.02 55.928 17.132 56.328 17.132 56.784H16.076C16.076 56.552 16.016 56.324 15.896 56.1C15.776 55.876 15.592 55.692 15.344 55.548C15.104 55.396 14.8 55.32 14.432 55.32C14.128 55.312 13.856 55.364 13.616 55.476C13.384 55.58 13.2 55.732 13.064 55.932C12.936 56.132 12.872 56.376 12.872 56.664C12.872 56.936 12.928 57.156 13.04 57.324C13.16 57.492 13.328 57.636 13.544 57.756C13.768 57.868 14.028 57.972 14.324 58.068C14.62 58.164 14.948 58.272 15.308 58.392C15.716 58.528 16.076 58.696 16.388 58.896C16.708 59.088 16.956 59.336 17.132 59.64C17.316 59.944 17.408 60.332 17.408 60.804C17.408 61.204 17.3 61.584 17.084 61.944C16.876 62.296 16.564 62.584 16.148 62.808C15.732 63.032 15.208 63.144 14.576 63.144ZM20.9969 63.144C20.5329 63.144 20.1249 63.052 19.7729 62.868C19.4289 62.684 19.1609 62.4 18.9689 62.016C18.7849 61.632 18.6929 61.152 18.6929 60.576V56.952H19.7009V60.468C19.7009 61.068 19.8329 61.52 20.0969 61.824C20.3609 62.128 20.7329 62.28 21.2129 62.28C21.5489 62.28 21.8529 62.2 22.1249 62.04C22.3969 61.872 22.6089 61.636 22.7609 61.332C22.9209 61.02 23.0009 60.636 23.0009 60.18V56.952H24.0089V63H23.0969L23.0369 61.944C22.8529 62.32 22.5809 62.616 22.2209 62.832C21.8609 63.04 21.4529 63.144 20.9969 63.144ZM25.6798 63V56.952H26.5918L26.6638 58.104C26.7998 57.832 26.9718 57.6 27.1798 57.408C27.3958 57.216 27.6518 57.068 27.9478 56.964C28.2518 56.86 28.5958 56.808 28.9798 56.808V57.864H28.6078C28.3518 57.864 28.1078 57.9 27.8758 57.972C27.6438 58.036 27.4358 58.144 27.2518 58.296C27.0758 58.448 26.9358 58.656 26.8318 58.92C26.7358 59.176 26.6878 59.496 26.6878 59.88V63H25.6798ZM31.8613 63L29.5693 56.952H30.6253L32.4492 62.028L34.2853 56.952H35.3173L33.0253 63H31.8613ZM38.7967 63.144C38.2367 63.144 37.7367 63.012 37.2967 62.748C36.8567 62.484 36.5127 62.116 36.2647 61.644C36.0167 61.164 35.8927 60.608 35.8927 59.976C35.8927 59.336 36.0127 58.78 36.2527 58.308C36.5007 57.836 36.8447 57.468 37.2847 57.204C37.7327 56.94 38.2447 56.808 38.8207 56.808C39.4127 56.808 39.9167 56.94 40.3327 57.204C40.7487 57.468 41.0647 57.816 41.2807 58.248C41.5047 58.672 41.6167 59.14 41.6167 59.652C41.6167 59.732 41.6167 59.816 41.6167 59.904C41.6167 59.992 41.6127 60.092 41.6047 60.204H36.6487V59.424H40.6207C40.5967 58.872 40.4127 58.44 40.0687 58.128C39.7327 57.816 39.3087 57.66 38.7967 57.66C38.4607 57.66 38.1447 57.74 37.8487 57.9C37.5527 58.052 37.3167 58.28 37.1407 58.584C36.9647 58.88 36.8767 59.252 36.8767 59.7V60.036C36.8767 60.532 36.9647 60.948 37.1407 61.284C37.3247 61.62 37.5607 61.872 37.8487 62.04C38.1447 62.208 38.4607 62.292 38.7967 62.292C39.2207 62.292 39.5687 62.2 39.8407 62.016C40.1207 61.824 40.3247 61.564 40.4527 61.236H41.4487C41.3447 61.604 41.1727 61.932 40.9327 62.22C40.6927 62.5 40.3927 62.724 40.0327 62.892C39.6807 63.06 39.2687 63.144 38.7967 63.144ZM43.3906 65.64L44.8666 62.328H44.5186L42.1426 56.952H43.2346L45.2026 61.572L47.2786 56.952H48.3226L44.4466 65.64H43.3906Z" fill="#F5F5F5"/>
+<path d="M39.4948 13.166H31.5781C31.5781 14.0368 30.8656 14.7493 29.9948 14.7493C29.124 14.7493 28.4115 14.0368 28.4115 13.166H20.4948C18.7531 13.166 17.3281 14.591 17.3281 16.3327V41.666C17.3281 43.4077 18.7531 44.8327 20.4948 44.8327H39.4948C41.2365 44.8327 42.6615 43.4077 42.6615 41.666V16.3327C42.6615 14.591 41.2365 13.166 39.4948 13.166Z" fill="#455A64"/>
+<path d="M39.4948 42.4577H20.4948C20.0198 42.4577 19.7031 42.141 19.7031 41.666V16.3327C19.7031 15.8577 20.0198 15.541 20.4948 15.541H39.4948C39.9698 15.541 40.2865 15.8577 40.2865 16.3327V41.666C40.2865 42.141 39.9698 42.4577 39.4948 42.4577Z" fill="white"/>
+<path d="M31.5833 13.166C31.5833 14.0368 30.8708 14.7493 30 14.7493C29.1292 14.7493 28.4167 14.0368 28.4167 13.166H22.875V16.3327C22.875 17.2035 23.5875 17.916 24.4583 17.916H35.5417C36.4125 17.916 37.125 17.2035 37.125 16.3327V13.166H31.5833Z" fill="#90A4AE"/>
+<path d="M29.9948 10C28.2531 10 26.8281 11.425 26.8281 13.1667C26.8281 14.9083 28.2531 16.3333 29.9948 16.3333C31.7365 16.3333 33.1615 14.9083 33.1615 13.1667C33.1615 11.425 31.7365 10 29.9948 10ZM29.9948 14.75C29.124 14.75 28.4115 14.0375 28.4115 13.1667C28.4115 12.2958 29.124 11.5833 29.9948 11.5833C30.8656 11.5833 31.5781 12.2958 31.5781 13.1667C31.5781 14.0375 30.8656 14.75 29.9948 14.75Z" fill="#90A4AE"/>
+<path d="M27.625 25.8327H37.125V27.416H27.625V25.8327ZM22.875 25.041H26.0417V28.2077H22.875V25.041Z" fill="#CFD8DC"/>
+<path d="M27.625 32.9577H37.125V34.541H27.625V32.9577ZM22.875 32.166H26.0417V35.3327H22.875V32.166Z" fill="#E6602C"/>
+<defs>
+<filter id="filter0_d_2295_27907" x="0" y="0" width="67" height="67" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="3" dy="1"/>
+<feGaussianBlur stdDeviation="2"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2295_27907"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_2295_27907" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_2295_27907" x1="30.5" y1="4" x2="30.5" y2="61" gradientUnits="userSpaceOnUse">
+<stop stop-color="#6BCDF5"/>
+<stop offset="1" stop-color="#3E788F"/>
+</linearGradient>
+</defs>
+</svg>
+              
             </button>
           </div>
 
           <div style={{ 
-            border: '2px solid #f05e23', 
             borderRadius: '0.5rem', 
             padding: '0.5rem',
             display: 'inline-block'
@@ -679,10 +705,32 @@ const TelegramMiniApp: React.FC = () => {
                 alignItems: 'center',
               }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16.8" height="16.8">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-4.41 3.59-8 8-8s8 3.59 8 8c0 4.41-3.59 8-8 8zm-1-4h2v2h-2zm1-10c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
-              </svg>
-              <span style={{ marginTop: '0.5rem', fontSize: '1rem' }}>Chat</span>
+              <svg width="67" height="68" viewBox="0 0 67 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g filter="url(#filter0_d_2295_27907)">
+    <path d="M2 16C2 8.26801 8.26801 2 16 2H45C52.732 2 59 8.26801 59 16V35C59 42.732 52.732 49 45 49H16C8.26801 49 2 42.732 2 35V16Z" fill="url(#paint0_linear_2295_27907)"/>
+    <path d="M1.5 16C1.5 7.99187 7.99187 1.5 16 1.5H45C53.0081 1.5 59.5 7.99187 59.5 16V35C59.5 43.0081 53.0081 49.5 45 49.5H16C7.99187 49.5 1.5 43.0081 1.5 35V16Z" stroke="white"/>
+  </g>
+  <path d="M30 55L20 45H45C52.732 45 59 38.732 59 31V35C59 42.732 52.732 49 45 49H30V55Z" fill="#E6602C"/>
+  <path d="M20 20H40M20 30H40" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <defs>
+    <filter id="filter0_d_2295_27907" x="0" y="0" width="67" height="67" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="3" dy="1"/>
+      <feGaussianBlur stdDeviation="2"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2295_27907"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_2295_27907" result="shape"/>
+    </filter>
+    <linearGradient id="paint0_linear_2295_27907" x1="30.5" y1="2" x2="30.5" y2="49" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6BCDF5"/>
+      <stop offset="1" stop-color="#3E788F"/>
+    </linearGradient>
+  </defs>
+</svg>
+    
+              <span style={{ marginTop: '0.1rem', fontSize: '1rem' }}>Chat</span>
             </button>
           </div>
         </div>
@@ -806,7 +854,7 @@ const TelegramMiniApp: React.FC = () => {
         right: 0,
         display: 'flex',
         justifyContent: 'space-around',
-        alignItems: 'center', // Changed back to 'center'
+        alignItems: 'center',
         backgroundColor: '#1a1a1a',
         height: '70px',
         borderTop: '1px solid #333',
@@ -822,7 +870,7 @@ const TelegramMiniApp: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            paddingTop: '8px', // Added padding to the top of the button
+            paddingTop: '8px',
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
@@ -841,6 +889,7 @@ const TelegramMiniApp: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            paddingTop: '8px',
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
@@ -859,6 +908,7 @@ const TelegramMiniApp: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            paddingTop: '8px',
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
@@ -877,6 +927,7 @@ const TelegramMiniApp: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            paddingTop: '8px',
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
@@ -895,6 +946,7 @@ const TelegramMiniApp: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            paddingTop: '8px',
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
