@@ -739,7 +739,7 @@ const TelegramMiniApp: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ padding: '0.5rem', marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ padding: '0.5rem', marginBottom: '0.25rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
             <svg style={{ width: '2rem', height: '2rem', color: '#F59E0B', marginRight: '0.5rem' }} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h1V7a1 1 0 012 0v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H8a1 1 0 01-1-1z" clipRule="evenodd" fillRule="evenodd"></path>
@@ -749,7 +749,7 @@ const TelegramMiniApp: React.FC = () => {
           <p style={{ fontSize: '0.875rem', color: '#A0AEC0' }}></p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
           <div style={{ position: 'relative', width: '13rem', height: '13rem' }}>
             <div style={{ 
               position: 'absolute', 
@@ -812,9 +812,7 @@ const TelegramMiniApp: React.FC = () => {
               }}></div>
             </button>
           </div>
-          <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#A0AEC0' }}>
-             {dailyTaps} / {DAILY_TAP_LIMIT}
-          </p>
+
           {error && (
             <p style={{ marginTop: '0.5rem', color: '#EF4444', fontSize: '0.875rem' }}>{error}</p>
           )}
