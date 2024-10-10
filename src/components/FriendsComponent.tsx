@@ -136,7 +136,7 @@ const FriendsComponent: React.FC = () => {
       const response = await axios.post(functionUrl, { 
         referrerId: referrerId
       });
-      setReferralLink(response.data.referralLink.replace('?start=', '?referral='));
+      setReferralLink(response.data.referralLink);
       setReferralCode(response.data.referralCode);
     } catch (error) {
       console.error('Error fetching referral link:', error);
@@ -243,4 +243,3 @@ const FriendsComponent: React.FC = () => {
 };
 
 export default FriendsComponent;
-
