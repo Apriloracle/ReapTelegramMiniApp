@@ -19,3 +19,13 @@ body {
 }
 
 /* You can add other global styles here */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #000000;
+}
+
+#__next {
+  min-height: 100vh;
+}
