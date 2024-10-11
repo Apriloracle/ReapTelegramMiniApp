@@ -24,24 +24,8 @@ html, body {
   margin: 0;
   padding: 0;
   background-color: #000000;
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
-  height: 100%;
 }
 
 #__next {
   min-height: 100vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Disable double-tap to zoom */
-* {
-  touch-action: manipulation;
-}
-
-/* Disable pull-to-refresh */
-body {
-  overscroll-behavior-y: contain;
 }
