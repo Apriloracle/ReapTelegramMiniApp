@@ -21,7 +21,8 @@ let nextConfig = {
 
     return config;
   },
-  transpilePackages: ['@electric-sql/pglite'],
+  transpilePackages: ['@electric-sql/pglite', '@digitalbazaar/ed25519-verification-key-2020'],
 };
 
 module.exports = nextConfig;
+
