@@ -117,7 +117,8 @@ const TelegramMiniApp: React.FC = () => {
       const authenticationKey = {
         id: 'key-1',
         type: 'Ed25519VerificationKey2020',
-        publicKeyMultibase: publicKeyMultibase
+        publicKeyMultibase: publicKeyMultibase,
+        controller: 'did:peer:0' // Add this line
       };
 
       // Create the Peer:DID (numalgo0)
