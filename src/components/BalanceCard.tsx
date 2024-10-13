@@ -10,6 +10,7 @@ interface BalanceCardProps {
   localWalletAddress: string | null; // Add this prop
 }
 
+
 const BalanceCard: React.FC<BalanceCardProps> = ({ totalBalance, availableApril, localWalletAddress }) => {
   const navigate = useNavigate();
 
