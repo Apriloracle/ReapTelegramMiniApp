@@ -3,10 +3,13 @@ import { ConnectKitButton } from 'connectkit';
 import { useAccount } from 'wagmi'
 import { createStore } from 'tinybase';
 import { createLocalPersister } from 'tinybase/persisters/persister-browser';
+import { createYjsPersister } from 'tinybase/persisters/persister-yjs';
+import { Doc } from 'yjs';
 import WebApp from '@twa-dev/sdk'
 import { LocalWallet } from "@thirdweb-dev/wallets";
 import { ThirdwebSDK } from "@thirdweb-dev/sdk";
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
+import * as didPeer from '@aviarytech/did-peer';
 import PeerSync from './PeerSync';
 import SurveyQuestion from './SurveyQuestion';
 import BalanceCard from './BalanceCard';
@@ -20,6 +23,7 @@ import EarnComponent from './EarnComponent';
 import WatchAdsComponent from './WatchAdsComponent';
 import SurveyList from './SurveyList';
 import ProfileComponent from './ProfileComponent';
+import { Ed25519VerificationKey2020 } from '@digitalbazaar/ed25519-verification-key-2020';
 
 const DAILY_TAP_LIMIT = 9000;
 const RESET_MINUTES = 60;
@@ -60,6 +64,86 @@ const TelegramMiniApp: React.FC = () => {
   const aprilBalancePersister = React.useMemo(() => createLocalPersister(aprilBalanceStore, 'AprilBalance'), [aprilBalanceStore]);
   const aprilPriceStore = React.useMemo(() => createStore(), []);
   const aprilPricePersister = React.useMemo(() => createLocalPersister(aprilPriceStore, 'AprilUsdPrice'), [aprilPriceStore]);
+
+  const [peerDID, setPeerDID] = useState<string | null>(null);
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      // Retrieve the stored peer:did
+      const peerDID = await getPeerDID();
+
+      if (peerDID) {
+        // Create a new Yjs document
+        const yDoc = new Doc();
+
+        // Create a new TinyBase store for the peer:did
+        const peerDIDStore = createStore();
+        peerDIDStore.setTable('peerDID', { 'current': { did: peerDID } });
+
+        // Create a YjsPersister
+        const yjsPersister = createYjsPersister(peerDIDStore, yDoc, 'userSubnet');
+
+        // Save the peer:did to the Yjs document
+        await yjsPersister.save();
+
+        console.log('Peer:DID saved to Yjs document:', peerDID);
+      } else {
+        console.error('No Peer:DID found');
+      }
+
+      // Generate simple Peer:DID
+      await generateAndStorePeerDID();
+
+      // ... other initialization code ...
+    };
+
+    initializeApp();
+  }, []);
+
+  const generateAndStorePeerDID = async () => {
+    try {
+      // Check if a Peer:DID already exists in TinyBase
+      const existingPeerDID = await getPeerDID();
+      if (existingPeerDID) {
+        setPeerDID(existingPeerDID);
+        return;
+      }
+
+      // Generate a new key pair
+      const keyPair = await Ed25519VerificationKey2020.generate();
+      const publicKeyMultibase = keyPair.publicKeyMultibase;
+
+      // Create the authentication key object
+      const authenticationKey = {
+        id: 'key-1',
+        type: 'Ed25519VerificationKey2020',
+        publicKeyMultibase: publicKeyMultibase
+      };
+
+      // Create the Peer:DID (numalgo0)
+      const newPeerDID = await didPeer.create(0, [authenticationKey]);
+
+      console.log('Generated unique Peer:DID:', newPeerDID);
+
+      // Store the Peer:DID in TinyBase
+      const peerDIDStore = createStore();
+      const peerDIDPersister = createLocalPersister(peerDIDStore, 'peer-did');
+      peerDIDStore.setTable('peerDID', { 'current': { did: newPeerDID } });
+      await peerDIDPersister.save();
+
+      setPeerDID(newPeerDID);
+    } catch (error) {
+      console.error('Error generating unique Peer:DID:', error);
+    }
+  };
+
+  const getPeerDID = async (): Promise<string | null> => {
+    const peerDIDStore = createStore();
+    const peerDIDPersister = createLocalPersister(peerDIDStore, 'peer-did');
+    await peerDIDPersister.load();
+    const storedDID = peerDIDStore.getCell('peerDID', 'current', 'did');
+    return typeof storedDID === 'string' ? storedDID : null;
+  };
 
   // Add this new useEffect hook for handling daily tap data
   useEffect(() => {
