@@ -76,8 +76,9 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus, onPeerDIDFound 
     console.log('Existing Peer:DID data:', existingPeerDID);
     
     if (existingPeerDID && typeof existingPeerDID === 'object' && 'did' in existingPeerDID) {
-      console.log('Existing peer:DID found in userSubnet:', existingPeerDID.did);
-      if (onPeerDIDFound) onPeerDIDFound(existingPeerDID.did);
+      const peerDID = existingPeerDID.did as string;
+      console.log('Existing peer:DID found in userSubnet:', peerDID);
+      if (onPeerDIDFound) onPeerDIDFound(peerDID);
     } else {
       console.log('No existing peer:DID found in userSubnet');
     }
@@ -87,5 +88,6 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus, onPeerDIDFound 
 };
 
 export default PeerSync;
+
 
 
