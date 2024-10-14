@@ -40,11 +40,10 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus, onPeerDIDFound 
             checkForExistingPeerDID();
           });
 
-          providerRef.current.on('status', ({ status }: { status: any }) => {
-            console.log('Y-WebRTC provider status changed:', status);
-            const isConnected = status === 'connected';
-            setIsConnected(isConnected);
-            if (onConnectionStatus) onConnectionStatus(isConnected);
+          providerRef.current.on('status', ({ connected }: { connected: boolean }) => {
+            console.log('Y-WebRTC provider status changed:', connected ? 'connected' : 'disconnected');
+            setIsConnected(connected);
+            if (onConnectionStatus) onConnectionStatus(connected);
           });
 
           console.log('Saving YjsPersister...');
