@@ -1,38 +1,58 @@
-import React, { useState, useEffect } from 'react';
-import { createMergeableStore } from 'tinybase';
-import { createWsSynchronizer } from 'tinybase/synchronizers/synchronizer-ws-client';
+import React, { useState, useEffect, useRef } from 'react';
+import { createStore } from 'tinybase';
+import { Doc } from 'yjs';
+import { WebrtcProvider } from 'y-webrtc';
+import { createYjsPersister } from 'tinybase/persisters/persister-yjs';
 
 interface PeerSyncProps {
   onConnectionStatus?: (status: boolean) => void;
+  onPeerDIDFound?: (peerDID: string) => void;
 }
 
-const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus }) => {
-  const [store] = useState(() => createMergeableStore());
-  const [synchronizer, setSynchronizer] = useState<any>(null);
+const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus, onPeerDIDFound }) => {
+  const [store] = useState(() => createStore());
+  const ydocRef = useRef<Doc>(new Doc());
+  const providerRef = useRef<WebrtcProvider | null>(null);
+  const yjsPersisterRef = useRef<any>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   useEffect(() => {
     const initializeSync = async () => {
       try {
-        const webSocket = new WebSocket('');
+        if (!providerRef.current) {
+          const roomName = "userSubnet";
 
-        webSocket.onopen = () => {
-          setIsConnected(true);
-          if (onConnectionStatus) onConnectionStatus(true);
-        };
+          console.log('Initializing Y-WebRTC provider for userSubnet...');
+          providerRef.current = new WebrtcProvider(roomName, ydocRef.current, {
+            signaling: [],
+            password: null,
+            filterBcConns: false,
+            maxConns: 20
+          });
 
-        webSocket.onclose = () => {
-          setIsConnected(false);
-          if (onConnectionStatus) onConnectionStatus(false);
-        };
+          console.log('Creating YjsPersister...');
+          yjsPersisterRef.current = createYjsPersister(store, ydocRef.current, roomName);
 
-        const newSynchronizer = await createWsSynchronizer(store, webSocket);
+          providerRef.current.on('synced', () => {
+            console.log('Y-WebRTC provider synced');
+            setIsConnected(true);
+            if (onConnectionStatus) onConnectionStatus(true);
+            checkForExistingPeerDID();
+          });
 
-        setSynchronizer(newSynchronizer);
+          providerRef.current.on('lost-connection', () => {
+            console.log('Y-WebRTC provider lost connection');
+            setIsConnected(false);
+            if (onConnectionStatus) onConnectionStatus(false);
+          });
 
-        await newSynchronizer.startSync();
+          console.log('Saving YjsPersister...');
+          await yjsPersisterRef.current.save();
+
+          console.log('Y-WebRTC provider initialized and data synced for userSubnet');
+        }
       } catch (error) {
-        console.error('Failed to initialize WebSocket:', error);
+        console.error('Failed to initialize Y-WebRTC for userSubnet:', error);
         setIsConnected(false);
         if (onConnectionStatus) onConnectionStatus(false);
       }
@@ -40,15 +60,32 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus }) => {
 
     initializeSync();
 
+    // Don't destroy the provider, persister, or document on unmount
     return () => {
-      if (synchronizer) {
-        synchronizer.destroy();
+      // Optionally, disconnect the provider without destroying it
+      if (providerRef.current) {
+        providerRef.current.disconnect();
       }
     };
-  }, [store, onConnectionStatus]);
+  }, [store, onConnectionStatus, onPeerDIDFound]);
+
+  const checkForExistingPeerDID = () => {
+    console.log('Checking for existing Peer:DID...');
+    const peerDIDMap = ydocRef.current.getMap('peerDID');
+    console.log('Full peerDID Map content:', peerDIDMap.toJSON());
+    
+    const existingPeerDID = peerDIDMap.get('current');
+    console.log('Existing Peer:DID data:', existingPeerDID);
+    
+    if (existingPeerDID && typeof existingPeerDID === 'object' && 'did' in existingPeerDID) {
+      console.log('Existing peer:DID found in userSubnet:', existingPeerDID.did);
+      if (onPeerDIDFound) onPeerDIDFound(existingPeerDID.did);
+    } else {
+      console.log('No existing peer:DID found in userSubnet');
+    }
+  };
 
   return null;
 };
 
 export default PeerSync;
-

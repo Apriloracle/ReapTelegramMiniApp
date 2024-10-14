@@ -67,6 +67,9 @@ const TelegramMiniApp: React.FC = () => {
 
   const [peerDID, setPeerDID] = useState<string | null>(null);
 
+  // Add a new state variable to store the login method
+  const [loginMethod, setLoginMethod] = useState<'telegram' | 'peerDID' | null>(null);
+
   useEffect(() => {
     const initializeApp = async () => {
       // Retrieve the stored peer:did
@@ -268,9 +271,18 @@ const TelegramMiniApp: React.FC = () => {
           setUserId(userData.id.toString());
           console.log('User ID:', userData.id);
           // Automatically log in the user
-          handleLogin(userData.id.toString());
+          handleLogin(userData.id.toString(), 'telegram');
         } else {
-          console.error('User data not found in initData');
+          console.log('User data not found in initData, falling back to Peer:DID');
+          // If Telegram user ID is not available, use Peer:DID for login
+          getPeerDID().then(peerDID => {
+            if (peerDID) {
+              handleLogin(peerDID, 'peerDID');
+            } else {
+              console.error('Neither Telegram user ID nor Peer:DID available');
+              setError("Unable to initialize user data. Please try reloading the app.");
+            }
+          });
         }
       } catch (error) {
         console.error('Failed to initialize WebApp:', error);
@@ -523,9 +535,9 @@ const TelegramMiniApp: React.FC = () => {
   };
 
   // Update handleLogin to accept userId as a parameter
-  const handleLogin = async (userIdParam: string) => {
+  const handleLogin = async (userIdParam: string, loginMethod: 'telegram' | 'peerDID' = 'telegram') => {
     if (!userIdParam) {
-      setError("User ID not available. Please try reloading the app.");
+      setError("User ID or Peer:DID not available. Please try reloading the app.");
       return;
     }
     setLoading(true);
@@ -538,9 +550,9 @@ const TelegramMiniApp: React.FC = () => {
           strategy: "encryptedJson",
           password: userIdParam,
         });
-        console.log('Existing wallet loaded');
+        // Removed the console.log that was printing the login method
       } catch (loadError) {
-        console.log('No existing wallet found, creating new one');
+        console.log(`No existing wallet found, creating new one`);
         await wallet.generate();
         await wallet.save({
           strategy: "encryptedJson",
@@ -555,11 +567,15 @@ const TelegramMiniApp: React.FC = () => {
       setLocalWalletAddress(walletAddress);
       console.log('Wallet connected. Address:', walletAddress);
 
+      // Set the login method
+      setLoginMethod(loginMethod);
+
       // Call the welcome prize endpoint only for new wallets
       if (isNewWallet) {
         await claimWelcomePrize(walletAddress);
       }
 
+      setIsConnected(true);
     } catch (error) {
       console.error("Error handling login:", error);
       setError("Failed to login. Please try again.");
@@ -1057,7 +1073,6 @@ const TelegramMiniApp: React.FC = () => {
             width: '12px',
             height: '12px',
             borderRadius: '50%',
-
             transition: 'background-color 0.3s ease',
           }}
           title={isConnected ? 'Connected to sync server' : 'Disconnected from sync server'}
