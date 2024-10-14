@@ -25,7 +25,7 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus, onPeerDIDFound 
           console.log('Initializing Y-WebRTC provider for userSubnet...');
           providerRef.current = new WebrtcProvider(roomName, ydocRef.current, {
             signaling: [],
-            password: '', // Change this line from null to an empty string
+            password: '',
             filterBcConns: false,
             maxConns: 20
           });
@@ -40,10 +40,11 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus, onPeerDIDFound 
             checkForExistingPeerDID();
           });
 
-          providerRef.current.on('lost-connection', () => {
-            console.log('Y-WebRTC provider lost connection');
-            setIsConnected(false);
-            if (onConnectionStatus) onConnectionStatus(false);
+          providerRef.current.on('status', ({ status }: { status: any }) => {
+            console.log('Y-WebRTC provider status changed:', status);
+            const isConnected = status === 'connected';
+            setIsConnected(isConnected);
+            if (onConnectionStatus) onConnectionStatus(isConnected);
           });
 
           console.log('Saving YjsPersister...');
@@ -60,9 +61,7 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus, onPeerDIDFound 
 
     initializeSync();
 
-    // Don't destroy the provider, persister, or document on unmount
     return () => {
-      // Optionally, disconnect the provider without destroying it
       if (providerRef.current) {
         providerRef.current.disconnect();
       }
@@ -89,4 +88,5 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus, onPeerDIDFound 
 };
 
 export default PeerSync;
+
 
