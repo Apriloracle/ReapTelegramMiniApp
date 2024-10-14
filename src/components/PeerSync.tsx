@@ -25,7 +25,7 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus, onPeerDIDFound 
           console.log('Initializing Y-WebRTC provider for userSubnet...');
           providerRef.current = new WebrtcProvider(roomName, ydocRef.current, {
             signaling: [],
-            password: null,
+            password: '', // Change this line from null to an empty string
             filterBcConns: false,
             maxConns: 20
           });
@@ -89,3 +89,4 @@ const PeerSync: React.FC<PeerSyncProps> = ({ onConnectionStatus, onPeerDIDFound 
 };
 
 export default PeerSync;
+
