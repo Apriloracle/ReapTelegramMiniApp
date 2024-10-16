@@ -1,0 +1,8 @@
+[{
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.reapapril",
+      "sha256_cert_fingerprints": ["E5:C5:F4:CF:C9:64:6F:6B:29:24:6B:B5:D4:65:50:A9:EF:77:55:B1:6E:07:0D:73:59:67:54:0A:7A:AC:ED:ED"]
+    }
+  }]
