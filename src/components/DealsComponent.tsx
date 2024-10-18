@@ -134,7 +134,7 @@ const DealsComponent: React.FC = () => {
           })}
         </div>
       ) : (
-        <p style={{ color: '#A0AEC0' }}>No personalized deals available at the moment.</p>
+        <p style={{ color: '#A0AEC0' }}>Please reload app to see your deals.</p>
       )}
     </div>
   );
