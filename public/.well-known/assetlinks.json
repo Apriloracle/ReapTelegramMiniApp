@@ -1,8 +1,15 @@
-[{
-    "relation": ["delegate_permission/common.handle_all_urls"],
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.reapapril",
-      "sha256_cert_fingerprints": ["E5:C5:F4:CF:C9:64:6F:6B:29:24:6B:B5:D4:65:50:A9:EF:77:55:B1:6E:07:0D:73:59:67:54:0A:7A:AC:ED:ED"]
+      "sha256_cert_fingerprints": [
+        "E5:C5:F4:CF:C9:64:6F:6B:29:24:6B:B5:D4:65:50:A9:EF:77:55:B1:6E:07:0D:73:59:67:54:0A:7A:AC:ED:ED",
+        "45:C9:34:14:27:42:80:05:80:6D:D8:3D:70:7B:E1:41:B0:AE:A3:84:E3:A5:55:1D:76:21:EB:D7:F4:40:28:F5"
+      ]
     }
-  }]
+  }
+]
